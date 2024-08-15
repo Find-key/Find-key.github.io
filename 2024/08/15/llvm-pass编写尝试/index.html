@@ -163,7 +163,7 @@
             <span class="icon">
                 <i class="fa-solid fa-calendar fa-fw"></i>
             </span>
-            2024/8/14
+            2024/8/15
         </span>
         
         
@@ -175,7 +175,7 @@
             
             <span class="tag">
                 
-                <a href="/tags/llvm/" style="color: #00a596">
+                <a href="/tags/llvm/" style="color: #00bcd4">
                     llvm
                 </a>
             </span>
@@ -185,7 +185,119 @@
     </div>
     
     <div class="content" v-pre>
-        
+        <h2 id="一-环境准备"><a href="#一-环境准备" class="headerlink" title="一.环境准备"></a>一.环境准备</h2><p>指引:</p>
+<ul>
+<li>whitebird师傅blog:<a target="_blank" rel="noopener" href="https://whitebird0.github.io/post/%E4%BB%8Ellvm%E5%88%B0ollvm%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0.html">Blog</a></li>
+<li>llvm的官方文档:<a target="_blank" rel="noopener" href="https://llvm.org/docs/UserGuides.html">LLVM</a></li>
+</ul>
+<p><strong>注意</strong>:ninja -j8 很慢是正常的,<br>也可以改成ninja -j4或ninja -j2<br>(报错可以多次使用,配置低一点数字就调小一点)</p>
+<h2 id="二-开始编写llvm-pass-示例"><a href="#二-开始编写llvm-pass-示例" class="headerlink" title="二.开始编写llvm-pass(示例)"></a>二.开始编写llvm-pass(示例)</h2><p>首先,进入llvm-project(源码文件夹)中的llvm&#x2F;inlucde&#x2F;llvm&#x2F;Transforms&#x2F;Utils文件夹.<br>我们看见了官方文档所说的HelloWorld.h头文件,</p>
+<pre><code>#ifndef LLVM_TRANSFORMS_UTILS_ENCODE_H
+#define LLVM_TRANSFORMS_UTILS_ENCODE_H
+
+#include "llvm/IR/PassManager.h"
+
+namespace llvm &#123;
+
+class HelloWorldPass : public PassInfoMixin<HelloWorldPass> &#123;
+public:
+  PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM);
+&#125;;
+
+&#125; // namespace llvm
+
+#endif // LLVM_TRANSFORMS_UTILS_ENCODE_H
+</code></pre>
+
+<p>这是个简单的模板,我们在这个目录下创建一个Encode.h</p>
+<pre><code>#ifndef LLVM_TRANSFORMS_UTILS_ENCODE_H
+#define LLVM_TRANSFORMS_UTILS_ENCODE_H
+
+#include "llvm/IR/PassManager.h"//可能会用编译器警告,可忽略
+
+namespace llvm &#123;
+
+class EncodePass : public PassInfoMixin<EncodePass> &#123;
+public:
+  PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM);
+&#125;;
+
+&#125; // namespace llvm
+
+#endif // LLVM_TRANSFORMS_UTILS_ENCODE_H
+</code></pre>
+<p>创建完头文件后我们需要创建对应的cpp文件<br>进入llvm-project的llvm&#x2F;lib&#x2F;Transforms&#x2F;Utils目录下,<br>创建Encode.cpp,内容如下:</p>
+<pre><code>#include "llvm/Transforms/Utils/Encode.h"
+using namespace llvm;
+PreservedAnalyses EncodePass::run(Function &F,
+                                      FunctionAnalysisManager &AM) &#123;
+  errs() << F.getName() << "\n";//获取函数名称
+  return PreservedAnalyses::all();
+&#125;
+</code></pre>
+
+<p>然后在llvm&#x2F;lib&#x2F;Transforms&#x2F;Utils的Cmakelists.txt中添加  </p>
+<pre><code>Encode.cpp
+</code></pre>
+<p><img src="/../images/llvmpass/1.png" alt="alt text">  </p>
+<p>在llvm&#x2F;lib&#x2F;Passes&#x2F;PassRegistry.def中添加  </p>
+<pre><code>FUNCTION_PASS("encode",EncodePass())
+</code></pre>
+<p><img src="/../images/llvmpass/2.png" alt="alt text">  </p>
+<p>在llvm&#x2F;lib&#x2F;Passes&#x2F;PassBuilder.cpp添加</p>
+<pre><code>#include "llvm/Transforms/Utils/Encode.h"
+</code></pre>
+<p><img src="/../images/llvmpass/3.png" alt="alt text">  </p>
+<p>进而,我们在clion打开重新加载该项目<br><img src="/../images/llvmpass/4.png" alt="alt text"></p>
+<p>然后进入编译出现的cmake-build-release文件夹<br>用终端打开,<br>使用命令:</p>
+<pre><code>ninja -j2 opt
+</code></pre>
+
+<p>ok,准备工作已经完成</p>
+<h2 id="三-使用一下自定义的llvm-pass"><a href="#三-使用一下自定义的llvm-pass" class="headerlink" title="三.使用一下自定义的llvm-pass"></a>三.使用一下自定义的llvm-pass</h2><p>首先创建一个简单的c语言代码(这里直接借用kw17师傅blog的代码)</p>
+<pre><code>#include<stdio.h>
+
+void test_hello1()&#123;
+
+  printf("test_hello1\n");
+  return ;
+&#125;
+void test_hello2()&#123;
+
+  printf("test_hello2\n");
+
+  return ;
+&#125;
+int main(int argc ,char const *argv[])&#123;
+
+  printf("hello clang\n");
+
+  return 0;
+&#125;
+</code></pre>
+
+<p>用终端打开该文件所在目录,</p>
+<pre><code>clang -O3 -emit-llvm hello_clang.c -S -o hello_clang.ll
+</code></pre>
+
+<p>这里的-o3应该也可以是-o1或-o2,<br>而hello_clang.c是文件名</p>
+<p>如果clang报错说not found,就是没加环境变量</p>
+<pre><code>export PATH=/home/whitebird/llvm-project-llvmorg-14.0.6/llvm/cmake-build-release/bin:$PATHlan
+</code></pre>
+<p>记得改成自己对应的目录</p>
+<p>然后使用</p>
+<pre><code>opt -disable-out hello_clang.ll -passes=helloworld
+</code></pre>
+<p>就输出了该文件的所有函数名</p>
+<p>以上.</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>参考内容:</p>
+<ul>
+<li>1.<a target="_blank" rel="noopener" href="https://whitebird0.github.io/post/%E4%BB%8Ellvm%E5%88%B0ollvm%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0.html">whitebird’s Blog</a></li>
+<li>2.<a target="_blank" rel="noopener" href="https://kw171.github.io/2024/07/23/%E5%A6%82%E4%BD%95%E7%BC%96%E5%86%99%E4%B8%80%E4%B8%AAllvm-pass/">kw’s Blog</a></li>
+<li>3.<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1Bf3neVEnN/?spm_id_from=333.337.search-card.all.click&vd_source=d13d9bb231477d793884d458d677e63f">urlyy</a></li>
+<li>4.<a target="_blank" rel="noopener" href="https://llvm.org/docs/UserGuides.html">官方文档</a></li>
+</ul>
+
     </div>
     
     
