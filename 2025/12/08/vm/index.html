@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="Hexo Theme Redefine">
+    
+    
+    <meta name="author" content="Findkey">
+    
+    <!-- Completely eliminate flash of wrong theme -->
+    <script>
+        (function() {
+            const THEME_KEY = "REDEFINE-THEME-STATUS";
+            const DARK = "dark", LIGHT = "light";
+            
+            // Get preferred theme
+            function getTheme() {
+                try {
+                    const saved = localStorage.getItem(THEME_KEY);
+                    if (saved) {
+                        const { isDark } = JSON.parse(saved);
+                        return isDark ? DARK : LIGHT;
+                    }
+                } catch (e) {}
+                
+                return matchMedia("(prefers-color-scheme: dark)").matches ? DARK : LIGHT;
+            }
+            
+            // Apply theme to document
+            function applyTheme(theme) {
+                const isDark = theme === DARK;
+                const root = document.documentElement;
+                
+                // Set classes for compatibility
+                root.classList.add(theme);
+                root.classList.remove(isDark ? LIGHT : DARK);
+                root.style.colorScheme = theme;
+            }
+            
+            // Initial application
+            const theme = getTheme();
+            applyTheme(theme);
+            
+            // Listen for system preference changes
+            matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ({ matches }) => {
+                // Only update if using system preference (no localStorage entry)
+                if (!localStorage.getItem(THEME_KEY)) {
+                    applyTheme(matches ? DARK : LIGHT);
+                }
+            });
+            
+            // Set body classes ASAP (before DOMContentLoaded)
+            (function() {
+                const addBodyClass = () => {
+                    const b = document.body;
+                    if (!b) return false;
+                    b.classList.add(theme + "-mode");
+                    return true;
+                };
+
+                // Try immediately
+                if (addBodyClass()) return;
+
+                // Observe until body exists
+                const mo = new MutationObserver(() => {
+                    if (addBodyClass()) mo.disconnect();
+                });
+                mo.observe(document.documentElement, { childList: true, subtree: true });
+            })();
+        })();
+    </script>
+    
+    <!-- preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    
+    <!--- Seo Part-->
+    
+    <link rel="canonical" href="https://find-key.github.io/2025/12/08/vm/"/>
+    <meta name="robots" content="index,follow">
+    <meta name="googlebot" content="index,follow">
+    <meta name="revisit-after" content="1 days">
+    
+    
+        
+        <meta name="description" content="Hexo Theme Redefine, Redefine Your Hexo Journey.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="VM helper">
+<meta property="og:url" content="https://find-key.github.io/2025/12/08/vm/index.html">
+<meta property="og:site_name" content="Find-key&#39;Blog">
+<meta property="og:description" content="Hexo Theme Redefine, Redefine Your Hexo Journey.">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://find-key.github.io/images/redefine-og.webp">
+<meta property="article:published_time" content="2025-12-08T05:07:20.000Z">
+<meta property="article:modified_time" content="2026-04-02T15:09:17.038Z">
+<meta property="article:author" content="Find-key">
+<meta property="article:tag" content="GDB Script">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://find-key.github.io/images/redefine-og.webp">
+    
+    
+    <!--- Icon Part-->
+    <link rel="icon" type="image/png" href="/images/redefine-favicon.svg" sizes="192x192">
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/redefine-favicon.svg">
+    <meta name="theme-color" content="#A31F34">
+    <link rel="shortcut icon" href="/images/redefine-favicon.svg">
+    <!--- Page Info-->
+    
+    <title>
+        
+            VM helper | Findkey&#39;s Blog
+        
+    </title>
+
+    
+<link rel="stylesheet" href="/fonts/Chillax/chillax.css">
+
+
+    <!--- Inject Part-->
+    
+
+    
+<link rel="stylesheet" href="/css/style.css">
+
+
+    
+        
+<link rel="stylesheet" href="/css/build/tailwind.css">
+
+    
+
+    
+<link rel="stylesheet" href="/fonts/GeistMono/geist-mono.css">
+
+    
+<link rel="stylesheet" href="/fonts/Geist/geist.css">
+
+    <!--- Font Part-->
+    
+    
+    
+    
+    
+    
+
+    <script id="hexo-configurations">
+    window.config = {"hostname":"find-key.github.io","root":"/","language":"en"};
+    window.theme = {"articles":{"style":{"font_size":"16px","line_height":1.5,"image_border_radius":"14px","image_alignment":"center","image_caption":false,"link_icon":true,"delete_mask":false,"title_alignment":"left","headings_top_spacing":{"h1":"3.2rem","h2":"2.4rem","h3":"1.9rem","h4":"1.6rem","h5":"1.4rem","h6":"1.3rem"}},"word_count":{"enable":true,"count":true,"min2read":true},"author_label":{"enable":true,"auto":false,"list":[]},"code_block":{"copy":true,"style":"mac","highlight_theme":{"light":"github","dark":"vs2015"},"font":{"enable":false,"family":null,"url":null}},"toc":{"enable":true,"max_depth":3,"number":false,"expand":true,"init_open":true},"copyright":{"enable":true,"default":"cc_by_nc_sa"},"lazyload":true,"pangu_js":false,"recommendation":{"enable":false,"title":"推荐阅读","limit":3,"mobile_limit":2,"placeholder":"/images/wallhaven-wqery6-light.webp","skip_dirs":[]}},"colors":{"primary":"#A31F34","secondary":null,"default_mode":"light"},"global":{"fonts":{"chinese":{"enable":false,"family":null,"url":null},"english":{"enable":false,"family":null,"url":null},"title":{"enable":false,"family":null,"url":null}},"content_max_width":"1000px","sidebar_width":"210px","hover":{"shadow":true,"scale":false},"scroll_progress":{"bar":false,"percentage":true},"website_counter":{"url":"https://cn.vercount.one/js","enable":true,"site_pv":true,"site_uv":true,"post_pv":true},"single_page":true,"preloader":{"enable":false,"custom_message":null},"side_tools":{"gear_rotation":true,"auto_expand":false},"open_graph":{"enable":true,"image":"/images/redefine-og.webp","description":"Hexo Theme Redefine, Redefine Your Hexo Journey."},"google_analytics":{"enable":false,"id":null}},"home_banner":{"enable":true,"style":"fixed","image":{"light":"/images/wallhaven-wqery6-light.webp","dark":"/images/wallhaven-wqery6-dark.webp"},"title":"To Be PWN Master.","subtitle":{"text":[],"hitokoto":{"enable":true,"show_author":false,"api":"https://v1.hitokoto.cn"},"typing_speed":100,"backing_speed":80,"starting_delay":500,"backing_delay":1500,"loop":true,"smart_backspace":true},"text_color":{"light":"#fff","dark":"#d1d1b6"},"text_style":{"title_size":"2.8rem","subtitle_size":"1.5rem","line_height":1.2},"custom_font":{"enable":false,"family":null,"url":null},"social_links":{"enable":true,"style":"default","links":[{"icon":"fa-brands fa-github","url":"https://github.com/Find-key"},{"icon":"fa-solid fa-at","url":"Find_key@foxmail.com"},{"icon":"fa-solid fa-at","url":null},{"icon":"fa-brands fa-telegram","url":null},{"icon":"/images/custom-icon.svg","url":null}],"qrs":null}},"plugins":{"feed":{"enable":false},"aplayer":{"enable":false,"type":"fixed","audios":[{"name":null,"artist":null,"url":null,"cover":null,"lrc":null}]},"mermaid":{"enable":false,"version":"11.4.1","theme":{"light":"default","dark":"dark"}}},"version":"2.9.0","navbar":{"auto_hide":false,"color":{"left":"#f78736","right":"#367df7","transparency":35},"width":{"home":"1200px","pages":"1000px"},"links":{"Home":{"path":"/","icon":"fa-regular fa-house"},"Archives":{"path":"/archives","icon":"fa-regular fa-archive"},"Tags":{"path":"/tags/","icon":"fa-regular fa-tags"},"Friends":{"path":"/links/","icon":"fa-solid fa-link"}},"search":{"enable":false,"preload":true}},"page_templates":{"friends_column":2,"tags_style":"blur","masonry":{"batch_size":12,"initial_batch_size":24}},"home":{"sidebar":{"enable":true,"position":"left","first_item":"menu","announcement":"为之则易，不为则难","show_on_mobile":true,"links":null},"article_date_format":"auto","excerpt_length":200,"categories":{"enable":false,"limit":3},"tags":{"enable":true,"limit":3}},"footer":{"runtime":true,"icon":"<i class=\"fa-solid fa-heart fa-beat\" style=\"--fa-animation-duration: 0.5s; color: #f54545\"></i>","start":"2022/8/17 11:45:14","statistics":true,"customize":null,"icp":{"enable":false,"number":null,"url":null}},"footerStart":"2022/8/17 11:45:14","mermaid":{"style":{"light":"default","dark":"dark"}}};
+    window.lang_ago = {"second":"%s seconds ago","minute":"%s minutes ago","hour":"%s hours ago","day":"%s days ago","week":"%s weeks ago","month":"%s months ago","year":"%s years ago"};
+    window.i18n = {"search":"Search...","toc":"On this page","prev":"Prev","next":"Next","prev_posts":"Prev posts","next_posts":"Next posts","page":"Page %d","recent_posts":"Recent Posts","share":"Share","powered_by":"POWERED BY %s","theme":"THEME","rss_feed":"RSS Feed","category":"Category","categories":"Categories","tag":"Tag","tags":"Tags","post":"Post","posts":"Posts","tagcloud":"Tag Cloud","comment":"Comment","comments":"Comments","home":"Home","archive":"Archive","archives":"Archives","top":"TOP","sticky":"Sticky","go-back-home":"Go Back Home","masonry_loading":"Loading photos...","image_viewer":"Image viewer","close":"Close","exif":{"title":"EXIF","cards":{"camera":"Camera","lens":"Lens","exposure":"Exposure","other":"Other"},"fields":{"make":"Brand","model":"Model","date_taken":"Date taken","lens_model":"Lens","focal_length":"Focal length","focus_mode":"Focus mode","shutter":"Shutter","aperture":"Aperture","iso":"ISO","exposure_program":"Exposure program","exposure_compensation":"Exposure compensation","metering_mode":"Metering mode","flash":"Flash","white_balance":"White balance","latitude":"Latitude","longitude":"Longitude","altitude":"Altitude"},"status":{"loading":"Loading...","no_exif":"No EXIF available","library_missing":"EXIF library not loaded","image_source_missing":"Image source unavailable","unavailable":"EXIF unavailable (blocked by CORS or missing metadata)","flag_unavailable":"EXIF unavailable"}},"about":"About","changelog":"Changelog","links":"Links","link":"Link","friends":"Friends","friend":"Friend","timeline":"Timeline","shuoshuo":"Shuoshuo","bookmarks":"Bookmarks","site_uv":"VISITOR COUNT","site_pv":"TOTAL PAGE VIEWS","read_more":"Read more","wordcount":"Words","min2read":"Mins","status":"Status","runtime":"Blog up for","days":"days","hours":"hrs","minutes":"Min","seconds":"Sec","optimized_by":"and Optimized by Evan","rights":"All Rights Reserved","site_posts":"%s posts in total","site_wordcount":"%s words in total","copyright":{"author":"Author","title":"Title","link":"Link","create_time":"Created at","update_time":"Updated at","license_title":"License","license_content":"This work is licensed under %s.","all_rights_reserved":"All Rights Reserved &#169; %s","public_domain":"This work is in the public domain."},"ago":{"second":"%s seconds ago","minute":"%s minutes ago","hour":"%s hours ago","day":"%s days ago","week":"%s weeks ago","month":"%s months ago","year":"%s years ago"},"create_time":"Created","update_time":"Updated","expired":"This post is written %s days ago, and the content may not be up to date."};
+    window.data = {"masonry":false};
+  </script>
+    
+    <!--- Fontawesome Part-->
+    
+<link rel="stylesheet" href="/fontawesome/fontawesome.min.css">
+
+    
+<link rel="stylesheet" href="/fontawesome/brands.min.css">
+
+    
+<link rel="stylesheet" href="/fontawesome/solid.min.css">
+
+    
+<link rel="stylesheet" href="/fontawesome/regular.min.css">
+
+    
+    
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+	<div class="progress-bar-container">
+	
+
+	
+	<span class="pjax-progress-bar"></span>
+	<!--        <span class="swup-progress-icon">-->
+	<!--            <i class="fa-solid fa-circle-notch fa-spin"></i>-->
+	<!--        </span>-->
+	
+</div>
+
+<main class="page-container" id="swup">
+
+	
+
+	<div class="main-content-container flex flex-col justify-between min-h-dvh">
+		<div class="main-content-header">
+			<header class="navbar-container px-6 md:px-12">
+    <div class="navbar-content transition-navbar ">
+        <div class="left">
+            
+            <a class="logo-title" href="/">
+                
+                Findkey&#39;s Blog
+                
+            </a>
+        </div>
+
+        <div class="right">
+            <!-- PC -->
+            <div class="desktop">
+                <ul class="navbar-list">
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/"
+                                        >
+                                    <i class="fa-regular fa-house fa-fw"></i>
+                                    HOME
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/archives"
+                                        >
+                                    <i class="fa-regular fa-archive fa-fw"></i>
+                                    ARCHIVES
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/tags/"
+                                        >
+                                    <i class="fa-regular fa-tags fa-fw"></i>
+                                    TAGS
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/links/"
+                                        >
+                                    <i class="fa-solid fa-link fa-fw"></i>
+                                    FRIENDS
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                    
+                </ul>
+            </div>
+            <!-- Mobile -->
+            <div class="mobile">
+                
+                <div class="icon-item navbar-bar">
+                    <div class="navbar-bar-middle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile sheet -->
+    <div class="navbar-drawer h-dvh w-full absolute top-0 left-0 bg-background-color flex flex-col justify-between">
+        <ul class="drawer-navbar-list flex flex-col px-4 justify-center items-start">
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/"
+                        >
+                            <span>
+                                HOME
+                            </span>
+                            
+                                <i class="fa-regular fa-house fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/archives"
+                        >
+                            <span>
+                                ARCHIVES
+                            </span>
+                            
+                                <i class="fa-regular fa-archive fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/tags/"
+                        >
+                            <span>
+                                TAGS
+                            </span>
+                            
+                                <i class="fa-regular fa-tags fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/links/"
+                        >
+                            <span>
+                                FRIENDS
+                            </span>
+                            
+                                <i class="fa-solid fa-link fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+
+            
+            
+        </ul>
+
+        <div class="statistics flex justify-around my-2.5">
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/tags">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">8</div>
+        <div class="label text-third-text-color text-sm">Tags</div>
+    </a>
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/categories">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">0</div>
+        <div class="label text-third-text-color text-sm">Categories</div>
+    </a>
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/archives">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">12</div>
+        <div class="label text-third-text-color text-sm">Posts</div>
+    </a>
+</div>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+		</div>
+
+		<div class="main-content-body transition-fade-up">
+			
+
+			<div class="main-content">
+				<div class="post-page-container flex relative justify-between box-border w-full h-full">
+	<div class="article-content-container">
+
+		<div class="article-title relative w-full">
+			
+			<div class="w-full flex items-center pt-6 justify-start">
+				<h1 class="article-title-regular text-second-text-color tracking-tight text-4xl md:text-6xl font-semibold px-2 sm:px-6 md:px-8 py-3">VM helper</h1>
+			</div>
+			
+		</div>
+
+		
+		<div class="article-header flex flex-row gap-2 items-center px-2 sm:px-6 md:px-8">
+			<div class="avatar w-[46px] h-[46px] shrink-0 rounded-medium border border-border-color p-px">
+				<img src="/images/head_image.jpg">
+			</div>
+			<div class="info flex flex-col justify-between">
+				<div class="author flex items-center">
+					<span class="name text-default-text-color text-lg font-semibold">Findkey</span>
+					
+					<span class="author-label ml-1.5 text-xs px-2 py-0.5 rounded-small text-third-text-color border border-shadow-color-1">Lv2</span>
+					
+				</div>
+				<div class="meta-info">
+					<div class="article-meta-info">
+    <span class="article-date article-meta-item">
+        <i class="fa-regular fa-pen-fancy"></i>&nbsp;
+        <span class="desktop">2025-12-08 13:07:20</span>
+        <span class="mobile">2025-12-08 13:07:20</span>
+        <span class="hover-info">Created</span>
+    </span>
+    
+        <span class="article-date article-meta-item">
+            <i class="fa-regular fa-wrench"></i>&nbsp;
+            <span class="desktop">2026-04-02 23:09:17</span>
+            <span class="mobile">2026-04-02 23:09:17</span>
+            <span class="hover-info">Updated</span>
+        </span>
+    
+
+    
+    
+        <span class="article-tags article-meta-item">
+            <i class="fa-regular fa-tags"></i>&nbsp;
+            <ul>
+                
+                    <li>
+                        <a href="/tags/GDB-Script/">GDB Script</a>&nbsp;
+                    </li>
+                
+            </ul>
+        </span>
+    
+
+    
+    
+    
+    
+        <span class="article-pv article-meta-item">
+            <i class="fa-regular fa-eye"></i>&nbsp;<span id="busuanzi_value_page_pv"></span>
+        </span>
+    
+</div>
+
+				</div>
+			</div>
+		</div>
+		
+
+		
+
+
+		<div class="article-content markdown-body px-2 sm:px-6 md:px-8 pb-8">
+			<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在写 DASCTF 2025 下半年赛的 VM 题的时候，觉得分析题目给的 vmcode 很麻烦，就想着能不能 trace 。<br>本来想用 frida 也试试的，但是遇到了神秘问题，便尝试使用 gdb 脚本了，发现效果还不错。</p>
+<h2 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h2><p>附件给了 vvmm 和 vmcode，就是解释器和代码，之前都是让挑战者自己输入代码然后用解释器执行。<br>第二次遇到用解释器去跑 vmcode 然后交互的。</p>
+<h3 id="解释器：vvmm"><a href="#解释器：vvmm" class="headerlink" title="解释器：vvmm"></a>解释器：vvmm</h3><p>程序部分</p>
+<div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> __fastcall __noreturn <span class="title function_">main</span><span class="params">(<span class="type">int</span> a1, <span class="type">char</span> **a2, <span class="type">char</span> **a3)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">int</span> fd; <span class="comment">// [rsp+Ch] [rbp-14h]</span></span><br><span class="line">  <span class="type">char</span> *buf; <span class="comment">// [rsp+10h] [rbp-10h]</span></span><br><span class="line">  vm *s; <span class="comment">// [rsp+18h] [rbp-8h]</span></span><br><span class="line"></span><br><span class="line">  init();</span><br><span class="line">  s = (vm *)<span class="built_in">malloc</span>(<span class="number">0x30u</span>LL);</span><br><span class="line">  <span class="built_in">memset</span>(s, <span class="number">0</span>, <span class="keyword">sizeof</span>(vm));</span><br><span class="line">  buf = (<span class="type">char</span> *)mmap(<span class="number">0LL</span>, <span class="number">0x30000u</span>LL, <span class="number">7</span>, <span class="number">34</span>, <span class="number">-1</span>, <span class="number">0LL</span>);</span><br><span class="line">  s-&gt;code = buf;</span><br><span class="line">  fd = open(<span class="string">&quot;./vmcode&quot;</span>, <span class="number">0</span>);</span><br><span class="line">  read(fd, &amp;s-&gt;ip, <span class="number">4uLL</span>);</span><br><span class="line">  <span class="keyword">while</span> ( (<span class="type">unsigned</span> <span class="type">int</span>)read(fd, buf, <span class="number">0x400u</span>LL) )</span><br><span class="line">    buf += <span class="number">0x400</span>;</span><br><span class="line">  s-&gt;sp = <span class="number">0x30000</span>;</span><br><span class="line">  run(s);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> __fastcall __noreturn <span class="title function_">run</span><span class="params">(vm *m)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">int</span> type; <span class="comment">// eax</span></span><br><span class="line">  op *opinfo; <span class="comment">// [rsp+18h] [rbp-8h]</span></span><br><span class="line"></span><br><span class="line">  opinfo = (op *)<span class="built_in">malloc</span>(<span class="number">0xCu</span>LL);</span><br><span class="line">  <span class="built_in">memset</span>(opinfo, <span class="number">0</span>, <span class="number">8uLL</span>);</span><br><span class="line">  <span class="keyword">do</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">if</span> ( (<span class="type">unsigned</span> <span class="type">int</span>)GetOpType(m, opinfo) == <span class="number">-1</span> )</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    type = opinfo-&gt;val &amp; <span class="number">3</span>;</span><br><span class="line">    <span class="keyword">if</span> ( type == <span class="number">3</span> )</span><br><span class="line">    &#123;</span><br><span class="line">      opt3(m, opinfo);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> ( (opinfo-&gt;val &amp; <span class="number">3u</span>) &lt;= <span class="number">3</span> )</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">if</span> ( type == <span class="number">2</span> )</span><br><span class="line">      &#123;</span><br><span class="line">        opt2(m, opinfo);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">else</span> <span class="keyword">if</span> ( (opinfo-&gt;val &amp; <span class="number">3</span>) != <span class="number">0</span> )</span><br><span class="line">      &#123;</span><br><span class="line">        opt1(m, opinfo);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">else</span></span><br><span class="line">      &#123;</span><br><span class="line">        opt0(m, opinfo);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">memset</span>(opinfo, <span class="number">0</span>, <span class="keyword">sizeof</span>(op));</span><br><span class="line">    <span class="keyword">if</span> ( m-&gt;sp &gt; <span class="number">0x30000u</span> )</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">while</span> ( m-&gt;ip &lt;= <span class="number">0x30000u</span> );</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Segment error&quot;</span>);</span><br><span class="line">  _exit(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>结构体部分</p>
+<div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">vm</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">  <span class="type">char</span> *code;</span><br><span class="line">  <span class="type">int</span> ip;</span><br><span class="line">  <span class="type">int</span> r[<span class="number">6</span>];</span><br><span class="line">  <span class="type">int</span> sp;</span><br><span class="line">  <span class="type">char</span> flag;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">op</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">  <span class="type">char</span> val;</span><br><span class="line">  <span class="type">char</span> type;</span><br><span class="line">  <span class="type">char</span> pad[<span class="number">2</span>];</span><br><span class="line">  <span class="type">int</span> num1;</span><br><span class="line">  <span class="type">int</span> num2;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></div>
+<p>逆向解释器部分并非本文的重点，笔者就简单写写了，opt 那几个函数我就不给出了</p>
+<h3 id="代码：vmcode"><a href="#代码：vmcode" class="headerlink" title="代码：vmcode"></a>代码：vmcode</h3><p>hexdump 或者 010 之类的工具可以看到值</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">(Pwn) air@Air-key ~/w/P/M/D/2/d/mvmp&gt; hexdump ./vmcode</span><br><span class="line">0000000 0000 0000 0090 0800 008d 0047 6857 7461</span><br><span class="line">0000010 002b 0004 0000 0047 7327 7920 002b 0004</span><br><span class="line">0000020 0000 0047 756f 2072 002b 0004 0000 0047</span><br><span class="line">0000030 616e 656d 002b 0004 0000 0043 0a3f 0000</span><br><span class="line">0000040 008d 007d 00c0 6601 020e 8d00 0f01 0100</span><br><span class="line">0000050 0000 7d00 7d02 7d01 c000 0000 c08b 0000</span><br><span class="line">0000060 c00c 0000 944c 0000 ec08 0000 9000 0000</span><br><span class="line">0000070 8d06 0f00 0001 0000 0f00 1802 0000 7d00</span><br><span class="line">0000080 7d02 7d01 c000 0000 8d88 0f01 0000 0000</span><br><span class="line">0000090 0f00 5002 0000 7d00 7d02 7d01 c000 0000</span><br><span class="line">00000a0 8d1e 7d01 c001 0000 94a1 0000 ec06 0000</span><br><span class="line">00000b0 0f00 0000 0000 cc00 0000 ec3c 0000 7d00</span><br><span class="line">00000c0 8d05 2b05 0805 0000 3a00 0500 052b 0004</span><br><span class="line">00000d0 0000 013a 2b05 0405 0000 3a00 0502 00d4</span><br><span class="line">00000e0 0000 0581 00ec 0300 057d 058d 052b 0008</span><br><span class="line">00000f0 0000 003a 2b05 0405 0000 3a00 0501 052b</span><br><span class="line">0000100 0004 0000 023a d405 0000 8101 ec05 0000</span><br><span class="line">0000110 7d03 8d05 2b05 0805 0000 3a00 0500 052b</span><br><span class="line">0000120 0004 0000 013a 2b05 0405 0000 3a00 0502</span><br><span class="line">0000130 030f 0000 0000 003e 8501 8500 0603 0203</span><br><span class="line">0000140 80b0 0e00 0581 00ec 0300 057d 058d 052b</span><br><span class="line">0000150 0008 0000 0090 0300 018d 000e 4701 6800</span><br><span class="line">0000160 6c65 2b6c 0400 0000 4300 6f00 0020 0f00</span><br><span class="line">0000170 0100 0000 0f00 0602 0000 7d00 7d02 7d01</span><br><span class="line">0000180 c000 0080 3a9d 0501 017d 00c0 2000 020e</span><br><span class="line">0000190 3a00 0501 000f 0001 0000 027d 017d 007d</span><br><span class="line">00001a0 80c0 bc00 0094 0300 0581 00ec 0100 057d</span><br><span class="line">00001b0 058d 052b 0008 0000 013a 0e05 0100 0232</span><br><span class="line">00001c0 0700 0002 0000 a800 0000 8506 a400 0080</span><br><span class="line">00001d0 2e13 0100 0581 00ec 0100               </span><br><span class="line">00001da</span><br></pre></td></tr></table></figure></div>
+<p>但是对着分析还是太要精力了</p>
+<p>尝试写 gdb 脚本，思路是当程序运行到 opt0、opt1、opt2、opt3 这些函数的时候，打印出当时的参数</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><figcaption><span>script</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">start</span><br><span class="line"></span><br><span class="line">python</span><br><span class="line">import gdb</span><br><span class="line"></span><br><span class="line">class VmTrace(gdb.Breakpoint):</span><br><span class="line">    def __init__(self, addr):</span><br><span class="line">        super().__init__(addr, temporary=False)</span><br><span class="line"></span><br><span class="line">    def stop(self):</span><br><span class="line"></span><br><span class="line">        rdi = gdb.parse_and_eval(&quot;$rdi&quot;)</span><br><span class="line">        rsi = gdb.parse_and_eval(&quot;$rsi&quot;)</span><br><span class="line"></span><br><span class="line">        print(f&quot;rdi: &#123;hex(int(rdi))&#125;&quot;,end=&quot;, &quot;)</span><br><span class="line">        print(f&quot;rsi: &#123;hex(int(rsi))&#125;&quot;)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        return False    # False = 自动 continue</span><br><span class="line"></span><br><span class="line">VmTrace(f&quot;*&#123;gdb.parse_and_eval(&#x27;$rebase(0x14DE)&#x27;)&#125;&quot;)</span><br><span class="line"></span><br><span class="line">end</span><br><span class="line"></span><br><span class="line">continue</span><br></pre></td></tr></table></figure></div>
+<p>像是这样，继承自 gdb 的 Breakpoint 类，在每次经过断点的时候打印了 rdi 和 rsi 的值</p>
+<p>使用方法：<code>gdb -x ./sc --args ./vvmm</code> ，其中 <code>./sc</code> 就是脚本文件。</p>
+<p>运行就会发现打印了好多 rdi 和 rsi 信息，然后是输入，输入完又是一大串信息，这样的话感觉不是很好，所以笔者选择让信息输出到 log 文件中，而不是标准输出，防止 trace 的信息妨碍看程序信息，修改后：</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><figcaption><span>script</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">start</span><br><span class="line"></span><br><span class="line">python</span><br><span class="line">import gdb</span><br><span class="line"></span><br><span class="line">f = open(&quot;./vm.log&quot;, &quot;w&quot;)</span><br><span class="line"></span><br><span class="line">class VmTrace(gdb.Breakpoint):</span><br><span class="line">    def __init__(self, addr):</span><br><span class="line">        super().__init__(addr, temporary=False)</span><br><span class="line"></span><br><span class="line">    def stop(self):</span><br><span class="line"></span><br><span class="line">        rdi = gdb.parse_and_eval(&quot;$rdi&quot;)</span><br><span class="line">        rsi = gdb.parse_and_eval(&quot;$rsi&quot;)</span><br><span class="line"></span><br><span class="line">        print(f&quot;rdi: &#123;hex(int(rdi))&#125;, rsi: &#123;hex(int(rsi))&#125;&quot;, file=f)</span><br><span class="line">        f.flush()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        return False    # False = 自动 continue</span><br><span class="line"></span><br><span class="line">VmTrace(f&quot;*&#123;gdb.parse_and_eval(&#x27;$rebase(0x14DE)&#x27;)&#125;&quot;)</span><br><span class="line"></span><br><span class="line">end</span><br><span class="line"></span><br><span class="line">continue</span><br></pre></td></tr></table></figure></div>
+<p>用同样的方法运行，发现成功将 trace 信息写入文件，那么开始下一步，解析参数。</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><figcaption><span>script</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line">start</span><br><span class="line"></span><br><span class="line">python</span><br><span class="line">import gdb</span><br><span class="line"></span><br><span class="line">f = open(&quot;./vm.log&quot;, &quot;w&quot;)</span><br><span class="line"></span><br><span class="line">def analyse(*args):</span><br><span class="line">    inf = gdb.selected_inferior()   # 获取调试实例</span><br><span class="line"></span><br><span class="line">    vm_addr = args[0]</span><br><span class="line">    info_addr = args[1]</span><br><span class="line"></span><br><span class="line">    code_ptr = int.from_bytes(inf.read_memory(vm_addr + 0, 8), &quot;little&quot;, signed=False)</span><br><span class="line">    ip = int.from_bytes(inf.read_memory(vm_addr + 8, 4), &quot;little&quot;, signed=False)</span><br><span class="line">    regs = []</span><br><span class="line">    for i in range(6):</span><br><span class="line">        reg_val = int.from_bytes(inf.read_memory(vm_addr + 12 + i * 4, 4), &quot;little&quot;, signed=False)</span><br><span class="line">        regs.append(hex(reg_val))</span><br><span class="line">    sp = int.from_bytes(inf.read_memory(vm_addr + 36, 4),</span><br><span class="line">    &quot;little&quot;, signed=False)</span><br><span class="line">    flag = int.from_bytes(inf.read_memory(vm_addr + 40, 1), &quot;little&quot;, signed=False)</span><br><span class="line"></span><br><span class="line">    val = int.from_bytes(inf.read_memory(info_addr + 0, 1), &quot;little&quot;, signed=False)</span><br><span class="line">    val = val &gt;&gt; 2</span><br><span class="line">    type_ = int.from_bytes(inf.read_memory(info_addr + 1, 1), &quot;little&quot;, signed=False)</span><br><span class="line">    num1 = int.from_bytes(inf.read_memory(info_addr + 4, 4), &quot;little&quot;, signed=False)</span><br><span class="line">    num2 = int.from_bytes(inf.read_memory(info_addr + 8, 4), &quot;little&quot;, signed=False)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    print(f&quot;Type: &#123;hex(type_)&#125; | val: &#123;hex(val)&#125; | num1: &#123;hex(num1)&#125; | num2: &#123;hex(num2)&#125; || VM ip: 0x&#123;ip:X&#125; | regs: &#123;regs&#125; | sp: 0x&#123;sp:X&#125; | flag: &#123;flag&#125;&quot;, file=f)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">class VmTrace(gdb.Breakpoint):</span><br><span class="line">    def __init__(self, addr):</span><br><span class="line">        super().__init__(addr, temporary=False)</span><br><span class="line"></span><br><span class="line">    def stop(self):</span><br><span class="line"></span><br><span class="line">        rdi = int(gdb.parse_and_eval(&quot;$rdi&quot;))</span><br><span class="line">        rsi = int(gdb.parse_and_eval(&quot;$rsi&quot;))</span><br><span class="line"></span><br><span class="line">        analyse(rdi, rsi)</span><br><span class="line"></span><br><span class="line">        return False    # False = 自动 continue</span><br><span class="line"></span><br><span class="line">off_list = [0x14DE, 0x1AAC, 0x1C96,0x211D]</span><br><span class="line"></span><br><span class="line">for off in off_list:</span><br><span class="line">    addr = gdb.parse_and_eval(f&quot;$rebase(&#123;hex(off)&#125;)&quot;)</span><br><span class="line">    VmTrace(f&quot;*&#123;addr&#125;&quot;)</span><br><span class="line"></span><br><span class="line">end</span><br><span class="line"></span><br><span class="line">continue</span><br></pre></td></tr></table></figure></div>
+<p>trace 完成，在 vm.log 文件查看结果。</p>
+<h2 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h2><p>在 type 为 0 ，val &gt;&gt; 2 为 0x35 时，程序调用系统调用，对应的 nr 是 num1<br>在 type 为 0 ，val &gt;&gt; 2 为 0x3b 时，对应的操作为 ret</p>
+<p>在 vm.log 找到</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Type: 0x0 | val: 0x35 | num1: 0x1 | num2: 0x0 || VM ip: 0x107 | regs: [&#x27;0x1&#x27;, &#x27;0x2ffe0&#x27;, &#x27;0x12&#x27;, &#x27;0x0&#x27;, &#x27;0x0&#x27;, &#x27;0x2ffdc&#x27;] | sp: 0x2FFCC | flag: 0</span><br><span class="line">···</span><br><span class="line">Type: 0x0 | val: 0x35 | num1: 0x0 | num2: 0x0 || VM ip: 0xDE | regs: [&#x27;0x0&#x27;, &#x27;0x2ffc4&#x27;, &#x27;0x50&#x27;, &#x27;0x18&#x27;, &#x27;0x0&#x27;, &#x27;0x2ffc0&#x27;] | sp: 0x2FFB0 | flag: 0</span><br><span class="line">···</span><br><span class="line">Type: 0x0 | val: 0x35 | num1: 0x1 | num2: 0x0 || VM ip: 0x107 | regs: [&#x27;0x1&#x27;, &#x27;0x2ffac&#x27;, &#x27;0x6&#x27;, &#x27;0x18&#x27;, &#x27;0x0&#x27;, &#x27;0x2ffa8&#x27;] | sp: 0x2FF98 | flag: 0</span><br><span class="line">···</span><br><span class="line">Type: 0x0 | val: 0x35 | num1: 0x1 | num2: 0x0 || VM ip: 0x107 | regs: [&#x27;0x1&#x27;, &#x27;0x2ffc4&#x27;, &#x27;0x9&#x27;, &#x27;0x18&#x27;, &#x27;0x0&#x27;, &#x27;0x2ffa8&#x27;] | sp: 0x2FF98 | flag: 0</span><br><span class="line">···</span><br><span class="line">Type: 0x0 | val: 0x3b | num1: 0x0 | num2: 0x0 || VM ip: 0xAD | regs: [&#x27;0x5555a2ac&#x27;, &#x27;0x2ffc4&#x27;, &#x27;0x9&#x27;, &#x27;0x18&#x27;, &#x27;0x0&#x27;, &#x27;0x0&#x27;] | sp: 0x2FFDC | flag: 0</span><br></pre></td></tr></table></figure></div>
+
+<p>对应的伪代码也就是</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">write(1, 0x2ffe0, 0x12);</span><br><span class="line">len = read(0, 0x2ffc4, 0x50);</span><br><span class="line">write(1, 0x2ffac, 0x6);</span><br><span class="line">write(1, 0x2ffc4, len);</span><br><span class="line"></span><br><span class="line">ret     # rsp = 0x2FFDC</span><br></pre></td></tr></table></figure></div>
+<p>这个 len 是多次 trace 得出的，</p>
+<p>然后就是漏洞点，0x2FFDC 显然是在 0x2ffc4 与 0x2ffc4+0x50 中的，也就是可以用 read 覆盖控制执行流。</p>
+<p>read 的长度足够，可以尝试让解释器执行写入的 payload，思路：控制各个寄存器，然后通过 syscall 拿 shell。<br>本文重点在于分析 WP 可以查看 <a class="link"   target="_blank" rel="noopener" href="https://yfor-yfor.github.io/2025/12/07/2025dasctf-wp/#pwn3" >这里<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<h2 id="模板"><a href="#模板" class="headerlink" title="模板"></a>模板</h2><p>最后给出模板 VM helper ，欢迎各位师傅来交流。</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><figcaption><span>script</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">start</span><br><span class="line"></span><br><span class="line">python</span><br><span class="line">import gdb</span><br><span class="line"></span><br><span class="line">f = open(&quot;./vm.log&quot;, &quot;w&quot;)</span><br><span class="line"></span><br><span class="line">def analyse(*args):</span><br><span class="line">    inf = gdb.selected_inferior()   # 获取调试实例</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">class MyBreakPoint(gdb.Breakpoint):</span><br><span class="line">    def __init__(self, addr):</span><br><span class="line">        super().__init__(addr, temporary=False)</span><br><span class="line"></span><br><span class="line">    def stop(self):</span><br><span class="line">        ...</span><br><span class="line"></span><br><span class="line">        return False    # False = 自动 continue</span><br><span class="line"></span><br><span class="line"># 断点自填</span><br><span class="line">off_list = []</span><br><span class="line"></span><br><span class="line">is_pie = 1</span><br><span class="line"></span><br><span class="line">for off in off_list:</span><br><span class="line">    if is_pie:</span><br><span class="line">        addr = gdb.parse_and_eval(f&quot;$rebase(&#123;hex(off)&#125;)&quot;)</span><br><span class="line">    else:</span><br><span class="line">        addr = gdb.parse_and_eval(f&quot;&#123;hex(off)&#125;&quot;)</span><br><span class="line">    MyBreakPoint(f&quot;*&#123;addr&#125;&quot;)</span><br><span class="line"></span><br><span class="line">end</span><br><span class="line"></span><br><span class="line">continue</span><br></pre></td></tr></table></figure></div>
+		</div>
+
+		
+		<div class="post-copyright-info w-full my-8 px-2 sm:px-6 md:px-8">
+			<div class="article-copyright-info-container">
+    <ul>
+        <li><strong>Title:</strong> VM helper</li>
+        <li><strong>Author:</strong> Findkey</li>
+        <li><strong>Created at
+                :</strong> 2025-12-08 13:07:20</li>
+        
+            <li>
+                <strong>Updated at
+                    :</strong> 2026-04-02 23:09:17
+            </li>
+        
+        <li>
+            <strong>Link:</strong> https://find-key.github.io/2025/12/08/vm/
+        </li>
+        <li>
+            <strong>
+                License:
+            </strong>
+            
+
+            
+                This work is licensed under <a class="license" target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0">CC BY-NC-SA 4.0</a>.
+            
+        </li>
+    </ul>
+</div>
+
+		</div>
+		
+
+		
+		<ul class="post-tags-box text-lg mt-1.5 flex-wrap justify-center flex md:hidden">
+			
+			<li class="tag-item mx-0.5">
+				<a href="/tags/GDB-Script/">#GDB Script</a>&nbsp;
+			</li>
+			
+		</ul>
+		
+
+		
+
+		
+		<div class="article-nav my-8 flex justify-between items-center px-2 sm:px-6 md:px-8">
+			
+			<div class="article-prev border-border-color shadow-redefine-flat shadow-shadow-color-2 rounded-medium px-4 py-2 hover:shadow-redefine-flat-hover hover:shadow-shadow-color-2">
+				<a class="prev" rel="prev" href="/2026/04/02/php-pwn/">
+					<span class="left arrow-icon flex justify-center items-center">
+						<i class="fa-solid fa-chevron-left"></i>
+					</span>
+					<span class="title flex justify-center items-center">
+						<span class="post-nav-title-item truncate max-w-48">从零开始的 PHP PWN 学习</span>
+						<span class="post-nav-item">Prev posts</span>
+					</span>
+				</a>
+			</div>
+			
+			
+			<div class="article-next border-border-color shadow-redefine-flat shadow-shadow-color-2 rounded-medium px-4 py-2 hover:shadow-redefine-flat-hover hover:shadow-shadow-color-2">
+				<a class="next" rel="next" href="/2025/11/24/ret2dl-runtime-resolve/">
+					<span class="title flex justify-center items-center">
+						<span class="post-nav-title-item truncate max-w-48">ret2dl_runtime_resolve</span>
+						<span class="post-nav-item">Next posts</span>
+					</span>
+					<span class="right arrow-icon flex justify-center items-center">
+						<i class="fa-solid fa-chevron-right"></i>
+					</span>
+				</a>
+			</div>
+			
+		</div>
+		
+
+
+		
+	</div>
+
+	
+	<div class="toc-content-container">
+		<div class="post-toc-wrap">
+	<div class="post-toc">
+		<div class="toc-title">On this page</div>
+		<div class="page-title">VM helper</div>
+		<ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E6%9E%90"><span class="nav-text">分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%A3%E9%87%8A%E5%99%A8%EF%BC%9Avvmm"><span class="nav-text">解释器：vvmm</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%EF%BC%9Avmcode"><span class="nav-text">代码：vmcode</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8"><span class="nav-text">漏洞利用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E6%9D%BF"><span class="nav-text">模板</span></a></li></ol>
+
+	</div>
+</div>
+	</div>
+	
+</div>
+
+			</div>
+
+			
+		</div>
+
+		<div class="main-content-footer">
+			<footer class="footer mt-5 py-5 h-auto text-base text-third-text-color relative border-t-2 border-t-border-color">
+    <div class="info-container py-3 text-center">
+        
+        <div class="text-center">
+            &copy;
+            
+              <span>2022</span>
+              -
+            
+            2026&nbsp;&nbsp;<i class="fa-solid fa-heart fa-beat" style="--fa-animation-duration: 0.5s; color: #f54545"></i>&nbsp;&nbsp;<a href="/">Findkey</a>
+            
+                
+                <p class="post-count space-x-0.5">
+                    <span>
+                        12 posts in total
+                    </span>
+                    
+                </p>
+            
+        </div>
+        
+            <script data-swup-reload-script src="https://cn.vercount.one/js"></script>
+            <div class="relative text-center lg:absolute lg:right-[20px] lg:top-1/2 lg:-translate-y-1/2 lg:text-right">
+                
+                    <span id="busuanzi_container_site_uv" class="lg:!block">
+                        <span class="text-sm">VISITOR COUNT</span>
+                        <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+                
+                    <span id="busuanzi_container_site_pv" class="lg:!block">
+                        <span class="text-sm">TOTAL PAGE VIEWS</span>
+                        <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+            </div>
+        
+        <div class="relative text-center lg:absolute lg:left-[20px] lg:top-1/2 lg:-translate-y-1/2 lg:text-left">
+            <span class="lg:block text-sm">POWERED BY <?xml version="1.0" encoding="utf-8"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg class="relative top-[2px] inline-block align-baseline" version="1.1" id="圖層_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="1rem" height="1rem" viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve"><path fill="#0E83CD" d="M256.4,25.8l-200,115.5L56,371.5l199.6,114.7l200-115.5l0.4-230.2L256.4,25.8z M349,354.6l-18.4,10.7l-18.6-11V275H200v79.6l-18.4,10.7l-18.6-11v-197l18.5-10.6l18.5,10.8V237h112v-79.6l18.5-10.6l18.5,10.8V354.6z"/></svg><a target="_blank" class="text-base" href="https://hexo.io">Hexo</a></span>
+            <span class="text-sm lg:block">THEME&nbsp;<a class="text-base" target="_blank" href="https://github.com/EvanNotFound/hexo-theme-redefine">Redefine v2.9.0</a></span>
+        </div>
+        
+        
+            <div>
+                Blog up for <span class="odometer" id="runtime_days" ></span> days <span class="odometer" id="runtime_hours"></span> hrs <span class="odometer" id="runtime_minutes"></span> Min <span class="odometer" id="runtime_seconds"></span> Sec
+            </div>
+        
+        
+            <script data-swup-reload-script>
+                try {
+                    function odometer_init() {
+                    const elements = document.querySelectorAll('.odometer');
+                    elements.forEach(el => {
+                        new Odometer({
+                            el,
+                            format: '( ddd).dd',
+                            duration: 200
+                        });
+                    });
+                    }
+                    odometer_init();
+                } catch (error) {}
+            </script>
+        
+        
+        
+    </div>  
+</footer>
+		</div>
+	</div>
+
+	
+	<div class="post-tools">
+		<div class="post-tools-container">
+	<ul class="article-tools-list">
+		<!-- TOC aside toggle -->
+		
+		<li class="right-bottom-tools page-aside-toggle">
+			<i class="fa-regular fa-outdent"></i>
+		</li>
+		
+
+		<!-- go comment -->
+		
+	</ul>
+</div>
+	</div>
+	
+
+	<div class="right-side-tools-container">
+		<div class="side-tools-container">
+	<ul class="hidden-tools-list">
+		<li class="right-bottom-tools tool-font-adjust-plus flex justify-center items-center">
+			<i class="fa-regular fa-magnifying-glass-plus"></i>
+		</li>
+
+		<li class="right-bottom-tools tool-font-adjust-minus flex justify-center items-center">
+			<i class="fa-regular fa-magnifying-glass-minus"></i>
+		</li>
+
+		<li class="right-bottom-tools tool-dark-light-toggle flex justify-center items-center">
+			<i class="fa-regular fa-moon"></i>
+		</li>
+
+		<!-- rss -->
+		
+
+		
+
+		<li class="right-bottom-tools tool-scroll-to-bottom flex justify-center items-center">
+			<i class="fa-regular fa-arrow-down"></i>
+		</li>
+	</ul>
+
+	<ul class="visible-tools-list">
+		<li class="right-bottom-tools toggle-tools-list flex justify-center items-center">
+			<i class="fa-regular fa-cog fa-spin"></i>
+		</li>
+		
+		<li class="right-bottom-tools tool-scroll-to-top flex justify-center items-center">
+			<i class="arrow-up fas fa-arrow-up"></i>
+			<span class="percent"></span>
+		</li>
+		
+		
+	</ul>
+</div>
+	</div>
+
+	<div class="image-viewer-container" role="dialog" aria-modal="true" aria-label="Image viewer">
+	<button class="image-viewer-close" type="button" aria-label="Close">
+		<i class="fa-solid fa-xmark"></i>
+	</button>
+	<button class="image-viewer-prev" type="button" aria-label="Prev">
+		<i class="fa-solid fa-chevron-left"></i>
+	</button>
+	<div class="image-viewer-frame">
+		<img src="" alt="">
+	</div>
+	<div class="image-viewer-exif-panel hidden absolute left-1/2 bottom-20 -translate-x-1/2 w-[min(92vw,420px)] max-h-[60vh] overflow-hidden rounded-2xl bg-background-color-transparent-80 p-4 text-left shadow-redefine-flat backdrop-blur-md" role="dialog" aria-label="EXIF" aria-hidden="true">
+		<div class="flex items-center justify-between mb-3">
+			<span class="text-sm font-semibold text-first-text-color">EXIF</span>
+			<button class="image-viewer-exif-close flex h-8 w-8 items-center justify-center rounded-full bg-background-color-transparent-80 text-first-text-color transition hover:bg-background-color-transparent-40" type="button" aria-label="Close">
+				<i class="fa-solid fa-xmark text-[0.65rem]"></i>
+			</button>
+		</div>
+		<div class="image-viewer-exif-cards grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto pr-1 scrollbar-hide"></div>
+		<template class="image-viewer-exif-card-template">
+			<div class="rounded-lg bg-background-color-transparent-40 px-3 py-2">
+				<div class="image-viewer-exif-card-header flex items-center gap-2 mb-1">
+					<i class="image-viewer-exif-card-icon fa-solid fa-circle-info text-xs text-third-text-color"></i>
+					<div class="image-viewer-exif-card-title text-xs font-semibold text-first-text-color"></div>
+				</div>
+				<div class="image-viewer-exif-card-items flex flex-col gap-1"></div>
+			</div>
+		</template>
+	</div>
+	<button class="image-viewer-exif-toggle flex items-center gap-2 hidden absolute left-1/2 bottom-6 -translate-x-1/2 rounded-full border border-border-color bg-background-color-transparent-80 px-4 py-2 text-first-text-color backdrop-blur-md transition hover:bg-background-color-transparent-40" type="button" aria-label="EXIF" aria-expanded="false">
+		<i class="fa-solid fa-circle-info text-xs"></i>
+		<span class="text-xs font-semibold uppercase tracking-wider">EXIF</span>
+	</button>
+	<button class="image-viewer-next" type="button" aria-label="Next">
+		<i class="fa-solid fa-chevron-right"></i>
+	</button>
+</div>
+
+
+	
+
+</main>
+
+
+
+<script src="/js/build/libs/Swup.min.js"></script>
+
+<script src="/js/build/libs/SwupSlideTheme.min.js"></script>
+
+<script src="/js/build/libs/SwupScriptsPlugin.min.js"></script>
+
+<script src="/js/build/libs/SwupProgressPlugin.min.js"></script>
+
+<script src="/js/build/libs/SwupScrollPlugin.min.js"></script>
+
+<script src="/js/build/libs/SwupPreloadPlugin.min.js"></script>
+
+<script>
+    window.swup = new Swup({
+        plugins: [
+            new SwupScriptsPlugin({
+                optin: true,
+            }),
+            new SwupProgressPlugin(),
+            new SwupScrollPlugin({
+                offset: 80,
+            }),
+            new SwupSlideTheme({
+                mainElement: ".main-content-body",
+            }),
+            new SwupPreloadPlugin(),
+        ],
+        containers: ["#swup"],
+    });
+
+    window.dispatchEvent(
+        new CustomEvent("redefine:swup:ready", {
+            detail: {
+                swup: window.swup,
+            },
+        }),
+    );
+</script>
+
+
+
+
+	
+<script src="/js/build/main.js" type="module"></script>
+
+
+
+    
+<script src="/js/build/libs/odometer.min.js"></script>
+
+    
+<link rel="stylesheet" href="/assets/odometer-theme-minimal.css">
+
+
+
+
+
+
+
+  
+<script src="/js/build/libs/Typed.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+<script src="/js/build/libs/moment-with-locales.min.js" data-swup-reload-script=""></script>
+
+
+
+	
+</body>
+
+</html>

