@@ -27,10 +27,10 @@ export const SITE = {
 	email: 'find_key@foxmail.com',
 } as const;
 
-/** 目次（覆盖层）里的主链接，按显示顺序排列 */
+/**
+ * 目次覆盖层里的次级链接（分类本身由 CATEGORIES + 文章自动生成，不在这里）
+ */
 export const NAV = [
-	{ href: '/', label: '首页' },
-	{ href: '/categories', label: '分类' },
 	{ href: '/posts', label: '全部文章' },
 	{ href: '/tags', label: '标签' },
 	{ href: '/about', label: '关于' },
