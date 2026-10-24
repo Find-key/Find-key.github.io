@@ -1,0 +1,62 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE } from '../consts';
+---
+
+<!doctype html>
+<html lang={SITE.lang}>
+	<head>
+		<BaseHead title={`关于 · ${SITE.title}`} description={`关于 ${SITE.author}`} />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<h1>关于</h1>
+			<div class="prose">
+				<p>
+					我是 {SITE.author}，平时折腾嵌入式 Linux：用 Buildroot 搭最小系统，丢进 QEMU 里跑，
+					踩完坑再回到真板子上验证。这里记录那些「当时找了两小时、事后一句话」的东西。
+				</p>
+				<p>
+					<!-- TODO: 换成你自己的自我介绍：现在在做什么、关注什么方向、想在这里写什么 -->
+					这个博客主要写三类内容：嵌入式/内核调试笔记、开发环境与工具链的折腾记录、
+					以及一些读完书/源码之后的理解。写给三个月后的自己看，所以尽量带可复现的命令。
+				</p>
+				<h2>关于这个站</h2>
+				<p>
+					站点用 <a href="https://astro.build" target="_blank" rel="noopener">Astro</a> 构建，
+					纯静态输出，托管在 GitHub Pages 上；没有后端、没有数据库、没有追踪脚本。
+					构建与项目结构说明见仓库里的 <code>PROJECT.md</code>。
+				</p>
+				<h2>联系</h2>
+				<ul>
+					{SITE.github && (
+						<li>
+							GitHub：<a href={SITE.github} target="_blank" rel="noopener">{SITE.github}</a>
+						</li>
+					)}
+					{SITE.email && (
+						<li>
+							邮箱：<a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+						</li>
+					)}
+					<li>
+						RSS：<a href={`${import.meta.env.BASE_URL}rss.xml`}>订阅</a>
+					</li>
+				</ul>
+			</div>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.prose {
+		max-width: 720px;
+	}
+	.prose ul {
+		padding-left: 1.2em;
+	}
+</style>

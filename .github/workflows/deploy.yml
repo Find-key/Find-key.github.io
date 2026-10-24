@@ -1,0 +1,42 @@
+name: Deploy to GitHub Pages
+
+on:
+  # 推送到 main 分支就构建部署
+  push:
+    branches: [main]
+  # 也可以在 Actions 页面手动触发
+  workflow_dispatch:
+
+# 允许读取仓库、写入 Pages、以及用 OIDC 令牌和 Pages 服务认证
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只跑一个部署；不取消进行中的，避免线上出现半成品
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Install, build, upload
+        uses: withastro/action@v6
+        with:
+          # 与 package.json 的 engines 保持一致；不给则用 action 默认的 24
+          node-version: 24
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

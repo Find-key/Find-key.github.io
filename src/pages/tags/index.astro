@@ -1,0 +1,87 @@
+---
+import { getCollection } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import { SITE } from '../../consts';
+import { tagUrl } from '../../utils/url';
+
+const posts = await getCollection('blog', ({ data }) => import.meta.env.DEV || !data.draft);
+
+// tag -> 文章数
+const tagMap = new Map<string, number>();
+for (const post of posts) {
+	for (const tag of post.data.tags) {
+		tagMap.set(tag, (tagMap.get(tag) ?? 0) + 1);
+	}
+}
+const tags = [...tagMap.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+---
+
+<!doctype html>
+<html lang={SITE.lang}>
+	<head>
+		<BaseHead title={`标签 · ${SITE.title}`} description={`${SITE.title} 的全部标签`} />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<h1 class="page-title">标签</h1>
+			<p class="count">{tags.length} 个标签</p>
+			<ul class="tag-cloud">
+				{
+					tags.map(([tag, count]) => (
+						<li>
+							<a href={tagUrl(tag)}>
+								#{tag}<span class="count-badge">{count}</span>
+							</a>
+						</li>
+					))
+				}
+			</ul>
+			{tags.length === 0 && <p class="empty">还没有标签。在文章 frontmatter 里加 tags 即可。</p>}
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.page-title {
+		margin-bottom: 0.1em;
+	}
+	.count {
+		color: rgb(var(--gray));
+		font-size: 0.85em;
+		margin: 0 0 2em;
+	}
+	.tag-cloud {
+		list-style: none;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75em;
+		padding: 0;
+		margin: 0;
+	}
+	.tag-cloud a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4em;
+		text-decoration: none;
+		color: rgb(var(--gray-dark));
+		background: rgb(var(--gray-light));
+		border-radius: 999px;
+		padding: 0.25em 0.9em;
+		font-size: 0.9em;
+	}
+	.tag-cloud a:hover {
+		color: #fff;
+		background: var(--accent);
+	}
+	.count-badge {
+		font-size: 0.75em;
+		opacity: 0.7;
+	}
+	.empty {
+		color: rgb(var(--gray));
+	}
+</style>

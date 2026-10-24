@@ -1,0 +1,111 @@
+---
+import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+import { postUrl, tagUrl } from '../utils/url';
+import FormattedDate from './FormattedDate.astro';
+
+interface Props {
+	posts: CollectionEntry<'blog'>[];
+	/** 列表里是否显示封面图（文章有 heroImage 时才显示） */
+	showImages?: boolean;
+}
+
+const { posts, showImages = false } = Astro.props;
+---
+
+<ul class="post-list">
+	{
+		posts.map((post) => (
+			<li>
+				<a class="post-link" href={postUrl(post.id)}>
+					{showImages && post.data.heroImage && (
+						<Image
+							class="hero"
+							width={720}
+							height={360}
+							src={post.data.heroImage}
+							alt={post.data.title}
+						/>
+					)}
+					<h3 class="title">{post.data.title}</h3>
+					<p class="desc">{post.data.description}</p>
+					<p class="date">
+						<FormattedDate date={post.data.pubDate} />
+					</p>
+				</a>
+				{post.data.tags.length > 0 && (
+					<div class="tags">
+						{post.data.tags.map((tag) => (
+							<a class="tag" href={tagUrl(tag)}>
+								#{tag}
+							</a>
+						))}
+					</div>
+				)}
+			</li>
+		))
+	}
+	{posts.length === 0 && <li class="empty">还没有文章。</li>}
+</ul>
+
+<style>
+	.post-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	li {
+		padding: 1.25em 0;
+		border-bottom: 1px solid rgb(var(--gray-light));
+	}
+	li:first-child {
+		padding-top: 0;
+	}
+	.post-link {
+		display: block;
+		text-decoration: none;
+	}
+	.hero {
+		margin-bottom: 0.75rem;
+		border-radius: 12px;
+	}
+	.title {
+		margin: 0 0 0.25em;
+		font-size: 1.4em;
+		color: rgb(var(--black));
+	}
+	.desc {
+		margin: 0 0 0.35em;
+		color: rgb(var(--gray-dark));
+		font-size: 0.95em;
+	}
+	.date {
+		margin: 0;
+		color: rgb(var(--gray));
+		font-size: 0.8em;
+	}
+	.post-link:hover .title {
+		color: var(--accent);
+	}
+	.tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5em;
+		margin-top: 0.5em;
+	}
+	.tag {
+		font-size: 0.75em;
+		color: rgb(var(--gray));
+		text-decoration: none;
+		background: rgb(var(--gray-light));
+		border-radius: 999px;
+		padding: 0.15em 0.7em;
+	}
+	.tag:hover {
+		color: #fff;
+		background: var(--accent);
+	}
+	.empty {
+		color: rgb(var(--gray));
+	}
+</style>

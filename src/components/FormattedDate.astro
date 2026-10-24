@@ -1,0 +1,19 @@
+---
+import { SITE } from '../consts';
+
+interface Props {
+	date: Date;
+}
+
+const { date } = Astro.props;
+
+// 固定时区，避免构建机（CI 通常是 UTC）和本地时间不一致导致日期差一天
+const formatted = date.toLocaleDateString('zh-CN', {
+	year: 'numeric',
+	month: 'long',
+	day: 'numeric',
+	timeZone: SITE.timeZone,
+});
+---
+
+<time datetime={date.toISOString()}>{formatted}</time>
