@@ -2,15 +2,13 @@
 /**
  * 刊头 + 目次覆盖层
  *
- * 取代原来的「顶部导航条」：
- * - 平时只有一条 44px 的细条：站点名 + RSS + 「目录」
- * - 点「目录」弹出全屏目次（原生 <dialog>，自带 Esc / 焦点管理）
- * - 首页额外显示居中刊头：期号行 + 大标题 + 一句话，下面压双细线
+ * - 全站只有一条 44px 细条：站点名（首页隐藏）+ 「目录」
+ * - 「目录」弹出全屏目次：主条目是分类（带篇数），次级是全部文章/标签/关于
+ * - 首页额外显示刊头：名字 + 短饰线 + 一句话（字标组合，避免名字孤零零悬着）
  */
 import { NAV, SITE } from '../consts';
-import { allPosts } from '../utils/posts';
-import { withBase } from '../utils/url';
-import FormattedDate from './FormattedDate.astro';
+import { allPosts, groupByCategory } from '../utils/posts';
+import { categoryUrl, withBase } from '../utils/url';
 
 interface Props {
 	variant?: 'home' | 'inner';
@@ -18,9 +16,8 @@ interface Props {
 
 const { variant = 'inner' } = Astro.props;
 
-// 刊头上标「更新于」：取最新一篇的发布时间，比构建时间有意义
 const posts = await allPosts();
-const latest = posts[0];
+const groups = groupByCategory(posts);
 ---
 
 <header class:list={['site-header', `variant-${variant}`]}>
@@ -28,7 +25,6 @@ const latest = posts[0];
 		<div class="inner">
 			<a class="wordmark" href={withBase('/')}>{SITE.title}</a>
 			<div class="actions">
-				<a class="rss-link" href={withBase('/rss.xml')}>RSS</a>
 				<button class="menu-btn" type="button" aria-expanded="false" aria-controls="site-index">
 					目录
 					<svg viewBox="0 0 14 10" width="14" height="10" aria-hidden="true">
@@ -48,18 +44,10 @@ const latest = posts[0];
 		variant === 'home' && (
 			<div class="masthead">
 				<div class="inner">
-					<p class="issue">
-						{latest && (
-							<span>
-								更新于 <FormattedDate date={latest.data.pubDate} />
-							</span>
-						)}
-						{latest && posts.length > 0 && <span class="dot">·</span>}
-						<span>共 {posts.length} 篇</span>
-					</p>
 					<h1 class="title">
 						<a href={withBase('/')}>{SITE.title}</a>
 					</h1>
+					<span class="rule" aria-hidden="true" />
 					<p class="tagline">{SITE.description}</p>
 				</div>
 			</div>
@@ -74,19 +62,23 @@ const latest = posts[0];
 			<button class="close" type="button" aria-label="关闭目次">关闭 ✕</button>
 		</div>
 
-		<nav class="primary">
+		<nav class="cats">
 			{
-				NAV.map((item, i) => (
-					<a href={withBase(item.href)}>
+				groups.map(({ category, posts: items }, i) => (
+					<a href={categoryUrl(category.slug)}>
 						<span class="num">{String(i + 1).padStart(2, '0')}</span>
-						<span class="text">{item.label}</span>
+						<span class="text">{category.name}</span>
+						<span class="meta">
+							<span class="count">{items.length} 篇</span>
+						</span>
 					</a>
 				))
 			}
+			{groups.length === 0 && <p class="empty">还没有文章。</p>}
 		</nav>
 
 		<div class="secondary">
-			<a href={withBase('/rss.xml')}>RSS 订阅</a>
+			{NAV.map((item) => <a href={withBase(item.href)}>{item.label}</a>)}
 			{SITE.github && <a href={SITE.github} target="_blank" rel="noopener">GitHub</a>}
 			{SITE.email && <a href={`mailto:${SITE.email}`}>邮箱</a>}
 		</div>
@@ -161,18 +153,6 @@ const latest = posts[0];
 	.actions {
 		display: flex;
 		align-items: center;
-		gap: 1.15rem;
-	}
-	.rss-link,
-	.menu-btn {
-		color: var(--muted);
-		font-family: var(--font-mono);
-		font-size: 0.7rem;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-	}
-	.rss-link:hover {
-		color: var(--accent);
 	}
 	.menu-btn {
 		display: inline-flex;
@@ -181,13 +161,17 @@ const latest = posts[0];
 		padding: 0;
 		border: 0;
 		background: none;
+		color: var(--muted);
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+		letter-spacing: 0.08em;
 		cursor: pointer;
 	}
 	.menu-btn:hover {
 		color: var(--accent);
 	}
 
-	/* 首页刊头已经有大标题，细条里不再重复站点名，只留右侧功能 */
+	/* 首页刊头已经有大标题，细条里不再重复站点名 */
 	.variant-home .wordmark {
 		display: none;
 	}
@@ -195,18 +179,18 @@ const latest = posts[0];
 		justify-content: flex-end;
 	}
 
-	/* ---------- 首页刊头 ---------- */
+	/* ---------- 首页刊头：名字 + 短饰线 + 一句话 ---------- */
 	.masthead {
-		padding: 4.5rem 0 0;
+		padding: 5rem 0 0;
 		text-align: center;
 	}
 	.masthead .inner {
 		display: block;
 		height: auto;
-		padding-bottom: 1.75rem;
+		padding-bottom: 2rem;
 		border-bottom: 1px solid var(--text);
 	}
-	/* 双细线：主规则线之下留 4px 再压一条淡线，报纸刊头的老做法 */
+	/* 双细线：主规则线之下留 4px 再压一条淡线 */
 	.masthead::after {
 		display: block;
 		max-width: var(--page-width);
@@ -214,24 +198,12 @@ const latest = posts[0];
 		border-top: 1px solid var(--line);
 		content: '';
 	}
-	.issue {
-		margin: 0 0 1.4rem;
-		color: var(--muted);
-		font-family: var(--font-mono);
-		font-size: 0.7rem;
-		/* 中文占多数，字距别拉太开，否则「共 2 篇」会散成三个词 */
-		letter-spacing: 0.08em;
-	}
-	.issue .dot {
-		margin: 0 0.5em;
-		color: var(--line-strong);
-	}
 	.title {
 		margin: 0;
-		font-size: clamp(2.1rem, 5.2vw, 3.1rem);
+		font-size: clamp(2.4rem, 6vw, 3.4rem);
 		font-weight: 600;
-		line-height: 1.2;
-		letter-spacing: -0.015em;
+		line-height: 1.15;
+		letter-spacing: -0.02em;
 	}
 	.title a {
 		color: var(--text);
@@ -239,10 +211,18 @@ const latest = posts[0];
 	.title a:hover {
 		text-decoration: none;
 	}
+	/* 40px 短饰线：给名字一个落脚点，避免它孤零零悬在中间 */
+	.rule {
+		display: block;
+		width: 40px;
+		height: 1px;
+		margin: 1.5rem auto 1.15rem;
+		background: var(--line-strong);
+	}
 	.tagline {
-		margin: 1rem 0 0;
+		margin: 0;
 		color: var(--muted);
-		font-size: 0.95rem;
+		font-size: 0.92rem;
 	}
 
 	/* ---------- 目次覆盖层 ---------- */
@@ -260,7 +240,6 @@ const latest = posts[0];
 	.site-index::backdrop {
 		background: rgba(28, 26, 23, 0.25);
 	}
-	/* 目次整块垂直居中，像书里的目录页 */
 	.site-index[open] {
 		display: flex;
 		align-items: center;
@@ -294,43 +273,61 @@ const latest = posts[0];
 		border-bottom-color: var(--accent);
 		color: var(--accent);
 	}
-	.primary {
+
+	.cats {
 		display: flex;
 		flex-direction: column;
-		margin: 2rem 0 0;
+		margin-top: 0.6rem;
 	}
-	.primary a {
+	.cats a {
 		display: flex;
 		align-items: baseline;
 		gap: 1rem;
-		padding: 0.55rem 0;
+		padding: 0.85rem 0;
 		border-bottom: 1px solid var(--line);
 		color: var(--text);
 	}
-	.primary .num {
+	.cats a:hover {
+		text-decoration: none;
+	}
+	.num {
 		color: var(--muted);
 		font-family: var(--font-mono);
 		font-size: 0.68rem;
 		letter-spacing: 0.1em;
 	}
-	.primary .text {
+	.cats .text {
 		font-family: var(--font-serif);
-		font-size: 1.75rem;
+		font-size: 1.7rem;
 		font-weight: 600;
 		transition: transform 0.15s ease;
 	}
-	.primary a:hover {
-		text-decoration: none;
-	}
-	.primary a:hover .text {
+	.cats a:hover .text {
 		color: var(--accent);
 		transform: translateX(0.3rem);
 	}
+	.cats .meta {
+		display: flex;
+		align-items: baseline;
+		gap: 0.75rem;
+		margin-left: auto;
+	}
+	.count {
+		color: var(--muted);
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
+		white-space: nowrap;
+	}
+	.empty {
+		color: var(--muted);
+		padding: 1rem 0;
+	}
+
 	.secondary {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 1.5rem;
-		margin-top: 2rem;
+		margin-top: 1.6rem;
 	}
 	.secondary a {
 		color: var(--muted);
@@ -345,10 +342,14 @@ const latest = posts[0];
 
 	@media (max-width: 640px) {
 		.masthead {
-			padding-top: 3rem;
+			padding-top: 3.25rem;
 		}
-		.primary .text {
-			font-size: 1.45rem;
+		.cats .text {
+			font-size: 1.35rem;
+		}
+		.cats a {
+			gap: 0.75rem;
+			padding: 0.75rem 0;
 		}
 	}
 </style>
