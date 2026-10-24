@@ -2,6 +2,7 @@
 title: 为什么又开了一个博客
 description: 写给三个月后的自己：动手前先设计，踩坑后立刻记录，别让解决方法只活在一次会话里。
 pubDate: 2026-10-24
+category: notes
 tags: [meta]
 ---
 

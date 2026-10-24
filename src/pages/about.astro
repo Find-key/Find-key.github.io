@@ -3,6 +3,7 @@ import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import { SITE } from '../consts';
+import { withBase } from '../utils/url';
 ---
 
 <!doctype html>
@@ -12,9 +13,9 @@ import { SITE } from '../consts';
 	</head>
 	<body>
 		<Header />
-		<main>
-			<h1>关于</h1>
-			<div class="prose">
+		<main class="container page">
+			<article class="prose">
+				<h1>关于</h1>
 				<p>
 					我是 {SITE.author}，平时折腾嵌入式 Linux：用 Buildroot 搭最小系统，丢进 QEMU 里跑，
 					踩完坑再回到真板子上验证。这里记录那些「当时找了两小时、事后一句话」的东西。
@@ -24,12 +25,15 @@ import { SITE } from '../consts';
 					这个博客主要写三类内容：嵌入式/内核调试笔记、开发环境与工具链的折腾记录、
 					以及一些读完书/源码之后的理解。写给三个月后的自己看，所以尽量带可复现的命令。
 				</p>
+
 				<h2>关于这个站</h2>
 				<p>
 					站点用 <a href="https://astro.build" target="_blank" rel="noopener">Astro</a> 构建，
 					纯静态输出，托管在 GitHub Pages 上；没有后端、没有数据库、没有追踪脚本。
+					文章按<strong>分类</strong>组织而不是按时间堆叠，读一个主题时可以顺着左侧目录一路往下看。
 					构建与项目结构说明见仓库里的 <code>PROJECT.md</code>。
 				</p>
+
 				<h2>联系</h2>
 				<ul>
 					{SITE.github && (
@@ -43,20 +47,26 @@ import { SITE } from '../consts';
 						</li>
 					)}
 					<li>
-						RSS：<a href={`${import.meta.env.BASE_URL}rss.xml`}>订阅</a>
+						RSS：<a href={withBase('/rss.xml')}>订阅</a>
 					</li>
 				</ul>
-			</div>
+			</article>
 		</main>
 		<Footer />
 	</body>
 </html>
 
 <style>
-	.prose {
-		max-width: 720px;
+	.page {
+		padding-top: 3.5rem;
 	}
-	.prose ul {
-		padding-left: 1.2em;
+	.prose {
+		max-width: var(--content-width);
+	}
+	h1 {
+		margin-top: 0;
+		font-size: 1.65rem;
+		font-weight: 650;
+		letter-spacing: -0.01em;
 	}
 </style>

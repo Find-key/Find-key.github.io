@@ -1,39 +1,92 @@
 ---
-import { getCollection } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
 import Header from '../../components/Header.astro';
 import PostList from '../../components/PostList.astro';
 import { SITE } from '../../consts';
+import { allPosts, groupByCategory } from '../../utils/posts';
+import { categoryUrl } from '../../utils/url';
 
-const posts = (await getCollection('blog', ({ data }) => import.meta.env.DEV || !data.draft)).sort(
-	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
-);
+const posts = await allPosts();
+const groups = groupByCategory(posts);
 ---
 
 <!doctype html>
 <html lang={SITE.lang}>
 	<head>
-		<BaseHead title={`文章 · ${SITE.title}`} description={SITE.description} />
+		<BaseHead title={`全部文章 · ${SITE.title}`} description={`${SITE.title} 的全部文章，按分类分组`} />
 	</head>
 	<body>
 		<Header />
-		<main>
-			<h1 class="page-title">文章</h1>
-			<p class="count">共 {posts.length} 篇</p>
-			<PostList posts={posts} />
+		<main class="container page">
+			<h1>全部文章</h1>
+			<p class="sub">{posts.length} 篇，按分类分组</p>
+
+			{
+				groups.map(({ category, posts: items }) => (
+					<section class="group">
+						<header class="group-head">
+							<h2>
+								<a href={categoryUrl(category.slug)}>{category.name}</a>
+							</h2>
+							<span class="count">{items.length} 篇</span>
+						</header>
+						<PostList posts={items} />
+					</section>
+				))
+			}
+			{posts.length === 0 && <p class="empty">还没有文章。</p>}
 		</main>
 		<Footer />
 	</body>
 </html>
 
 <style>
-	.page-title {
-		margin-bottom: 0.1em;
+	.page {
+		padding-top: 3.5rem;
+	}
+	h1 {
+		margin: 0 0 0.2em;
+		font-size: 1.65rem;
+		font-weight: 650;
+		letter-spacing: -0.01em;
+	}
+	.sub {
+		margin: 0 0 2.5rem;
+		color: var(--muted);
+		font-size: 0.84rem;
+	}
+	.group {
+		padding-top: 1.5rem;
+		border-top: 1px solid var(--line);
+	}
+	.group + .group {
+		margin-top: 2.5rem;
+	}
+	.group-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+	h2 {
+		margin: 0 0 0.3rem;
+		font-size: 1.02rem;
+		font-weight: 600;
+	}
+	h2 a {
+		color: var(--text);
+	}
+	h2 a:hover {
+		color: var(--accent);
+		text-decoration: none;
 	}
 	.count {
-		color: rgb(var(--gray));
-		font-size: 0.85em;
-		margin: 0 0 2em;
+		color: var(--muted);
+		font-size: 0.76rem;
+		font-variant-numeric: tabular-nums;
+	}
+	.empty {
+		color: var(--muted);
 	}
 </style>

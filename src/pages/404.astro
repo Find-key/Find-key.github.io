@@ -3,6 +3,7 @@ import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import { SITE } from '../consts';
+import { withBase } from '../utils/url';
 ---
 
 <!doctype html>
@@ -12,15 +13,46 @@ import { SITE } from '../consts';
 	</head>
 	<body>
 		<Header />
-		<main>
-			<h1>404</h1>
-			<p>这一页不存在，可能是链接过期，或者文章被我删了。</p>
-			<p>
-				<a href={import.meta.env.BASE_URL}>回首页</a>
-				·
-				<a href={`${import.meta.env.BASE_URL}posts`}>看全部文章</a>
+		<main class="container page">
+			<p class="code">404</p>
+			<h1>这一页不存在</h1>
+			<p class="sub">可能是链接过期了，或者文章被我删了。</p>
+			<p class="links">
+				<a href={withBase('/')}>回首页</a>
+				<span class="sep">·</span>
+				<a href={withBase('/categories')}>看分类</a>
 			</p>
 		</main>
 		<Footer />
 	</body>
 </html>
+
+<style>
+	.page {
+		padding-top: 6rem;
+	}
+	.code {
+		margin: 0;
+		color: var(--line-strong);
+		font-size: 0.8rem;
+		font-family: var(--font-mono);
+		letter-spacing: 0.1em;
+	}
+	h1 {
+		margin: 0.4em 0 0.3em;
+		font-size: 1.5rem;
+		font-weight: 600;
+	}
+	.sub {
+		color: var(--muted);
+		font-size: 0.9rem;
+	}
+	.links {
+		margin-top: 1.75rem;
+		font-size: 0.88rem;
+	}
+	.sep {
+		margin: 0 0.5rem;
+		color: var(--line-strong);
+	}
+</style>

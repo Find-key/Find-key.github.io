@@ -41,6 +41,11 @@ export function postUrl(id: string): string {
 	return withBase(`/posts/${id}/`);
 }
 
+/** 分类路径：/categories/<slug>/ */
+export function categoryUrl(slug: string): string {
+	return withBase(`/categories/${slug}/`);
+}
+
 /** 标签路径：/tags/<tag>/ */
 export function tagUrl(tag: string): string {
 	return withBase(`/tags/${encodeURIComponent(tag)}/`);

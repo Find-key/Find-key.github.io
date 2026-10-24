@@ -1,116 +1,235 @@
 ---
-import { Image } from 'astro:assets';
+/**
+ * 文章页布局：左侧分类目录 + 右侧正文（单栏，正文约 40 字宽）。
+ * 上一版是"居中大标题 + 封面图 + 渐变背景"，读长文很累，这一版按文档站的方式排。
+ */
+import { getCollection } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
+import CategoryNav from '../components/CategoryNav.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 import { SITE } from '../consts';
-import { tagUrl } from '../utils/url';
+import {
+	categoryOf,
+	isVisible,
+	postsOfCategory,
+	readingMinutes,
+	sortForReading,
+	type Post,
+} from '../utils/posts';
+import { categoryUrl, postUrl, tagUrl, withBase } from '../utils/url';
 
-type Props = CollectionEntry<'blog'>['data'] & {
-	/** 文章页可选副标题/摘要 */
-	readingTime?: string;
-};
+interface Props {
+	post: CollectionEntry<'blog'>;
+}
 
-const { title, description, pubDate, updatedDate, heroImage, tags } = Astro.props;
+const { post } = Astro.props;
+const { title, description, pubDate, updatedDate, tags, category: categorySlug } = post.data;
+
+const category = categoryOf(categorySlug);
+const all = (await getCollection('blog', isVisible)).sort(sortForReading);
+const siblings: Post[] = postsOfCategory(all, categorySlug);
+const index = siblings.findIndex((item) => item.id === post.id);
+const prev = index > 0 ? siblings[index - 1] : undefined;
+const next = index >= 0 && index < siblings.length - 1 ? siblings[index + 1] : undefined;
+const minutes = readingMinutes(post.body);
 ---
 
 <html lang={SITE.lang}>
 	<head>
 		<BaseHead title={title} description={description} type="article" />
-		<style>
-			main {
-				width: calc(100% - 2em);
-				max-width: 100%;
-				margin: 0;
-			}
-			.hero-image {
-				width: 100%;
-			}
-			.hero-image img {
-				display: block;
-				margin: 0 auto;
-				border-radius: 12px;
-				box-shadow: var(--box-shadow);
-			}
-			.prose {
-				width: 720px;
-				max-width: calc(100% - 2em);
-				margin: auto;
-				padding: 1em;
-				color: rgb(var(--gray-dark));
-			}
-			.title {
-				margin-bottom: 1em;
-				padding: 1em 0 0;
-				text-align: center;
-				line-height: 1.3;
-			}
-			.title h1 {
-				margin: 0 0 0.5em 0;
-			}
-			.date {
-				margin-bottom: 0.5em;
-				color: rgb(var(--gray));
-				font-size: 0.85em;
-			}
-			.last-updated-on {
-				font-style: italic;
-			}
-			.post-tags {
-				display: flex;
-				justify-content: center;
-				gap: 0.5em;
-				flex-wrap: wrap;
-				margin-top: 0.75em;
-			}
-			.post-tags a {
-				font-size: 0.75em;
-				color: rgb(var(--gray));
-				text-decoration: none;
-				background: rgb(var(--gray-light));
-				border-radius: 999px;
-				padding: 0.15em 0.7em;
-			}
-			.post-tags a:hover {
-				color: #fff;
-				background: var(--accent);
-			}
-		</style>
 	</head>
 
 	<body>
 		<Header />
-		<main>
-			<article>
-				<div class="hero-image">
-					{heroImage && <Image width={1020} height={510} src={heroImage} alt="" />}
-				</div>
-				<div class="prose">
-					<div class="title">
-						<div class="date">
-							<FormattedDate date={pubDate} />
-							{updatedDate && (
-								<div class="last-updated-on">
-									最后更新：<FormattedDate date={updatedDate} />
-								</div>
-							)}
-						</div>
-						<h1>{title}</h1>
-						{tags && tags.length > 0 && (
-							<div class="post-tags">
+		<main class="wrap">
+			<div class="grid">
+				{category && <CategoryNav category={category} posts={siblings} currentId={post.id} />}
+
+				<article class="article">
+					<nav class="crumb" aria-label="位置">
+						<a href={withBase('/categories')}>分类</a>
+						{category && (
+							<>
+								<span class="sep">/</span>
+								<a href={categoryUrl(category.slug)}>{category.name}</a>
+							</>
+						)}
+					</nav>
+
+					<h1>{title}</h1>
+
+					<p class="meta">
+						<FormattedDate date={pubDate} />
+						<span class="dot">·</span>
+						<span>约 {minutes} 分钟</span>
+						{
+							updatedDate && (
+								<>
+									<span class="dot">·</span>
+									<span>
+										更新于 <FormattedDate date={updatedDate} format="short" />
+									</span>
+								</>
+							)
+						}
+					</p>
+
+					{
+						tags.length > 0 && (
+							<div class="tags">
 								{tags.map((tag) => (
 									<a href={tagUrl(tag)}>#{tag}</a>
 								))}
 							</div>
-						)}
-						<hr />
+						)
+					}
+
+					<div class="prose">
+						<slot />
 					</div>
-					<slot />
-				</div>
-			</article>
+
+					{
+						(prev || next) && (
+							<nav class="pager" aria-label="同分类内的上一篇 / 下一篇">
+								<div class="pager-item">
+									{prev && (
+										<>
+											<span class="pager-label">← 上一篇</span>
+											<a href={postUrl(prev.id)}>{prev.data.title}</a>
+										</>
+									)}
+								</div>
+								<div class="pager-item next">
+									{next && (
+										<>
+											<span class="pager-label">下一篇 →</span>
+											<a href={postUrl(next.id)}>{next.data.title}</a>
+										</>
+									)}
+								</div>
+							</nav>
+						)
+					}
+				</article>
+			</div>
 		</main>
 		<Footer />
 	</body>
 </html>
+
+<style>
+	.wrap {
+		max-width: var(--page-width);
+		margin: 0 auto;
+		padding: 3rem 1.25rem 0;
+	}
+	.grid {
+		display: grid;
+		grid-template-columns: 208px minmax(0, 1fr);
+		gap: 3rem;
+		align-items: start;
+	}
+	.article {
+		max-width: 100%;
+		min-width: 0;
+	}
+	.crumb {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		color: var(--muted);
+		font-size: 0.78rem;
+	}
+	.crumb a {
+		color: var(--muted);
+	}
+	.crumb a:hover {
+		color: var(--text);
+		text-decoration: none;
+	}
+	.crumb .sep {
+		color: var(--line-strong);
+	}
+	h1 {
+		margin: 0.55em 0 0.5em;
+		font-size: 1.85rem;
+		font-weight: 650;
+		line-height: 1.35;
+		letter-spacing: -0.01em;
+	}
+	.meta {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.45rem;
+		margin: 0 0 0.9rem;
+		color: var(--muted);
+		font-size: 0.8rem;
+		font-variant-numeric: tabular-nums;
+	}
+	.meta .dot {
+		color: var(--line-strong);
+	}
+	.tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-bottom: 2.25rem;
+	}
+	.tags a {
+		padding: 0.1em 0.55em;
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		color: var(--muted);
+		font-size: 0.72rem;
+	}
+	.tags a:hover {
+		border-color: var(--line-strong);
+		color: var(--text);
+		text-decoration: none;
+	}
+	.pager {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1.5rem;
+		margin-top: 3.5rem;
+		padding-top: 1.4rem;
+		border-top: 1px solid var(--line);
+		font-size: 0.86rem;
+	}
+	.pager-item {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+		min-height: 1px;
+	}
+	.pager-item.next {
+		text-align: right;
+	}
+	.pager-label {
+		color: var(--muted);
+		font-size: 0.72rem;
+	}
+	@media (max-width: 900px) {
+		.grid {
+			grid-template-columns: minmax(0, 1fr);
+			gap: 0;
+		}
+		/* 小屏上分类目录让位给正文，用面包屑回到分类页 */
+		.grid :global(.sidebar) {
+			display: none;
+		}
+		h1 {
+			font-size: 1.55rem;
+		}
+		.pager {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.pager-item.next {
+			text-align: left;
+		}
+	}
+</style>
