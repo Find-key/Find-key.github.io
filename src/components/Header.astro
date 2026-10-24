@@ -49,15 +49,13 @@ const latest = posts[0];
 			<div class="masthead">
 				<div class="inner">
 					<p class="issue">
-						<span>个人笔记</span>
 						{latest && (
-							<>
-								<span class="dot">·</span>
-								<span>
-									更新于 <FormattedDate date={latest.data.pubDate} />
-								</span>
-							</>
+							<span>
+								更新于 <FormattedDate date={latest.data.pubDate} />
+							</span>
 						)}
+						{latest && posts.length > 0 && <span class="dot">·</span>}
+						<span>共 {posts.length} 篇</span>
 					</p>
 					<h1 class="title">
 						<a href={withBase('/')}>{SITE.title}</a>
@@ -221,7 +219,8 @@ const latest = posts[0];
 		color: var(--muted);
 		font-family: var(--font-mono);
 		font-size: 0.7rem;
-		letter-spacing: 0.16em;
+		/* 中文占多数，字距别拉太开，否则「共 2 篇」会散成三个词 */
+		letter-spacing: 0.08em;
 	}
 	.issue .dot {
 		margin: 0 0.5em;

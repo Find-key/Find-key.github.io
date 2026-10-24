@@ -8,10 +8,10 @@
  *    详见项目根目录 PROJECT.md 的「上线前检查清单」。
  */
 export const SITE = {
-	/** 站点标题（浏览器标签、页头、RSS 标题） */
-	title: 'Findkey 的博客',
-	/** 一句话简介，用于 SEO description、RSS 描述 */
-	description: '嵌入式 Linux、QEMU 试验与工程笔记。',
+	/** 站点名（浏览器标签、刊头、RSS 标题都用它）。只留名字，别加"的博客"这类后缀 */
+	title: 'Findkey',
+	/** 一句话简介，用于 SEO description、刊头下方、RSS 描述 */
+	description: '嵌入式 Linux、QEMU 与工具链的实践记录',
 	/** 作者名，显示在页脚和文章页 */
 	author: 'Findkey',
 	/** 正式域名：项目站写 https://<用户名>.github.io（不要带 /blog） */
