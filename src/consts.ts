@@ -27,10 +27,12 @@ export const SITE = {
 	email: 'find_key@foxmail.com',
 } as const;
 
-/** 顶栏导航。href 写站点内相对路径，渲染时会自动拼上 base 路径 */
+/** 目次（覆盖层）里的主链接，按显示顺序排列 */
 export const NAV = [
 	{ href: '/', label: '首页' },
 	{ href: '/categories', label: '分类' },
+	{ href: '/posts', label: '全部文章' },
+	{ href: '/tags', label: '标签' },
 	{ href: '/about', label: '关于' },
 ] as const;
 

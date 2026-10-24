@@ -17,14 +17,8 @@ const groups = groupByCategory(posts);
 		<BaseHead title={SITE.title} description={SITE.description} />
 	</head>
 	<body>
-		<Header />
+		<Header variant="home" />
 		<main class="container home">
-			<section class="intro">
-				<p class="label">个人笔记</p>
-				<h1>{SITE.author}</h1>
-				<p class="lead">{SITE.description}</p>
-			</section>
-
 			<section class="index">
 				<div class="index-head">
 					<span class="label">分类目录</span>
@@ -104,28 +98,7 @@ const groups = groupByCategory(posts);
 
 <style>
 	.home {
-		padding-top: 4.5rem;
-	}
-	.intro {
-		max-width: 640px;
-		margin-bottom: 3.5rem;
-	}
-	.intro .label {
-		display: block;
-		margin-bottom: 1.15rem;
-	}
-	h1 {
-		margin: 0 0 0.4em;
-		font-size: 2.7rem;
-		font-weight: 600;
-		line-height: 1.25;
-		letter-spacing: -0.01em;
-	}
-	.lead {
-		margin: 0;
-		color: var(--muted);
-		font-size: 1rem;
-		line-height: 1.8;
+		padding-top: 2.5rem;
 	}
 
 	/* ---------- 可展开的分类目录 ---------- */
@@ -254,9 +227,6 @@ const groups = groupByCategory(posts);
 	@media (max-width: 640px) {
 		.index {
 			--indent: 0rem;
-		}
-		h1 {
-			font-size: 2.2rem;
 		}
 		.name {
 			font-size: 1.15rem;
