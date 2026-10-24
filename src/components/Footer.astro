@@ -1,0 +1,51 @@
+---
+import { SITE } from '../consts';
+import { withBase } from '../utils/url';
+
+const today = new Date();
+---
+
+<footer>
+	<div class="copyright">
+		&copy; {today.getFullYear()} {SITE.author}
+	</div>
+	<div class="meta-links">
+		<a href={withBase('/rss.xml')}>RSS</a>
+		{SITE.github && <a href={SITE.github} target="_blank" rel="noopener">GitHub</a>}
+		{SITE.email && <a href={`mailto:${SITE.email}`}>邮箱</a>}
+		<a href={withBase('/posts')}>全部文章</a>
+	</div>
+	<div class="powered">
+		由 <a href="https://astro.build" target="_blank" rel="noopener">Astro</a> 构建 · 托管于
+		<a href="https://pages.github.com" target="_blank" rel="noopener">GitHub Pages</a>
+	</div>
+</footer>
+<style>
+	footer {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5em;
+		padding: 2em 1em 6em 1em;
+		background: linear-gradient(var(--gray-gradient)) no-repeat;
+		color: rgb(var(--gray));
+		text-align: center;
+		font-size: 0.85em;
+	}
+	.meta-links {
+		display: flex;
+		justify-content: center;
+		gap: 1em;
+		flex-wrap: wrap;
+	}
+	.meta-links a,
+	.powered a {
+		color: rgb(var(--gray));
+		text-decoration: none;
+		border-bottom: 1px solid rgb(var(--gray-light));
+	}
+	.meta-links a:hover,
+	.powered a:hover {
+		color: rgb(var(--gray-dark));
+		border-bottom-color: rgb(var(--gray));
+	}
+</style>

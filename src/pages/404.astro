@@ -1,0 +1,26 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE } from '../consts';
+---
+
+<!doctype html>
+<html lang={SITE.lang}>
+	<head>
+		<BaseHead title={`页面不存在 · ${SITE.title}`} description="404" />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<h1>404</h1>
+			<p>这一页不存在，可能是链接过期，或者文章被我删了。</p>
+			<p>
+				<a href={import.meta.env.BASE_URL}>回首页</a>
+				·
+				<a href={`${import.meta.env.BASE_URL}posts`}>看全部文章</a>
+			</p>
+		</main>
+		<Footer />
+	</body>
+</html>

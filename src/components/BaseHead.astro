@@ -1,0 +1,63 @@
+---
+// Import the global.css file here so that it is included on
+// all pages through the use of the <BaseHead /> component.
+import type { ImageMetadata } from 'astro';
+import { Font } from 'astro:assets';
+import FallbackImage from '../assets/blog-placeholder-1.jpg';
+import { SITE } from '../consts';
+import { absoluteAssetUrl, absoluteUrl, withBase } from '../utils/url';
+import '../styles/global.css';
+
+interface Props {
+	title: string;
+	description: string;
+	image?: ImageMetadata;
+	/** 文章页传 'article'，列表/首页传 'website' */
+	type?: 'website' | 'article';
+}
+
+const { title, description, image = FallbackImage, type = 'website' } = Astro.props;
+
+// 注意：Astro.url.pathname 在配置了 base 之后已经包含 base（如 /blog/posts/x/），
+// 所以这里不能再过一遍 withBase()，否则会变成 /blog/blog/...
+const canonicalURL = new URL(Astro.url.pathname, SITE.url);
+const ogImage = absoluteAssetUrl(image.src);
+---
+
+<!-- Global Metadata -->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
+<link rel="sitemap" href={withBase('/sitemap-index.xml')} />
+<link
+	rel="alternate"
+	type="application/rss+xml"
+	title={SITE.title}
+	href={absoluteUrl('/rss.xml')}
+/>
+<meta name="generator" content={Astro.generator} />
+<meta name="author" content={SITE.author} />
+
+<Font cssVariable="--font-atkinson" preload />
+
+<!-- Canonical URL -->
+<link rel="canonical" href={canonicalURL} />
+
+<!-- Primary Meta Tags -->
+<title>{title}</title>
+<meta name="description" content={description} />
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content={type} />
+<meta property="og:url" content={canonicalURL} />
+<meta property="og:site_name" content={SITE.title} />
+<meta property="og:locale" content="zh_CN" />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:image" content={ogImage} />
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImage} />
