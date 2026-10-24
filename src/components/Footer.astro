@@ -26,6 +26,8 @@ const cnYear = year
 		</p>
 
 		<p class="links">
+			<a href={withBase('/posts')}>全部文章</a>
+			<a href={withBase('/tags')}>标签</a>
 			<a href={withBase('/rss.xml')}>RSS</a>
 			{SITE.github && <a href={SITE.github} target="_blank" rel="noopener">GitHub</a>}
 			{SITE.email && <a href={`mailto:${SITE.email}`}>邮箱</a>}
