@@ -1,57 +1,87 @@
 ---
+/**
+ * 版权页（colophon），取代原来的页脚链接堆。
+ * 只留：一个装饰符号、一句排印说明、几个必要的小链接。
+ */
 import { SITE } from '../consts';
 import { withBase } from '../utils/url';
 
-const today = new Date();
+const year = String(new Date().getFullYear());
+const cnYear = year
+	.split('')
+	.map((d) => '〇一二三四五六七八九'[Number(d)] ?? d)
+	.join('');
 ---
 
-<footer class="site-footer">
+<footer class="colophon">
 	<div class="inner">
-		<p class="copy">© {today.getFullYear()} {SITE.author}</p>
-		<nav class="links">
-			<a href={withBase('/posts')}>全部文章</a>
-			<a href={withBase('/categories')}>分类</a>
-			<a href={withBase('/tags')}>标签</a>
+		<div class="ornament" aria-hidden="true">※</div>
+
+		<p class="imprint">
+			{SITE.author} · {cnYear}
+			<br />
+			以 <a href="https://astro.build" target="_blank" rel="noopener">Astro</a> 排版，标题思源宋体、正文系统黑体。
+			<br />
+			无统计、无广告、无追踪。
+		</p>
+
+		<p class="links">
+			<a href={withBase('/rss.xml')}>RSS</a>
 			{SITE.github && <a href={SITE.github} target="_blank" rel="noopener">GitHub</a>}
 			{SITE.email && <a href={`mailto:${SITE.email}`}>邮箱</a>}
-			<a href={withBase('/rss.xml')}>RSS</a>
-		</nav>
+			<a href="#">回到顶部 ↑</a>
+		</p>
 	</div>
 </footer>
 
 <style>
-	/* 页脚是纯白卡片，只用一条上边框分隔。
-	   上一版用了渐变背景 + 页面背景渐变叠在一起，才会出现那条"半隐藏的栏"。 */
-	.site-footer {
-		margin-top: 5rem;
+	.colophon {
+		margin-top: 6rem;
 		border-top: 1px solid var(--line);
 		background: var(--bg);
 	}
 	.inner {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem 1.5rem;
 		max-width: var(--page-width);
 		margin: 0 auto;
-		padding: 1.5rem 1.25rem 2.5rem;
+		padding: 3rem 1.25rem 4rem;
+		text-align: center;
+	}
+	.ornament {
+		margin-bottom: 1.1rem;
+		color: var(--line-strong);
+		font-size: 0.9rem;
+		line-height: 1;
+	}
+	.imprint {
+		margin: 0;
 		color: var(--muted);
 		font-size: 0.8rem;
+		line-height: 2;
 	}
-	.copy {
-		margin: 0;
+	.imprint a {
+		color: var(--muted);
+		border-bottom: 1px solid var(--line-strong);
+	}
+	.imprint a:hover {
+		border-bottom-color: var(--accent);
+		color: var(--accent);
+		text-decoration: none;
 	}
 	.links {
 		display: flex;
+		justify-content: center;
 		flex-wrap: wrap;
-		gap: 1.1rem;
+		gap: 1.4rem;
+		margin: 1.9rem 0 0;
 	}
 	.links a {
 		color: var(--muted);
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+		letter-spacing: 0.1em;
 	}
 	.links a:hover {
-		color: var(--text);
+		color: var(--accent);
 		text-decoration: none;
 	}
 </style>

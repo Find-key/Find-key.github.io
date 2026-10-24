@@ -1,37 +1,141 @@
 ---
+/**
+ * 刊头 + 目次覆盖层
+ *
+ * 取代原来的「顶部导航条」：
+ * - 平时只有一条 44px 的细条：站点名 + RSS + 「目录」
+ * - 点「目录」弹出全屏目次（原生 <dialog>，自带 Esc / 焦点管理）
+ * - 首页额外显示居中刊头：期号行 + 大标题 + 一句话，下面压双细线
+ */
 import { NAV, SITE } from '../consts';
+import { allPosts } from '../utils/posts';
 import { withBase } from '../utils/url';
-import HeaderLink from './HeaderLink.astro';
+import FormattedDate from './FormattedDate.astro';
+
+interface Props {
+	variant?: 'home' | 'inner';
+}
+
+const { variant = 'inner' } = Astro.props;
+
+// 刊头上标「更新于」：取最新一篇的发布时间，比构建时间有意义
+const posts = await allPosts();
+const latest = posts[0];
 ---
 
-<header class="site-header">
-	<div class="inner">
-		<a class="brand" href={withBase('/')}>{SITE.title}</a>
-		<nav class="nav">
-			{NAV.map((item) => <HeaderLink href={withBase(item.href)}>{item.label}</HeaderLink>)}
-			<a class="rss" href={withBase('/rss.xml')} aria-label="RSS 订阅">
-				<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-					<circle cx="3.2" cy="12.8" r="1.4" fill="currentColor"></circle>
-					<path
-						d="M1.8 6.2a8 8 0 0 1 8 8M1.8 1.8a12.4 12.4 0 0 1 12.4 12.4"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.8"
-						stroke-linecap="round"
-					></path>
-				</svg>
-			</a>
-		</nav>
+<header class:list={['site-header', `variant-${variant}`]}>
+	<div class="strip">
+		<div class="inner">
+			<a class="wordmark" href={withBase('/')}>{SITE.title}</a>
+			<div class="actions">
+				<a class="rss-link" href={withBase('/rss.xml')}>RSS</a>
+				<button class="menu-btn" type="button" aria-expanded="false" aria-controls="site-index">
+					目录
+					<svg viewBox="0 0 14 10" width="14" height="10" aria-hidden="true">
+						<path
+							d="M1 1h12M1 5h12M1 9h12"
+							stroke="currentColor"
+							stroke-width="1.2"
+							stroke-linecap="round"
+						></path>
+					</svg>
+				</button>
+			</div>
+		</div>
 	</div>
+
+	{
+		variant === 'home' && (
+			<div class="masthead">
+				<div class="inner">
+					<p class="issue">
+						<span>个人笔记</span>
+						{latest && (
+							<>
+								<span class="dot">·</span>
+								<span>
+									更新于 <FormattedDate date={latest.data.pubDate} />
+								</span>
+							</>
+						)}
+					</p>
+					<h1 class="title">
+						<a href={withBase('/')}>{SITE.title}</a>
+					</h1>
+					<p class="tagline">{SITE.description}</p>
+				</div>
+			</div>
+		)
+	}
 </header>
+
+<dialog class="site-index" id="site-index" aria-label="目次">
+	<div class="sheet">
+		<div class="sheet-head">
+			<span class="label">目次</span>
+			<button class="close" type="button" aria-label="关闭目次">关闭 ✕</button>
+		</div>
+
+		<nav class="primary">
+			{
+				NAV.map((item, i) => (
+					<a href={withBase(item.href)}>
+						<span class="num">{String(i + 1).padStart(2, '0')}</span>
+						<span class="text">{item.label}</span>
+					</a>
+				))
+			}
+		</nav>
+
+		<div class="secondary">
+			<a href={withBase('/rss.xml')}>RSS 订阅</a>
+			{SITE.github && <a href={SITE.github} target="_blank" rel="noopener">GitHub</a>}
+			{SITE.email && <a href={`mailto:${SITE.email}`}>邮箱</a>}
+		</div>
+	</div>
+</dialog>
+
+<script>
+	const dialog = document.getElementById('site-index') as HTMLDialogElement | null;
+	const openButton = document.querySelector<HTMLButtonElement>('.menu-btn');
+	const closeButton = dialog?.querySelector<HTMLButtonElement>('.close');
+
+	function openIndex() {
+		if (!dialog) return;
+		dialog.showModal();
+		openButton?.setAttribute('aria-expanded', 'true');
+		document.documentElement.style.overflow = 'hidden';
+	}
+
+	function closeIndex() {
+		if (!dialog) return;
+		dialog.close();
+		openButton?.setAttribute('aria-expanded', 'false');
+		document.documentElement.style.overflow = '';
+	}
+
+	openButton?.addEventListener('click', () => (dialog?.open ? closeIndex() : openIndex()));
+	closeButton?.addEventListener('click', closeIndex);
+	// 点空白处关闭（点到 dialog 本身说明点在遮罩上）
+	dialog?.addEventListener('click', (event) => {
+		if (event.target === dialog) closeIndex();
+	});
+	dialog?.addEventListener('close', () => {
+		openButton?.setAttribute('aria-expanded', 'false');
+		document.documentElement.style.overflow = '';
+	});
+</script>
 
 <style>
 	.site-header {
+		background: var(--bg);
+	}
+	.strip {
 		position: sticky;
 		top: 0;
 		z-index: 20;
 		border-bottom: 1px solid var(--line);
-		background: rgba(251, 249, 245, 0.86);
+		background: rgba(251, 249, 245, 0.88);
 		backdrop-filter: saturate(160%) blur(10px);
 		-webkit-backdrop-filter: saturate(160%) blur(10px);
 	}
@@ -41,41 +145,211 @@ import HeaderLink from './HeaderLink.astro';
 		justify-content: space-between;
 		gap: 1.5rem;
 		max-width: var(--page-width);
-		height: var(--header-height);
+		height: 44px;
 		margin: 0 auto;
 		padding: 0 1.25rem;
 	}
-	.brand {
-		font-family: var(--font-serif);
+	.wordmark {
 		color: var(--text);
-		font-size: 1.04rem;
+		font-family: var(--font-serif);
+		font-size: 0.95rem;
 		font-weight: 600;
-		letter-spacing: 0;
 		white-space: nowrap;
 	}
-	.brand:hover {
+	.wordmark:hover {
 		color: var(--accent);
 		text-decoration: none;
 	}
-	.nav {
+	.actions {
 		display: flex;
 		align-items: center;
-		gap: 1.4rem;
+		gap: 1.15rem;
 	}
-	.rss {
-		display: inline-flex;
-		align-items: center;
+	.rss-link,
+	.menu-btn {
 		color: var(--muted);
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
 	}
-	.rss:hover {
+	.rss-link:hover {
 		color: var(--accent);
 	}
-	@media (max-width: 480px) {
-		.nav {
-			gap: 1rem;
+	.menu-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		padding: 0;
+		border: 0;
+		background: none;
+		cursor: pointer;
+	}
+	.menu-btn:hover {
+		color: var(--accent);
+	}
+
+	/* 首页刊头已经有大标题，细条里不再重复站点名，只留右侧功能 */
+	.variant-home .wordmark {
+		display: none;
+	}
+	.variant-home .strip .inner {
+		justify-content: flex-end;
+	}
+
+	/* ---------- 首页刊头 ---------- */
+	.masthead {
+		padding: 4.5rem 0 0;
+		text-align: center;
+	}
+	.masthead .inner {
+		display: block;
+		height: auto;
+		padding-bottom: 1.75rem;
+		border-bottom: 1px solid var(--text);
+	}
+	/* 双细线：主规则线之下留 4px 再压一条淡线，报纸刊头的老做法 */
+	.masthead::after {
+		display: block;
+		max-width: var(--page-width);
+		margin: 4px auto 0;
+		border-top: 1px solid var(--line);
+		content: '';
+	}
+	.issue {
+		margin: 0 0 1.4rem;
+		color: var(--muted);
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+		letter-spacing: 0.16em;
+	}
+	.issue .dot {
+		margin: 0 0.5em;
+		color: var(--line-strong);
+	}
+	.title {
+		margin: 0;
+		font-size: clamp(2.1rem, 5.2vw, 3.1rem);
+		font-weight: 600;
+		line-height: 1.2;
+		letter-spacing: -0.015em;
+	}
+	.title a {
+		color: var(--text);
+	}
+	.title a:hover {
+		text-decoration: none;
+	}
+	.tagline {
+		margin: 1rem 0 0;
+		color: var(--muted);
+		font-size: 0.95rem;
+	}
+
+	/* ---------- 目次覆盖层 ---------- */
+	.site-index {
+		width: 100%;
+		max-width: none;
+		height: 100%;
+		max-height: none;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		background: var(--bg);
+		color: var(--text);
+	}
+	.site-index::backdrop {
+		background: rgba(28, 26, 23, 0.25);
+	}
+	/* 目次整块垂直居中，像书里的目录页 */
+	.site-index[open] {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.sheet {
+		width: 100%;
+		max-width: 720px;
+		margin: 0 auto;
+		padding: 2rem 1.25rem 3rem;
+	}
+	.sheet-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding-bottom: 1.1rem;
+		border-bottom: 1px solid var(--line-strong);
+	}
+	.close {
+		padding: 0;
+		border: 0;
+		border-bottom: 1px dotted var(--line-strong);
+		background: none;
+		color: var(--muted);
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+		letter-spacing: 0.1em;
+		cursor: pointer;
+	}
+	.close:hover {
+		border-bottom-color: var(--accent);
+		color: var(--accent);
+	}
+	.primary {
+		display: flex;
+		flex-direction: column;
+		margin: 2rem 0 0;
+	}
+	.primary a {
+		display: flex;
+		align-items: baseline;
+		gap: 1rem;
+		padding: 0.55rem 0;
+		border-bottom: 1px solid var(--line);
+		color: var(--text);
+	}
+	.primary .num {
+		color: var(--muted);
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
+		letter-spacing: 0.1em;
+	}
+	.primary .text {
+		font-family: var(--font-serif);
+		font-size: 1.75rem;
+		font-weight: 600;
+		transition: transform 0.15s ease;
+	}
+	.primary a:hover {
+		text-decoration: none;
+	}
+	.primary a:hover .text {
+		color: var(--accent);
+		transform: translateX(0.3rem);
+	}
+	.secondary {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1.5rem;
+		margin-top: 2rem;
+	}
+	.secondary a {
+		color: var(--muted);
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		letter-spacing: 0.06em;
+	}
+	.secondary a:hover {
+		color: var(--accent);
+		text-decoration: none;
+	}
+
+	@media (max-width: 640px) {
+		.masthead {
+			padding-top: 3rem;
 		}
-		.brand {
-			font-size: 0.98rem;
+		.primary .text {
+			font-size: 1.45rem;
 		}
 	}
 </style>
