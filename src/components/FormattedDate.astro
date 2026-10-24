@@ -3,12 +3,15 @@ import { SITE } from '../consts';
 
 interface Props {
 	date: Date;
+	/** long: 2026年10月24日 / short: 2026-10-24 */
+	format?: 'long' | 'short';
 }
 
-const { date } = Astro.props;
+const { date, format = 'long' } = Astro.props;
 
 // 固定时区，避免构建机（CI 通常是 UTC）和本地时间不一致导致日期差一天
-const formatted = date.toLocaleDateString('zh-CN', {
+const iso = new Intl.DateTimeFormat('sv-SE', { timeZone: SITE.timeZone }).format(date);
+const long = date.toLocaleDateString('zh-CN', {
 	year: 'numeric',
 	month: 'long',
 	day: 'numeric',
@@ -16,4 +19,4 @@ const formatted = date.toLocaleDateString('zh-CN', {
 });
 ---
 
-<time datetime={date.toISOString()}>{formatted}</time>
+<time datetime={iso}>{format === 'short' ? iso : long}</time>

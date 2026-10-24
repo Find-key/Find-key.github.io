@@ -5,47 +5,53 @@ import { withBase } from '../utils/url';
 const today = new Date();
 ---
 
-<footer>
-	<div class="copyright">
-		&copy; {today.getFullYear()} {SITE.author}
-	</div>
-	<div class="meta-links">
-		<a href={withBase('/rss.xml')}>RSS</a>
-		{SITE.github && <a href={SITE.github} target="_blank" rel="noopener">GitHub</a>}
-		{SITE.email && <a href={`mailto:${SITE.email}`}>邮箱</a>}
-		<a href={withBase('/posts')}>全部文章</a>
-	</div>
-	<div class="powered">
-		由 <a href="https://astro.build" target="_blank" rel="noopener">Astro</a> 构建 · 托管于
-		<a href="https://pages.github.com" target="_blank" rel="noopener">GitHub Pages</a>
+<footer class="site-footer">
+	<div class="inner">
+		<p class="copy">© {today.getFullYear()} {SITE.author}</p>
+		<nav class="links">
+			<a href={withBase('/posts')}>全部文章</a>
+			<a href={withBase('/categories')}>分类</a>
+			<a href={withBase('/tags')}>标签</a>
+			{SITE.github && <a href={SITE.github} target="_blank" rel="noopener">GitHub</a>}
+			{SITE.email && <a href={`mailto:${SITE.email}`}>邮箱</a>}
+			<a href={withBase('/rss.xml')}>RSS</a>
+		</nav>
 	</div>
 </footer>
+
 <style>
-	footer {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5em;
-		padding: 2em 1em 6em 1em;
-		background: linear-gradient(var(--gray-gradient)) no-repeat;
-		color: rgb(var(--gray));
-		text-align: center;
-		font-size: 0.85em;
+	/* 页脚是纯白卡片，只用一条上边框分隔。
+	   上一版用了渐变背景 + 页面背景渐变叠在一起，才会出现那条"半隐藏的栏"。 */
+	.site-footer {
+		margin-top: 5rem;
+		border-top: 1px solid var(--line);
+		background: var(--bg);
 	}
-	.meta-links {
+	.inner {
 		display: flex;
-		justify-content: center;
-		gap: 1em;
 		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem 1.5rem;
+		max-width: var(--page-width);
+		margin: 0 auto;
+		padding: 1.5rem 1.25rem 2.5rem;
+		color: var(--muted);
+		font-size: 0.8rem;
 	}
-	.meta-links a,
-	.powered a {
-		color: rgb(var(--gray));
+	.copy {
+		margin: 0;
+	}
+	.links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1.1rem;
+	}
+	.links a {
+		color: var(--muted);
+	}
+	.links a:hover {
+		color: var(--text);
 		text-decoration: none;
-		border-bottom: 1px solid rgb(var(--gray-light));
-	}
-	.meta-links a:hover,
-	.powered a:hover {
-		color: rgb(var(--gray-dark));
-		border-bottom-color: rgb(var(--gray));
 	}
 </style>

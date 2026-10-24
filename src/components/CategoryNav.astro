@@ -1,0 +1,82 @@
+---
+/**
+ * 文章页左侧的分类目录：当前分类下的全部文章，按阅读顺序排列。
+ * 这是"分类式"阅读的核心——读完一篇直接顺着往下点，不用回列表页翻。
+ */
+import type { Category } from '../consts';
+import type { Post } from '../utils/posts';
+import { categoryUrl, postUrl } from '../utils/url';
+
+interface Props {
+	category: Category;
+	posts: Post[];
+	currentId: string;
+}
+
+const { category, posts, currentId } = Astro.props;
+---
+
+<aside class="sidebar">
+	<a class="category" href={categoryUrl(category.slug)}>{category.name}</a>
+	<ol class="list">
+		{
+			posts.map((post) => (
+				<li>
+					<a class:list={[{ current: post.id === currentId }]} href={postUrl(post.id)}>
+						{post.data.title}
+					</a>
+				</li>
+			))
+		}
+	</ol>
+</aside>
+
+<style>
+	.sidebar {
+		position: sticky;
+		top: calc(var(--header-height) + 1.75rem);
+		font-size: 0.82rem;
+		line-height: 1.6;
+	}
+	.category {
+		display: block;
+		margin-bottom: 0.7rem;
+		color: var(--text);
+		font-size: 0.78rem;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+	}
+	.category:hover {
+		color: var(--accent);
+		text-decoration: none;
+	}
+	.list {
+		margin: 0;
+		padding: 0 0 0 0.9rem;
+		border-left: 1px solid var(--line);
+		list-style: none;
+	}
+	.list a {
+		position: relative;
+		display: block;
+		padding: 0.3rem 0;
+		color: var(--muted);
+	}
+	.list a:hover {
+		color: var(--text);
+		text-decoration: none;
+	}
+	.list a.current {
+		color: var(--accent);
+		font-weight: 500;
+	}
+	.list a.current::before {
+		position: absolute;
+		top: 0.3rem;
+		bottom: 0.3rem;
+		left: -0.95rem;
+		width: 2px;
+		background: var(--accent);
+		content: '';
+	}
+</style>

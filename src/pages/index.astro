@@ -1,17 +1,14 @@
 ---
-import { getCollection } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import PostList from '../components/PostList.astro';
 import { SITE } from '../consts';
-import { withBase } from '../utils/url';
+import { allPosts, groupByCategory } from '../utils/posts';
+import { categoryUrl, withBase } from '../utils/url';
 
-const posts = (
-	await getCollection('blog', ({ data }) => import.meta.env.DEV || !data.draft)
-)
-	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
-	.slice(0, 5);
+const posts = await allPosts();
+const groups = groupByCategory(posts);
 ---
 
 <!doctype html>
@@ -21,45 +18,117 @@ const posts = (
 	</head>
 	<body>
 		<Header />
-		<main>
-			<section class="hero">
-				<h1>{SITE.title}</h1>
+		<main class="container home">
+			<section class="intro">
+				<h1>{SITE.author}</h1>
 				<p class="lead">{SITE.description}</p>
 			</section>
 
-			<section>
-				<h2 class="section-title">最新文章</h2>
-				<PostList posts={posts} />
-				<p class="more">
-					<a href={withBase('/posts')}>查看全部文章 →</a>
-				</p>
-			</section>
+			{
+				groups.map(({ category, posts: items }) => (
+					<section class="group">
+						<header class="group-head">
+							<h2>
+								<a href={categoryUrl(category.slug)}>{category.name}</a>
+							</h2>
+							<span class="count">{items.length} 篇</span>
+						</header>
+						<p class="group-desc">{category.description}</p>
+						<PostList posts={items.slice(0, 4)} />
+						{items.length > 4 && (
+							<p class="more">
+								<a href={categoryUrl(category.slug)}>该分类共 {items.length} 篇 →</a>
+							</p>
+						)}
+					</section>
+				))
+			}
+
+			{
+				groups.length === 0 && (
+					<p class="empty">
+						还没有文章。新建 <code>src/content/blog/xxx.md</code> 并填好 frontmatter 即可。
+					</p>
+				)
+			}
+
+			<p class="all">
+				<a href={withBase('/posts')}>全部文章 →</a>
+			</p>
 		</main>
 		<Footer />
 	</body>
 </html>
 
 <style>
-	.hero {
-		padding-bottom: 2em;
+	.home {
+		padding-top: 3.5rem;
+	}
+	.intro {
+		margin-bottom: 3.25rem;
 	}
 	h1 {
-		margin-bottom: 0.25em;
+		margin: 0 0 0.3em;
+		font-size: 1.9rem;
+		font-weight: 650;
+		letter-spacing: -0.015em;
 	}
 	.lead {
-		color: rgb(var(--gray));
-		font-size: 1.1em;
 		margin: 0;
+		color: var(--muted);
+		font-size: 0.98rem;
 	}
-	.section-title {
-		font-size: 1.1em;
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-		color: rgb(var(--gray));
-		border-bottom: 2px solid rgb(var(--gray-light));
-		padding-bottom: 0.5em;
+	.group {
+		padding-top: 1.75rem;
+		border-top: 1px solid var(--line);
 	}
-	.more {
-		margin-top: 1.5em;
+	.group + .group {
+		margin-top: 2.5rem;
+	}
+	.group-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+	h2 {
+		margin: 0;
+		font-size: 1.05rem;
+		font-weight: 600;
+	}
+	h2 a {
+		color: var(--text);
+	}
+	h2 a:hover {
+		color: var(--accent);
+		text-decoration: none;
+	}
+	.count {
+		color: var(--muted);
+		font-size: 0.76rem;
+		font-variant-numeric: tabular-nums;
+	}
+	.group-desc {
+		margin: 0.3rem 0 0.6rem;
+		color: var(--muted);
+		font-size: 0.84rem;
+	}
+	.more,
+	.all {
+		margin: 0.9rem 0 0;
+		font-size: 0.84rem;
+	}
+	.all {
+		margin-top: 3rem;
+	}
+	.empty {
+		color: var(--muted);
+	}
+	code {
+		padding: 0.1em 0.35em;
+		border: 1px solid var(--line);
+		border-radius: 4px;
+		background: var(--code-bg);
+		font-size: 0.86em;
 	}
 </style>

@@ -27,10 +27,38 @@ export const SITE = {
 	email: 'find_key@foxmail.com',
 } as const;
 
-/** 导航栏。href 写站点内相对路径，渲染时会自动拼上 base 路径 */
+/** 顶栏导航。href 写站点内相对路径，渲染时会自动拼上 base 路径 */
 export const NAV = [
 	{ href: '/', label: '首页' },
-	{ href: '/posts', label: '文章' },
-	{ href: '/tags', label: '标签' },
+	{ href: '/categories', label: '分类' },
 	{ href: '/about', label: '关于' },
 ] as const;
+
+/**
+ * 分类体系 —— 文章按分类组织，而不是按时间堆在一条流里。
+ *
+ * 规则：
+ * - slug 用小写英文/连字符，会进 URL（/categories/<slug>/），定了就别改
+ * - 新增分类：在这里加一项，然后文章 frontmatter 的 category 填 slug
+ * - 没有任何文章的分类不会显示在页面上，可以先把分类列全
+ */
+export const CATEGORIES = [
+	{
+		slug: 'embedded',
+		name: '嵌入式 Linux',
+		description: '内核、启动流程、设备树、Buildroot 与 QEMU 实验记录。',
+	},
+	{
+		slug: 'site',
+		name: '建站与工具',
+		description: '这个站本身是怎么搭的，以及日常开发用的工具与工作流。',
+	},
+	{
+		slug: 'notes',
+		name: '随笔',
+		description: '不属于上面两类的零散记录。',
+	},
+] as const;
+
+export type Category = (typeof CATEGORIES)[number];
+export type CategorySlug = Category['slug'];

@@ -1,8 +1,5 @@
 ---
-// Import the global.css file here so that it is included on
-// all pages through the use of the <BaseHead /> component.
 import type { ImageMetadata } from 'astro';
-import { Font } from 'astro:assets';
 import FallbackImage from '../assets/blog-placeholder-1.jpg';
 import { SITE } from '../consts';
 import { absoluteAssetUrl, absoluteUrl, withBase } from '../utils/url';
@@ -27,6 +24,8 @@ const ogImage = absoluteAssetUrl(image.src);
 <!-- Global Metadata -->
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light" />
+<meta name="theme-color" content="#ffffff" />
 <link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
 <link rel="sitemap" href={withBase('/sitemap-index.xml')} />
 <link
@@ -37,8 +36,6 @@ const ogImage = absoluteAssetUrl(image.src);
 />
 <meta name="generator" content={Astro.generator} />
 <meta name="author" content={SITE.author} />
-
-<Font cssVariable="--font-atkinson" preload />
 
 <!-- Canonical URL -->
 <link rel="canonical" href={canonicalURL} />

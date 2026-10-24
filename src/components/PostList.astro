@@ -1,47 +1,31 @@
 ---
-import { Image } from 'astro:assets';
-import type { CollectionEntry } from 'astro:content';
-import { postUrl, tagUrl } from '../utils/url';
+import type { Post } from '../utils/posts';
+import { postUrl } from '../utils/url';
 import FormattedDate from './FormattedDate.astro';
 
 interface Props {
-	posts: CollectionEntry<'blog'>[];
-	/** 列表里是否显示封面图（文章有 heroImage 时才显示） */
-	showImages?: boolean;
+	posts: Post[];
+	showDate?: boolean;
 }
 
-const { posts, showImages = false } = Astro.props;
+const { posts, showDate = true } = Astro.props;
 ---
 
-<ul class="post-list">
+<ul class="posts">
 	{
 		posts.map((post) => (
 			<li>
-				<a class="post-link" href={postUrl(post.id)}>
-					{showImages && post.data.heroImage && (
-						<Image
-							class="hero"
-							width={720}
-							height={360}
-							src={post.data.heroImage}
-							alt={post.data.title}
-						/>
-					)}
-					<h3 class="title">{post.data.title}</h3>
-					<p class="desc">{post.data.description}</p>
-					<p class="date">
-						<FormattedDate date={post.data.pubDate} />
-					</p>
+				<a class="row" href={postUrl(post.id)}>
+					<span class="line">
+						<span class="title">{post.data.title}</span>
+						{showDate && (
+							<span class="date">
+								<FormattedDate date={post.data.pubDate} format="short" />
+							</span>
+						)}
+					</span>
+					<span class="desc">{post.data.description}</span>
 				</a>
-				{post.data.tags.length > 0 && (
-					<div class="tags">
-						{post.data.tags.map((tag) => (
-							<a class="tag" href={tagUrl(tag)}>
-								#{tag}
-							</a>
-						))}
-					</div>
-				)}
 			</li>
 		))
 	}
@@ -49,63 +33,52 @@ const { posts, showImages = false } = Astro.props;
 </ul>
 
 <style>
-	.post-list {
+	.posts {
 		list-style: none;
 		margin: 0;
 		padding: 0;
 	}
-	li {
-		padding: 1.25em 0;
-		border-bottom: 1px solid rgb(var(--gray-light));
+	li + li {
+		border-top: 1px solid var(--line);
 	}
-	li:first-child {
-		padding-top: 0;
-	}
-	.post-link {
+	.row {
 		display: block;
+		padding: 1rem 0;
+	}
+	.row:hover {
 		text-decoration: none;
 	}
-	.hero {
-		margin-bottom: 0.75rem;
-		border-radius: 12px;
+	.line {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
 	}
 	.title {
-		margin: 0 0 0.25em;
-		font-size: 1.4em;
-		color: rgb(var(--black));
+		color: var(--text);
+		font-size: 1rem;
+		font-weight: 500;
+		line-height: 1.65;
 	}
-	.desc {
-		margin: 0 0 0.35em;
-		color: rgb(var(--gray-dark));
-		font-size: 0.95em;
-	}
-	.date {
-		margin: 0;
-		color: rgb(var(--gray));
-		font-size: 0.8em;
-	}
-	.post-link:hover .title {
+	.row:hover .title {
 		color: var(--accent);
 	}
-	.tags {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5em;
-		margin-top: 0.5em;
+	.date {
+		flex: none;
+		color: var(--muted);
+		font-size: 0.76rem;
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
 	}
-	.tag {
-		font-size: 0.75em;
-		color: rgb(var(--gray));
-		text-decoration: none;
-		background: rgb(var(--gray-light));
-		border-radius: 999px;
-		padding: 0.15em 0.7em;
-	}
-	.tag:hover {
-		color: #fff;
-		background: var(--accent);
+	.desc {
+		display: block;
+		margin-top: 0.15rem;
+		color: var(--muted);
+		font-size: 0.84rem;
+		line-height: 1.65;
 	}
 	.empty {
-		color: rgb(var(--gray));
+		color: var(--muted);
+		padding: 1rem 0;
 	}
 </style>

@@ -2,7 +2,7 @@
 
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
-import { defineConfig, fontProviders } from 'astro/config';
+import { defineConfig } from 'astro/config';
 
 // 站点域名 / base 路径统一在 src/consts.ts 里改，这里只负责读
 import { SITE } from './src/consts.ts';
@@ -14,29 +14,10 @@ export default defineConfig({
 	base: SITE.base,
 	// 静态托管环境（GitHub Pages）对 /foo 和 /foo/ 都返回同一份 index.html
 	trailingSlash: 'ignore',
+	// 不加载 webfont：中文用系统字体栈，首屏没有字体闪烁，也少两个请求
 	integrations: [mdx(), sitemap()],
-	fonts: [
-		{
-			provider: fontProviders.local(),
-			name: 'Atkinson',
-			cssVariable: '--font-atkinson',
-			fallbacks: ['sans-serif'],
-			options: {
-				variants: [
-					{
-						src: ['./src/assets/fonts/atkinson-regular.woff'],
-						weight: 400,
-						style: 'normal',
-						display: 'swap',
-					},
-					{
-						src: ['./src/assets/fonts/atkinson-bold.woff'],
-						weight: 700,
-						style: 'normal',
-						display: 'swap',
-					},
-				],
-			},
-		},
-	],
+	markdown: {
+		// 代码高亮用 github-light：注释对比度够（min-light 的注释是 #c2c3c7，太淡看不清）
+		shikiConfig: { theme: 'github-light' },
+	},
 });
