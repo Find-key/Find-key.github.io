@@ -28,13 +28,28 @@ export const SITE = {
 } as const;
 
 /**
- * 目次覆盖层里的次级链接（分类本身由 CATEGORIES + 文章自动生成，不在这里）
+ * 站头右侧的固定链接（顺序即显示顺序）。分类页本身也在里面。
  */
 export const NAV = [
-	{ href: '/posts', label: '全部文章' },
-	{ href: '/tags', label: '标签' },
+	{ href: '/categories', label: '分类' },
+	{ href: '/links', label: '友链' },
 	{ href: '/about', label: '关于' },
 ] as const;
+
+export interface Friend {
+	/** 站点名 */
+	name: string;
+	/** 完整 URL（带 https://） */
+	url: string;
+	/** 一句话介绍，显示在名字下面 */
+	note?: string;
+}
+
+/**
+ * 友链。加一条就是把下面这个数组补一项，
+ * 然后 /links 页面会自动按顺序列出来。
+ */
+export const FRIENDS: Friend[] = [];
 
 /**
  * 分类体系 —— 文章按分类组织，而不是按时间堆在一条流里。

@@ -1,14 +1,10 @@
 ---
 /**
- * 刊头 + 目次覆盖层
- *
- * - 全站只有一条 44px 细条：站点名（首页隐藏）+ 「目录」
- * - 「目录」弹出全屏目次：主条目是分类（带篇数），次级是全部文章/标签/关于
- * - 首页额外显示刊头：名字 + 短饰线 + 一句话（字标组合，避免名字孤零零悬着）
+ * 站头：左侧字标 + 右侧链接（分类 / 友链 / 关于）。
+ * 首页的字标同时充当 <h1>，内页的 h1 由页面正文自己提供，避免出现两个 h1。
  */
 import { NAV, SITE } from '../consts';
-import { allPosts, groupByCategory } from '../utils/posts';
-import { categoryUrl, withBase } from '../utils/url';
+import { withBase } from '../utils/url';
 
 interface Props {
 	variant?: 'home' | 'inner';
@@ -16,116 +12,45 @@ interface Props {
 
 const { variant = 'inner' } = Astro.props;
 
-const posts = await allPosts();
-const groups = groupByCategory(posts);
+// 当前所在栏目，用于给导航加下划线
+const BASE = import.meta.env.BASE_URL.replace(/\/+$/, '');
+const current = (Astro.url.pathname.replace(BASE, '').replace(/\/+$/, '') || '/') as string;
+const isActive = (href: string) => current === href || current.startsWith(`${href}/`);
 ---
 
-<header class:list={['site-header', `variant-${variant}`]}>
-	<div class="strip">
-		<div class="inner">
-			<a class="wordmark" href={withBase('/')}>{SITE.title}</a>
-			<div class="actions">
-				<button class="menu-btn" type="button" aria-expanded="false" aria-controls="site-index">
-					目录
-					<svg viewBox="0 0 14 10" width="14" height="10" aria-hidden="true">
-						<path
-							d="M1 1h12M1 5h12M1 9h12"
-							stroke="currentColor"
-							stroke-width="1.2"
-							stroke-linecap="round"
-						></path>
-					</svg>
-				</button>
-			</div>
-		</div>
-	</div>
+<header class="site-header">
+	<div class="inner">
+		{
+			variant === 'home' ? (
+				<h1 class="brand">
+					<a href={withBase('/')}>{SITE.title}</a>
+				</h1>
+			) : (
+				<a class="brand" href={withBase('/')}>
+					{SITE.title}
+				</a>
+			)
+		}
 
-	{
-		variant === 'home' && (
-			<div class="masthead">
-				<div class="inner">
-					<h1 class="title">
-						<a href={withBase('/')}>{SITE.title}</a>
-					</h1>
-					<span class="rule" aria-hidden="true" />
-					<p class="tagline">{SITE.description}</p>
-				</div>
-			</div>
-		)
-	}
-</header>
-
-<dialog class="site-index" id="site-index" aria-label="目次">
-	<div class="sheet">
-		<div class="sheet-head">
-			<span class="label">目次</span>
-			<button class="close" type="button" aria-label="关闭目次">关闭 ✕</button>
-		</div>
-
-		<nav class="cats">
+		<nav class="nav">
 			{
-				groups.map(({ category, posts: items }, i) => (
-					<a href={categoryUrl(category.slug)}>
-						<span class="num">{String(i + 1).padStart(2, '0')}</span>
-						<span class="text">{category.name}</span>
-						<span class="meta">
-							<span class="count">{items.length} 篇</span>
-						</span>
+				NAV.map((item) => (
+					<a href={withBase(item.href)} class:list={[{ active: isActive(item.href) }]}>
+						{item.label}
 					</a>
 				))
 			}
-			{groups.length === 0 && <p class="empty">还没有文章。</p>}
 		</nav>
-
-		<div class="secondary">
-			{NAV.map((item) => <a href={withBase(item.href)}>{item.label}</a>)}
-			{SITE.github && <a href={SITE.github} target="_blank" rel="noopener">GitHub</a>}
-			{SITE.email && <a href={`mailto:${SITE.email}`}>邮箱</a>}
-		</div>
 	</div>
-</dialog>
-
-<script>
-	const dialog = document.getElementById('site-index') as HTMLDialogElement | null;
-	const openButton = document.querySelector<HTMLButtonElement>('.menu-btn');
-	const closeButton = dialog?.querySelector<HTMLButtonElement>('.close');
-
-	function openIndex() {
-		if (!dialog) return;
-		dialog.showModal();
-		openButton?.setAttribute('aria-expanded', 'true');
-		document.documentElement.style.overflow = 'hidden';
-	}
-
-	function closeIndex() {
-		if (!dialog) return;
-		dialog.close();
-		openButton?.setAttribute('aria-expanded', 'false');
-		document.documentElement.style.overflow = '';
-	}
-
-	openButton?.addEventListener('click', () => (dialog?.open ? closeIndex() : openIndex()));
-	closeButton?.addEventListener('click', closeIndex);
-	// 点空白处关闭（点到 dialog 本身说明点在遮罩上）
-	dialog?.addEventListener('click', (event) => {
-		if (event.target === dialog) closeIndex();
-	});
-	dialog?.addEventListener('close', () => {
-		openButton?.setAttribute('aria-expanded', 'false');
-		document.documentElement.style.overflow = '';
-	});
-</script>
+</header>
 
 <style>
 	.site-header {
-		background: var(--bg);
-	}
-	.strip {
 		position: sticky;
 		top: 0;
 		z-index: 20;
 		border-bottom: 1px solid var(--line);
-		background: rgba(251, 249, 245, 0.88);
+		background: rgba(251, 249, 245, 0.9);
 		backdrop-filter: saturate(160%) blur(10px);
 		-webkit-backdrop-filter: saturate(160%) blur(10px);
 	}
@@ -135,221 +60,64 @@ const groups = groupByCategory(posts);
 		justify-content: space-between;
 		gap: 1.5rem;
 		max-width: var(--page-width);
-		height: 44px;
+		height: 58px;
 		margin: 0 auto;
 		padding: 0 1.25rem;
 	}
-	.wordmark {
-		color: var(--text);
+	/* 字标：首页是 h1，内页是普通链接；两种都用同一套排版 */
+	.brand,
+	h1.brand {
+		margin: 0;
 		font-family: var(--font-serif);
-		font-size: 0.95rem;
+		font-size: 1.02rem;
 		font-weight: 600;
+		line-height: 1.2;
+		letter-spacing: -0.005em;
 		white-space: nowrap;
 	}
-	.wordmark:hover {
+	.brand a,
+	h1.brand a {
+		color: var(--text);
+	}
+	.brand a:hover {
 		color: var(--accent);
 		text-decoration: none;
 	}
-	.actions {
+	.nav {
 		display: flex;
 		align-items: center;
+		gap: 1.5rem;
 	}
-	.menu-btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.45rem;
-		padding: 0;
-		border: 0;
-		background: none;
+	.nav a {
 		color: var(--muted);
-		font-family: var(--font-mono);
-		font-size: 0.7rem;
-		letter-spacing: 0.08em;
-		cursor: pointer;
+		font-size: 0.86rem;
+		transition: color 0.15s ease;
 	}
-	.menu-btn:hover {
-		color: var(--accent);
+	.nav a:hover {
+		color: var(--text);
+		text-decoration: none;
 	}
-
-	/* 首页刊头已经有大标题，细条里不再重复站点名 */
-	.variant-home .wordmark {
-		display: none;
+	.nav a.active {
+		color: var(--text);
 	}
-	.variant-home .strip .inner {
-		justify-content: flex-end;
-	}
-
-	/* ---------- 首页刊头：名字 + 短饰线 + 一句话 ---------- */
-	.masthead {
-		padding: 5rem 0 0;
-		text-align: center;
-	}
-	.masthead .inner {
+	/* 当前栏目：文字下方 1px 短下划线，不用色块 */
+	.nav a.active::after {
 		display: block;
-		height: auto;
-		padding-bottom: 2rem;
-		border-bottom: 1px solid var(--text);
-	}
-	/* 双细线：主规则线之下留 4px 再压一条淡线 */
-	.masthead::after {
-		display: block;
-		max-width: var(--page-width);
-		margin: 4px auto 0;
-		border-top: 1px solid var(--line);
+		height: 1px;
+		margin-top: 3px;
+		background: var(--accent);
 		content: '';
 	}
-	.title {
-		margin: 0;
-		font-size: clamp(2.4rem, 6vw, 3.4rem);
-		font-weight: 600;
-		line-height: 1.15;
-		letter-spacing: -0.02em;
-	}
-	.title a {
-		color: var(--text);
-	}
-	.title a:hover {
-		text-decoration: none;
-	}
-	/* 40px 短饰线：给名字一个落脚点，避免它孤零零悬在中间 */
-	.rule {
-		display: block;
-		width: 40px;
-		height: 1px;
-		margin: 1.5rem auto 1.15rem;
-		background: var(--line-strong);
-	}
-	.tagline {
-		margin: 0;
-		color: var(--muted);
-		font-size: 0.92rem;
-	}
-
-	/* ---------- 目次覆盖层 ---------- */
-	.site-index {
-		width: 100%;
-		max-width: none;
-		height: 100%;
-		max-height: none;
-		margin: 0;
-		padding: 0;
-		border: 0;
-		background: var(--bg);
-		color: var(--text);
-	}
-	.site-index::backdrop {
-		background: rgba(28, 26, 23, 0.25);
-	}
-	.site-index[open] {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-	.sheet {
-		width: 100%;
-		max-width: 720px;
-		margin: 0 auto;
-		padding: 2rem 1.25rem 3rem;
-	}
-	.sheet-head {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding-bottom: 1.1rem;
-		border-bottom: 1px solid var(--line-strong);
-	}
-	.close {
-		padding: 0;
-		border: 0;
-		border-bottom: 1px dotted var(--line-strong);
-		background: none;
-		color: var(--muted);
-		font-family: var(--font-mono);
-		font-size: 0.7rem;
-		letter-spacing: 0.1em;
-		cursor: pointer;
-	}
-	.close:hover {
-		border-bottom-color: var(--accent);
-		color: var(--accent);
-	}
-
-	.cats {
-		display: flex;
-		flex-direction: column;
-		margin-top: 0.6rem;
-	}
-	.cats a {
-		display: flex;
-		align-items: baseline;
-		gap: 1rem;
-		padding: 0.85rem 0;
-		border-bottom: 1px solid var(--line);
-		color: var(--text);
-	}
-	.cats a:hover {
-		text-decoration: none;
-	}
-	.num {
-		color: var(--muted);
-		font-family: var(--font-mono);
-		font-size: 0.68rem;
-		letter-spacing: 0.1em;
-	}
-	.cats .text {
-		font-family: var(--font-serif);
-		font-size: 1.7rem;
-		font-weight: 600;
-		transition: transform 0.15s ease;
-	}
-	.cats a:hover .text {
-		color: var(--accent);
-		transform: translateX(0.3rem);
-	}
-	.cats .meta {
-		display: flex;
-		align-items: baseline;
-		gap: 0.75rem;
-		margin-left: auto;
-	}
-	.count {
-		color: var(--muted);
-		font-family: var(--font-mono);
-		font-size: 0.68rem;
-		white-space: nowrap;
-	}
-	.empty {
-		color: var(--muted);
-		padding: 1rem 0;
-	}
-
-	.secondary {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 1.5rem;
-		margin-top: 1.6rem;
-	}
-	.secondary a {
-		color: var(--muted);
-		font-family: var(--font-mono);
-		font-size: 0.72rem;
-		letter-spacing: 0.06em;
-	}
-	.secondary a:hover {
-		color: var(--accent);
-		text-decoration: none;
-	}
-
-	@media (max-width: 640px) {
-		.masthead {
-			padding-top: 3.25rem;
+	@media (max-width: 520px) {
+		.nav {
+			gap: 1.1rem;
 		}
-		.cats .text {
-			font-size: 1.35rem;
+		.nav a {
+			font-size: 0.82rem;
 		}
-		.cats a {
-			gap: 0.75rem;
-			padding: 0.75rem 0;
+		.brand,
+		h1.brand {
+			font-size: 0.96rem;
 		}
 	}
 </style>
