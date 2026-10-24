@@ -17,6 +17,7 @@ const { category, posts, currentId } = Astro.props;
 ---
 
 <aside class="sidebar">
+	<span class="label">本分类</span>
 	<a class="category" href={categoryUrl(category.slug)}>{category.name}</a>
 	<ol class="list">
 		{
@@ -36,15 +37,20 @@ const { category, posts, currentId } = Astro.props;
 		position: sticky;
 		top: calc(var(--header-height) + 1.75rem);
 		font-size: 0.82rem;
-		line-height: 1.6;
+		line-height: 1.65;
+	}
+	.label {
+		display: block;
+		margin-bottom: 0.35rem;
+		font-size: 0.66rem;
 	}
 	.category {
 		display: block;
-		margin-bottom: 0.7rem;
+		margin-bottom: 0.85rem;
+		font-family: var(--font-serif);
 		color: var(--text);
-		font-size: 0.78rem;
+		font-size: 0.98rem;
 		font-weight: 600;
-		letter-spacing: 0.02em;
 	}
 	.category:hover {
 		color: var(--accent);
@@ -59,7 +65,7 @@ const { category, posts, currentId } = Astro.props;
 	.list a {
 		position: relative;
 		display: block;
-		padding: 0.3rem 0;
+		padding: 0.32rem 0;
 		color: var(--muted);
 	}
 	.list a:hover {
@@ -68,12 +74,11 @@ const { category, posts, currentId } = Astro.props;
 	}
 	.list a.current {
 		color: var(--accent);
-		font-weight: 500;
 	}
 	.list a.current::before {
 		position: absolute;
-		top: 0.3rem;
-		bottom: 0.3rem;
+		top: 0.32rem;
+		bottom: 0.32rem;
 		left: -0.95rem;
 		width: 2px;
 		background: var(--accent);

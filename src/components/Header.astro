@@ -10,7 +10,7 @@ import HeaderLink from './HeaderLink.astro';
 		<nav class="nav">
 			{NAV.map((item) => <HeaderLink href={withBase(item.href)}>{item.label}</HeaderLink>)}
 			<a class="rss" href={withBase('/rss.xml')} aria-label="RSS 订阅">
-				<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+				<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
 					<circle cx="3.2" cy="12.8" r="1.4" fill="currentColor"></circle>
 					<path
 						d="M1.8 6.2a8 8 0 0 1 8 8M1.8 1.8a12.4 12.4 0 0 1 12.4 12.4"
@@ -31,9 +31,9 @@ import HeaderLink from './HeaderLink.astro';
 		top: 0;
 		z-index: 20;
 		border-bottom: 1px solid var(--line);
-		background: rgba(255, 255, 255, 0.86);
-		backdrop-filter: saturate(180%) blur(10px);
-		-webkit-backdrop-filter: saturate(180%) blur(10px);
+		background: rgba(251, 249, 245, 0.86);
+		backdrop-filter: saturate(160%) blur(10px);
+		-webkit-backdrop-filter: saturate(160%) blur(10px);
 	}
 	.inner {
 		display: flex;
@@ -46,10 +46,11 @@ import HeaderLink from './HeaderLink.astro';
 		padding: 0 1.25rem;
 	}
 	.brand {
+		font-family: var(--font-serif);
 		color: var(--text);
-		font-size: 0.94rem;
+		font-size: 1.04rem;
 		font-weight: 600;
-		letter-spacing: -0.01em;
+		letter-spacing: 0;
 		white-space: nowrap;
 	}
 	.brand:hover {
@@ -59,7 +60,7 @@ import HeaderLink from './HeaderLink.astro';
 	.nav {
 		display: flex;
 		align-items: center;
-		gap: 1.35rem;
+		gap: 1.4rem;
 	}
 	.rss {
 		display: inline-flex;
@@ -67,14 +68,14 @@ import HeaderLink from './HeaderLink.astro';
 		color: var(--muted);
 	}
 	.rss:hover {
-		color: var(--text);
+		color: var(--accent);
 	}
 	@media (max-width: 480px) {
 		.nav {
 			gap: 1rem;
 		}
 		.brand {
-			font-size: 0.9rem;
+			font-size: 0.98rem;
 		}
 	}
 </style>

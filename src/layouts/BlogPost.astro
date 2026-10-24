@@ -139,9 +139,11 @@ const minutes = readingMinutes(post.body);
 	.crumb {
 		display: flex;
 		align-items: center;
-		gap: 0.45rem;
+		gap: 0.5rem;
 		color: var(--muted);
-		font-size: 0.78rem;
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+		letter-spacing: 0.06em;
 	}
 	.crumb a {
 		color: var(--muted);
@@ -154,20 +156,20 @@ const minutes = readingMinutes(post.body);
 		color: var(--line-strong);
 	}
 	h1 {
-		margin: 0.55em 0 0.5em;
-		font-size: 1.85rem;
-		font-weight: 650;
-		line-height: 1.35;
-		letter-spacing: -0.01em;
+		margin: 0.5em 0 0.45em;
+		font-size: 2.05rem;
+		font-weight: 600;
+		line-height: 1.45;
+		letter-spacing: 0;
 	}
 	.meta {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.45rem;
-		margin: 0 0 0.9rem;
+		gap: 0.5rem;
+		margin: 0 0 1rem;
 		color: var(--muted);
-		font-size: 0.8rem;
+		font-size: 0.78rem;
 		font-variant-numeric: tabular-nums;
 	}
 	.meta .dot {
@@ -176,19 +178,17 @@ const minutes = readingMinutes(post.body);
 	.tags {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
-		margin-bottom: 2.25rem;
+		gap: 0.9rem;
+		margin-bottom: 2.6rem;
 	}
 	.tags a {
-		padding: 0.1em 0.55em;
-		border: 1px solid var(--line);
-		border-radius: 999px;
 		color: var(--muted);
+		font-family: var(--font-mono);
 		font-size: 0.72rem;
+		letter-spacing: 0.04em;
 	}
 	.tags a:hover {
-		border-color: var(--line-strong);
-		color: var(--text);
+		color: var(--accent);
 		text-decoration: none;
 	}
 	.pager {
@@ -211,7 +211,14 @@ const minutes = readingMinutes(post.body);
 	}
 	.pager-label {
 		color: var(--muted);
-		font-size: 0.72rem;
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
+		letter-spacing: 0.06em;
+	}
+	.pager a {
+		font-family: var(--font-serif);
+		font-size: 0.95rem;
+		line-height: 1.55;
 	}
 	@media (max-width: 900px) {
 		.grid {

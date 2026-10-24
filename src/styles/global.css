@@ -1,28 +1,45 @@
 /*
-  全局样式 —— 简约、以正文为中心的排版。
-  设计原则：
-  1. 只有一层背景色，不用渐变/阴影堆叠（页脚那条"半隐藏的栏"就是这么来的）
-  2. 颜色只用 4 个：正文、次要文字、分隔线、链接色
-  3. 中文正文 17px / 行高 1.9 / 正文宽度约 40 字，长文才读得下去
+  全局样式 —— 「纸感」简约：暖白底、衬线标题、无衬线正文、等宽小标签。
+
+  设计参考：
+  - leerob.com  ：暖白纸背景 + 衬线大标题 + 发丝分隔的条目列表
+  - paco.me     ：大量留白 + 小号标签做分组 + 下划线式链接
+  - 本项目的约束：不加载 webfont（中文用系统字体）、只用一套颜色、一个强调色
+
+  三条硬规则：
+  1. 只有一层背景色，禁止渐变和阴影堆叠
+  2. 标题用衬线（有书卷气），正文用无衬线（中文小字号更清楚）
+  3. 层级只用 1px 发丝线和留白表达
 */
 
 :root {
-	--bg: #ffffff;
-	--text: #1c1e21;
-	--muted: #6b7280;
-	--line: #e6e7eb;
-	--line-strong: #d2d5db;
-	--accent: #1a56db;
-	--code-bg: #f7f8fa;
-	--radius: 8px;
-	/* 中文优先的系统字体栈：不加载 webfont，首屏没有字体闪烁 */
+	/* 纸感暖白 + 暖灰层次 */
+	--bg: #fbf9f5;
+	--bg-raised: #ffffff;
+	--text: #1c1a17;
+	--muted: #736d64;
+	--line: #e7e2d8;
+	--line-strong: #d6cfc2;
+	/* 墨绿：比蓝更沉，和暖白底搭得住；全站只用这一个强调色 */
+	--accent: #1f6f5c;
+	--accent-soft: #e9f0ec;
+	--code-bg: #f2eee6;
+
+	--radius: 10px;
+
+	/* 拉丁字符优先衬线，中文回落思源/宋体 */
+	--font-serif:
+		'Iowan Old Style', 'Palatino Linotype', Palatino, 'Songti SC', 'Noto Serif CJK SC',
+		'Source Han Serif SC', Georgia, 'Times New Roman', serif;
+	/* 正文用系统无衬线：中文小字号比同尺寸衬线清楚 */
 	--font-sans:
-		-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', 'Source Han Sans SC',
+		-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans CJK SC', 'Source Han Sans SC',
 		'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 	--font-mono:
 		ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', 'Courier New',
 		monospace;
-	/* 内容宽度：正文列 700px；页面主栏 1000（减去左右各 20 padding 后，正文区 960） */
+
+	/* 正文列 700；主栏 1000（减左右各 20 padding → 内容区 960） */
 	--content-width: 700px;
 	--page-width: 1000px;
 	--header-height: 58px;
@@ -49,8 +66,8 @@ body {
 	color: var(--text);
 	font-family: var(--font-sans);
 	font-size: 17px;
-	line-height: 1.85;
-	letter-spacing: 0.01em;
+	line-height: 1.9;
+	letter-spacing: 0.008em;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	text-rendering: optimizeLegibility;
@@ -58,14 +75,13 @@ body {
 	overflow-wrap: break-word;
 }
 
-/* 内容不足一屏时，页脚也贴住视口底部，不会浮在页面中间 */
+/* 内容不足一屏时，页脚也贴住视口底部 */
 main {
 	flex: 1 0 auto;
 }
 
-
 ::selection {
-	background: rgba(26, 86, 219, 0.14);
+	background: rgba(31, 111, 92, 0.16);
 }
 
 a {
@@ -97,6 +113,24 @@ hr {
 	margin: 2.5em 0;
 }
 
+/* 标题统一衬线；各页面只调字号字重，不改字体 */
+h1,
+h2,
+h3 {
+	font-family: var(--font-serif);
+	font-weight: 600;
+	letter-spacing: -0.005em;
+}
+
+/* 等宽小标签：分组标题、日期、面包屑用，带字距很像印刷品上的小字 */
+.label {
+	font-family: var(--font-mono);
+	font-size: 0.72rem;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--muted);
+}
+
 /* ---------- 正文排版（文章页 .prose 内） ---------- */
 
 .prose {
@@ -111,26 +145,25 @@ hr {
 .prose p {
 	/* 段间距要明显大于行距，否则整篇看着像一堵墙 */
 	margin: 0 0 1.6em;
+	/* 避免最后一行只剩一两个字（Chrome 117+ / Safari 17.5+ 支持，其余浏览器忽略） */
+	text-wrap: pretty;
 }
 
 .prose h2 {
-	margin: 2.4em 0 0.85em;
-	padding-bottom: 0.4em;
-	border-bottom: 1px solid var(--line);
-	font-size: 1.3em;
-	font-weight: 600;
+	margin: 2.6em 0 0.9em;
+	font-size: 1.4em;
 	line-height: 1.5;
 }
 
 .prose h3 {
 	margin: 2em 0 0.6em;
-	font-size: 1.1em;
-	font-weight: 600;
-	line-height: 1.55;
+	font-size: 1.12em;
+	line-height: 1.6;
 }
 
 .prose h4 {
 	margin: 1.8em 0 0.5em;
+	font-family: var(--font-sans);
 	font-size: 1em;
 	font-weight: 600;
 }
@@ -150,13 +183,13 @@ hr {
 }
 
 .prose li::marker {
-	color: var(--muted);
+	color: var(--line-strong);
 }
 
 .prose blockquote {
-	margin: 1.6em 0;
-	padding: 0.1em 0 0.1em 1em;
-	border-left: 2px solid var(--line-strong);
+	margin: 1.8em 0;
+	padding: 0.1em 0 0.1em 1.1em;
+	border-left: 2px solid var(--accent);
 	color: var(--muted);
 }
 
@@ -165,12 +198,12 @@ hr {
 }
 
 .prose strong {
-	font-weight: 600;
+	font-weight: 650;
 }
 
-/* 链接：正文里用浅下划线，不靠颜色抢注意力 */
+/* 正文链接：浅下划线，不用亮色抢注意力 */
 .prose a {
-	border-bottom: 1px solid rgba(26, 86, 219, 0.28);
+	border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
 .prose a:hover {
@@ -188,11 +221,11 @@ hr {
 }
 
 .prose pre {
-	margin: 1.5em 0;
-	padding: 1.1em 1.2em;
+	margin: 1.6em 0;
+	padding: 1.15em 1.25em;
 	border: 1px solid var(--line);
-	border-radius: var(--radius);
-	/* Shiki 会把背景色写成行内 style，这里用 !important 压回浅色底 */
+	border-radius: 8px;
+	/* Shiki 会把背景色写成行内 style，这里用 !important 压回纸色 */
 	background: var(--code-bg) !important;
 	overflow-x: auto;
 	font-size: 0.88em;
@@ -209,15 +242,15 @@ hr {
 
 .prose table {
 	width: 100%;
-	margin: 1.5em 0;
+	margin: 1.6em 0;
 	border-collapse: collapse;
 	font-size: 0.9em;
-	line-height: 1.6;
+	line-height: 1.65;
 }
 
 .prose th,
 .prose td {
-	padding: 0.55em 0.7em;
+	padding: 0.6em 0.75em;
 	border-bottom: 1px solid var(--line);
 	text-align: left;
 	vertical-align: top;
@@ -225,7 +258,7 @@ hr {
 
 .prose th {
 	border-bottom-color: var(--line-strong);
-	background: #fafbfc;
+	font-family: var(--font-sans);
 	font-weight: 600;
 }
 
