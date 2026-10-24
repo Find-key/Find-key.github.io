@@ -25,34 +25,53 @@ const groups = groupByCategory(posts);
 				<p class="lead">{SITE.description}</p>
 			</section>
 
-			{
-				groups.map(({ category, posts: items }, i) => (
-					<section class="group">
-						<header class="group-head">
-							<h2 class="group-title">
-								<span class="index">{String(i + 1).padStart(2, '0')}</span>
-								<a href={categoryUrl(category.slug)}>{category.name}</a>
-							</h2>
-							<span class="label count">{items.length} 篇</span>
-						</header>
-						<p class="group-desc">{category.description}</p>
-						<PostList posts={items.slice(0, 4)} />
-						{items.length > 4 && (
-							<p class="more">
-								<a href={categoryUrl(category.slug)}>该分类共 {items.length} 篇 →</a>
-							</p>
-						)}
-					</section>
-				))
-			}
+			<section class="index">
+				<div class="index-head">
+					<span class="label">分类目录</span>
+					{groups.length > 1 && (
+						<button class="toggle" type="button" data-toggle-all>展开全部</button>
+					)}
+				</div>
 
-			{
-				groups.length === 0 && (
-					<p class="empty">
-						还没有文章。新建 <code>src/content/blog/xxx.md</code> 并填好 frontmatter 即可。
-					</p>
-				)
-			}
+				{
+					groups.map(({ category, posts: items }, i) => (
+						<details class="cat" id={category.slug} open={i === 0}>
+							<summary>
+								<span class="num">{String(i + 1).padStart(2, '0')}</span>
+								<span class="name">{category.name}</span>
+								<span class="meta">
+									<span class="count">{items.length} 篇</span>
+									<svg class="chevron" viewBox="0 0 10 10" aria-hidden="true">
+										<path
+											d="M2 3.5 5 6.5 8 3.5"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="1.2"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+										/>
+									</svg>
+								</span>
+							</summary>
+							<div class="panel">
+								<p class="desc">{category.description}</p>
+								<PostList posts={items} />
+								<p class="more">
+									<a href={categoryUrl(category.slug)}>进入分类 →</a>
+								</p>
+							</div>
+						</details>
+					))
+				}
+
+				{
+					groups.length === 0 && (
+						<p class="empty">
+							还没有文章。新建 <code>src/content/blog/xxx.md</code> 并填好 frontmatter 即可。
+						</p>
+					)
+				}
+			</section>
 
 			<p class="all">
 				<a href={withBase('/posts')}>全部文章 →</a>
@@ -61,6 +80,27 @@ const groups = groupByCategory(posts);
 		<Footer />
 	</body>
 </html>
+
+<script>
+	// 展开/收起全部 + 支持 #分类slug 直接展开对应分类。
+	// 折叠本身由 <details> 原生实现，这段脚本只是锦上添花，禁用 JS 也能用。
+	const cats = Array.from(document.querySelectorAll<HTMLDetailsElement>('details.cat'));
+	const button = document.querySelector<HTMLButtonElement>('[data-toggle-all]');
+
+	if (button) {
+		button.addEventListener('click', () => {
+			const expand = button.textContent?.trim() !== '收起全部';
+			cats.forEach((cat) => (cat.open = expand));
+			button.textContent = expand ? '收起全部' : '展开全部';
+		});
+	}
+
+	const hash = decodeURIComponent(location.hash.slice(1));
+	if (hash) {
+		const target = document.getElementById(hash);
+		if (target instanceof HTMLDetailsElement) target.open = true;
+	}
+</script>
 
 <style>
 	.home {
@@ -87,56 +127,140 @@ const groups = groupByCategory(posts);
 		font-size: 1rem;
 		line-height: 1.8;
 	}
-	.group {
-		padding-top: 1.9rem;
-		border-top: 1px solid var(--line);
+
+	/* ---------- 可展开的分类目录 ---------- */
+	.index {
+		/* 序号列宽 + 间距，用于把展开后的条目对齐到分类名下面 */
+		--indent: 1.6rem;
 	}
-	.group + .group {
-		margin-top: 3rem;
-	}
-	.group-head {
+	.index-head {
 		display: flex;
 		align-items: baseline;
 		justify-content: space-between;
-		gap: 1.25rem;
+		gap: 1rem;
+		padding-bottom: 0.9rem;
+		border-bottom: 1px solid var(--line-strong);
 	}
-	.group-title {
-		display: flex;
-		align-items: baseline;
-		gap: 0.7rem;
-		margin: 0;
-		font-size: 1.3rem;
-		font-weight: 600;
-	}
-	.index {
+	.toggle {
+		padding: 0;
+		border: 0;
+		border-bottom: 1px dotted var(--line-strong);
+		background: none;
 		color: var(--muted);
 		font-family: var(--font-mono);
 		font-size: 0.7rem;
-		font-weight: 400;
+		letter-spacing: 0.06em;
+		cursor: pointer;
+	}
+	.toggle:hover {
+		border-bottom-color: var(--accent);
+		color: var(--accent);
+	}
+
+	.cat {
+		border-bottom: 1px solid var(--line);
+	}
+	summary {
+		display: flex;
+		align-items: baseline;
+		gap: 0.7rem;
+		padding: 1.05rem 0;
+		cursor: pointer;
+		list-style: none;
+	}
+	summary::-webkit-details-marker {
+		display: none;
+	}
+	summary:hover .name {
+		color: var(--accent);
+	}
+	summary:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
+	}
+	.num {
+		color: var(--muted);
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
 		letter-spacing: 0.1em;
 	}
-	.group-title a {
+	.name {
+		font-family: var(--font-serif);
 		color: var(--text);
+		font-size: 1.3rem;
+		font-weight: 600;
+		transition: color 0.15s ease;
 	}
-	.group-title a:hover {
-		color: var(--accent);
-		text-decoration: none;
+	.meta {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		margin-left: auto;
 	}
 	.count {
+		color: var(--muted);
+		font-family: var(--font-mono);
 		font-size: 0.68rem;
+		letter-spacing: 0.02em;
+		white-space: nowrap;
 	}
-	.group-desc {
-		margin: 0.5rem 0 0.9rem;
+	.chevron {
+		width: 11px;
+		height: 11px;
+		color: var(--muted);
+		transition: transform 0.2s ease;
+	}
+	.cat[open] .chevron {
+		transform: rotate(180deg);
+	}
+
+	.panel {
+		/* 文章条目缩进到分类名下面，像目录树一样能看出从属关系 */
+		padding: 0 0 1.4rem var(--indent);
+	}
+	.desc {
+		margin: 0 0 0.4rem;
 		color: var(--muted);
 		font-size: 0.86rem;
+		text-wrap: pretty;
 	}
-	.more,
+	.more {
+		margin: 0.85rem 0 0;
+		font-size: 0.82rem;
+	}
+
+	/* 原生高度动画：Chrome 131+ / Safari 18+ 支持，其余浏览器直接展开 */
+	@supports (interpolate-size: allow-keywords) {
+		:root {
+			interpolate-size: allow-keywords;
+		}
+		.cat::details-content {
+			block-size: 0;
+			overflow: hidden;
+			transition:
+				block-size 0.22s ease,
+				content-visibility 0.22s;
+			transition-behavior: allow-discrete;
+		}
+		.cat[open]::details-content {
+			block-size: auto;
+		}
+	}
+
 	.all {
-		margin: 0.9rem 0 0;
+		margin: 2.5rem 0 0;
 		font-size: 0.85rem;
 	}
-	.all {
-		margin-top: 3.5rem;
+	@media (max-width: 640px) {
+		.index {
+			--indent: 0rem;
+		}
+		h1 {
+			font-size: 2.2rem;
+		}
+		.name {
+			font-size: 1.15rem;
+		}
 	}
 	.empty {
 		color: var(--muted);
