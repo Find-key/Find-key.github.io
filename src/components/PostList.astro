@@ -43,7 +43,7 @@ const { posts, showDate = true } = Astro.props;
 	}
 	.row {
 		display: block;
-		padding: 1rem 0;
+		padding: 1.05rem 0;
 	}
 	.row:hover {
 		text-decoration: none;
@@ -52,30 +52,44 @@ const { posts, showDate = true } = Astro.props;
 		display: flex;
 		align-items: baseline;
 		justify-content: space-between;
-		gap: 1rem;
+		gap: 1.25rem;
 	}
 	.title {
+		font-family: var(--font-serif);
 		color: var(--text);
-		font-size: 1rem;
-		font-weight: 500;
-		line-height: 1.65;
+		font-size: 1.07rem;
+		font-weight: 600;
+		line-height: 1.55;
+		letter-spacing: 0;
+	}
+	.title::after {
+		margin-left: 0.4em;
+		color: var(--accent);
+		content: '→';
+		opacity: 0;
+		transition: opacity 0.15s ease;
 	}
 	.row:hover .title {
 		color: var(--accent);
 	}
+	.row:hover .title::after {
+		opacity: 1;
+	}
 	.date {
 		flex: none;
 		color: var(--muted);
-		font-size: 0.76rem;
-		font-variant-numeric: tabular-nums;
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+		letter-spacing: 0.02em;
 		white-space: nowrap;
 	}
 	.desc {
 		display: block;
-		margin-top: 0.15rem;
+		margin-top: 0.2rem;
 		color: var(--muted);
-		font-size: 0.84rem;
-		line-height: 1.65;
+		font-size: 0.85rem;
+		line-height: 1.7;
+		text-wrap: pretty;
 	}
 	.empty {
 		color: var(--muted);
