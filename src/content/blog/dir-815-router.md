@@ -14,17 +14,17 @@ tags: [iot]
 DECIMAL         HEXADECIMAL     DESCRIPTION
 ---------------------------------------------------------------------------
 0               0x0             DLOB firmware header,
-								header size: 108 bytes,
-								data size: 3792928
+                                header size: 108 bytes,
+                                data size: 3792928
 
 108             0x6C            LZMA compressed data,
-								properties: 0x5D,
-								dictionary size: 33554432 bytes,
-								compressed size: 979100 bytes,
-								uncompressed size: 3017436 bytes
+                                properties: 0x5D,
+                                dictionary size: 33554432 bytes,
+                                compressed size: 979100 bytes,
+                                uncompressed size: 3017436 bytes
 
 983180          0xF008C         SquashFS file system, little endian,
-								version: 4.0, compression: lzma,
+                                version: 4.0, compression: lzma,
                                 inode count: 1526, block size: 262144,
                                 image size: 2808054 bytes,
                                 created: 2011-05-12 14:14:40

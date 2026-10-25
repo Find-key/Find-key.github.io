@@ -11,13 +11,36 @@
 	const FOLD_LINES = 26;
 	const PREVIEW_ROWS = 14;
 
+	function fallbackCopy(text: string): boolean {
+		// 非安全上下文（比如用局域网 IP 打开）没有 navigator.clipboard，退回 execCommand
+		const ta = document.createElement('textarea');
+		ta.value = text;
+		ta.setAttribute('readonly', '');
+		ta.style.position = 'fixed';
+		ta.style.top = '-1000px';
+		document.body.appendChild(ta);
+		ta.select();
+		let ok = false;
+		try {
+			ok = document.execCommand('copy');
+		} catch {
+			ok = false;
+		}
+		ta.remove();
+		return ok;
+	}
+
 	async function copyText(text: string, btn: HTMLButtonElement) {
 		const old = btn.textContent;
 		try {
-			await navigator.clipboard.writeText(text);
+			if (navigator.clipboard?.writeText) {
+				await navigator.clipboard.writeText(text);
+			} else if (!fallbackCopy(text)) {
+				throw new Error('copy failed');
+			}
 			btn.textContent = '已复制';
 		} catch {
-			btn.textContent = '复制失败';
+			btn.textContent = fallbackCopy(text) ? '已复制' : '复制失败';
 		}
 		setTimeout(() => {
 			btn.textContent = old;
