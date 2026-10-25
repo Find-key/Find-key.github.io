@@ -13,10 +13,6 @@ export const SITE = {
 	/** 一句话简介，用于 SEO description、RSS 描述 */
 	description: '二进制漏洞分析与利用（pwn）',
 	/**
-	 * 首页顶部那两行自述（每项一行）。用第一人称，别写成"某某的网站"，
-	 * 也别写成分类标签。想改自我介绍只动这里。
-	 */
-	/**
 	 * hero 里的题记：引一句真话 + 出处，比自己写格言稳。
 	 * 想换成别的引言，改这两行即可；不想要题记就把它设成空字符串。
 	 */
@@ -37,6 +33,8 @@ export const SITE = {
 	/** 社交链接，改成你自己的；留空字符串则不显示该图标 */
 	github: 'https://github.com/USERNAME',
 	email: 'find_key@foxmail.com',
+	/** QQ 号（纯展示，不生成链接）；留空则不显示 */
+	qq: '',
 } as const;
 
 /**
