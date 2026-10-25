@@ -15,3 +15,9 @@ npm run preview  # 本地预览生产构建
 写文章：`cp docs/post-template.md src/content/blog/新文章名.md`，frontmatter 里 **`category` 必填**（取值见 `src/consts.ts` 的 `CATEGORIES`）。
 
 > 改任何东西之后，记得在 `PROJECT.md` 的「变更日志」里加一条。
+
+## 日常操作
+
+写文章、加分类、加友链、改站点信息：见 [`docs/how-to.md`](docs/how-to.md)。
+
+项目结构、设计决策、踩坑记录：见 [`PROJECT.md`](PROJECT.md)。

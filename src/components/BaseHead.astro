@@ -1,6 +1,5 @@
 ---
 import type { ImageMetadata } from 'astro';
-import FallbackImage from '../assets/blog-placeholder-1.jpg';
 import { SITE } from '../consts';
 import { absoluteAssetUrl, absoluteUrl, withBase } from '../utils/url';
 import '../styles/global.css';
@@ -13,12 +12,13 @@ interface Props {
 	type?: 'website' | 'article';
 }
 
-const { title, description, image = FallbackImage, type = 'website' } = Astro.props;
+const { title, description, image, type = 'website' } = Astro.props;
 
 // 注意：Astro.url.pathname 在配置了 base 之后已经包含 base（如 /blog/posts/x/），
 // 所以这里不能再过一遍 withBase()，否则会变成 /blog/blog/...
 const canonicalURL = new URL(Astro.url.pathname, SITE.url);
-const ogImage = absoluteAssetUrl(image.src);
+// 文章自带封面就用封面，否则用 public/og.png（站点分享卡）
+const ogImage = image ? absoluteAssetUrl(image.src) : absoluteAssetUrl('/og.png');
 ---
 
 <!-- Global Metadata -->

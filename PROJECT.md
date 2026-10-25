@@ -164,13 +164,12 @@ blog/
 ├── AGENTS.md               ← 给编码助手的硬性约定
 ├── astro.config.mjs        ← Astro 配置（site/base 从 consts.ts 读）
 ├── .github/workflows/deploy.yml
-├── docs/post-template.md   ← 新建文章模板
+├── docs/how-to.md          ← ★ 日常操作：写文章 / 加分类 / 加友链
 ├── public/favicon.svg
 └── src/
     ├── consts.ts           ← ★ 站点信息、NAV 导航、CATEGORIES 分类
     ├── content.config.ts   ← 文章 frontmatter schema（category 会校验是否存在）
     ├── content/blog/       ← ★ 所有文章（.md / .mdx）
-    ├── assets/             ← 需要 Astro 优化的图片
     ├── components/
     │   ├── BaseHead.astro  ← <head>：SEO / OG / RSS / canonical
     │   ├── Header.astro    ← ★ 站头：左字标 + 右「归档/友链」
@@ -220,7 +219,7 @@ npm run preview        # 预览 dist/，路径行为与 Pages 一致
 ### 新建一篇
 
 ```bash
-cp docs/post-template.md src/content/blog/my-new-post.md
+npm run new -- "文章标题" --cat pwn --tags stack
 # 编辑 frontmatter（category 必填！）和正文
 npm run dev
 ```
@@ -483,3 +482,4 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | 文章页左侧从「本分类的文章列表」改为**文章目录**：`render(post)` 取 `headings`，过滤 h2/h3 生成锚点列表，sticky 且用 IntersectionObserver 高亮当前小节（左侧 1px 竖线）；<900px 隐藏；删除 `CategoryNav.astro`（分类入口仍在面包屑与底部上下篇） |
 | 2026-10-25 | 目录收尾：侧栏长标题 `line-clamp: 2` 截断；<900px 时侧栏隐藏、改为正文顶部的 `<details>` 可折叠目录（点击条目后自动收起）；两套目录共用同一份 `headings` 与同一段高亮脚本 |
 | 2026-10-25 | 加 `npm run new -- "标题" --cat pwn [--tags a,b] [--slug x] [--draft]`：读 `consts.ts` 校验分类、按标题生成 slug（中文标题补日期防撞）、生成带 pwn 骨架的 md；不做主题化重构（用户确认只给自己用） |
+| 2026-10-25 | 文档与资源收拾：新增 `docs/how-to.md`（写文章 / 加分类 / 加友链 / 改站点信息 / 常见报错），合并并删除两份重复的文章模板（`npm run new` 已覆盖）；生成 `public/og.png`（1200×630 纸感分享卡，站名 + 题记 + dump），`BaseHead` 默认用它，删掉模板自带的 `src/assets/blog-placeholder-1.jpg`（32K）|
