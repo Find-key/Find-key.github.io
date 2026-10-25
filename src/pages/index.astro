@@ -49,9 +49,12 @@ const rows = CATEGORIES.map((category) => ({
 				<img class="avatar" src={withBase('/avatar.svg')} alt="" width="96" height="96" />
 				<div class="who">
 					<p class="who-name">{SITE.author}</p>
-					{SITE.intro.map((line, i) => (
-						<p class:list={['tagline', { lead: i === 0 }]}>{line}</p>
-					))}
+					{SITE.quote.text && (
+						<p class="quote">
+							{SITE.quote.text}
+							{SITE.quote.by && <span class="quote-by">— {SITE.quote.by}</span>}
+						</p>
+					)}
 					<pre class="flag" aria-hidden="true">{rodataDump}</pre>
 					<div class="links">
 						{SITE.email && (
@@ -152,16 +155,25 @@ const rows = CATEGORIES.map((category) => ({
 		line-height: 1.15;
 		letter-spacing: -0.01em;
 	}
-	/* 一句格言：衬线、正文色，比 tagline 重一档，但不抢名字 */
-	.tagline {
-		margin: 0.55rem 0 0;
+	/* 题记：衬线正文色 + 行末 mono 署名，像书前的引语 */
+	.quote {
+		margin: 0.6rem 0 0;
 		color: var(--text);
 		font-family: var(--font-serif);
 		font-size: 1.06rem;
 		font-weight: 500;
-		line-height: 1.7;
+		line-height: 1.75;
 		letter-spacing: 0.005em;
 		text-wrap: pretty;
+	}
+	.quote-by {
+		margin-left: 0.5em;
+		color: var(--muted);
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		font-weight: 400;
+		letter-spacing: 0.04em;
+		white-space: nowrap;
 	}
 	/* flag 的十六进制形态：等宽、淡墨，ASCII 列读得出 flag{...} */
 	.flag {
