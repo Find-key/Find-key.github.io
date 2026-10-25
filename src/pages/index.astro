@@ -51,10 +51,12 @@ const groups = groupByCategory(posts);
 							</summary>
 							<div class="panel">
 								<p class="desc">{category.description}</p>
-								<PostList posts={items} />
-								<p class="more">
-									<a href={categoryUrl(category.slug)}>进入分类 →</a>
-								</p>
+								<PostList posts={items.slice(0, 4)} />
+								{items.length > 4 && (
+									<p class="more">
+										<a href={categoryUrl(category.slug)}>该分类共 {items.length} 篇 →</a>
+									</p>
+								)}
 							</div>
 						</details>
 					))
