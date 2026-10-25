@@ -8,21 +8,20 @@ tags: [glibc]
 
 ## 前言
 
-对于glibc的堆题.
-*get shell* 的方法总是用任意地址写达成的.
-本文讨论一些常见的调用链,用于任意地址写.
+对于 glibc 的堆题。
+*get shell* 的方法总是用任意地址写达成的。
+本文讨论一些常见的调用链，用于任意地址写。
 
 ## some of hook
 
-> 适用版本: glibc<2.34
-> 本质: 函数指针
+> 适用版本：glibc<2.34
+> 本质：函数指针
 
 ### __malloc_hook
 
-**简述**:若调用`malloc()`函数时,`__malloc_hook`不为空,则直接调用`__malloc_hook`所指向的函数.
+**简述**：若调用 `malloc()` 函数时，`__malloc_hook` 不为空，则直接调用 `__malloc_hook` 所指向的函数。
 
-
-以下给出`glibc2.23`的malloc.c部分源码.
+以下给出 `glibc2.23` 的 malloc.c 部分源码。
 ```C
 void *
 __libc_malloc (size_t bytes)
@@ -55,14 +54,12 @@ __libc_malloc (size_t bytes)
   return victim;
 }
 ```
-显然注意到在函数调用初期,
-若`__malloc_hook`不为**NULL**,调用(*__malloc_hook)(),返回值作为malloc()的返回值.
-
+显然注意到在函数调用初期，
+若 `__malloc_hook` 不为**NULL**，调用(*__malloc_hook)()，返回值作为 malloc()的返回值。
 
 ### __realloc_hook
 
-**简述**:若调用`realloc()`函数时,`__realloc_hook`不为空,则直接调用`__realloc_hook`所指向的函数.
-
+**简述**：若调用 `realloc()` 函数时，`__realloc_hook` 不为空，则直接调用 `__realloc_hook` 所指向的函数。
 
 ```C
 void *
@@ -160,13 +157,12 @@ __libc_realloc (void *oldmem, size_t bytes)
 }
 ```
 
-显然注意到在函数调用初期,
-若`__realloc_hook`不为**NULL**,调用(*__realloc_hook)(),返回值作为realloc()的返回值.
+显然注意到在函数调用初期，
+若 `__realloc_hook` 不为**NULL**，调用(*__realloc_hook)()，返回值作为 realloc()的返回值。
 
 ### __free_hook
 
-**简述**:若调用`free()`函数时,`__free_hook`不为空,则直接调用`__free_hook`所指向的函数.
-
+**简述**：若调用 `free()` 函数时，`__free_hook` 不为空，则直接调用 `__free_hook` 所指向的函数。
 
 ```C
 void
@@ -209,15 +205,14 @@ __libc_free (void *mem)
 }
 ```
 
-同样的,注意到在函数调用初期,
-若`__free_hook`不为**NULL**,调用(*__free_hook)(),返回值作为free()的返回值.
-
+同样的，注意到在函数调用初期，
+若 `__free_hook` 不为**NULL**，调用(*__free_hook)()，返回值作为 free()的返回值。
 
 ### exit_hook
 
-`exit_hook`并不是官方所提供的,而是`exit()`调用链中所会用到的**函数指针**,
+`exit_hook` 并不是官方所提供的，而是 `exit()` 调用链中所会用到的**函数指针**,
 
-glibc 2.23的exit.c源码
+glibc 2.23 的 exit.c 源码
 ```C
 #include <stdio.h>
 #include <stdlib.h>
@@ -307,12 +302,12 @@ void exit(int status)
 libc_hidden_def(exit)
 ```
 
-注意到,`exit()`实际上是调用`__run_exit_handlers()`
-而`__run_exit_handlers()`中不断调用`exit_function_list`中的函数.
+注意到，`exit()` 实际上是调用 `__run_exit_handlers()`
+而 `__run_exit_handlers()` 中不断调用 `exit_function_list` 中的函数。
 
-> 其中一种思路是伪造`exit_func_list`或者往其中放入 *one_gadget*.
+> 其中一种思路是伪造 `exit_func_list` 或者往其中放入 *one_gadget*.
 
-正常执行时,在`exit_func_list`会调用`_dl_fini()`函数.
+正常执行时，在 `exit_func_list` 会调用 `_dl_fini()` 函数。
 ```C
 void
 internal_function
@@ -470,12 +465,12 @@ _dl_fini (void)
 #endif
 }
 ```
-在这个函数中调用了`__rtld_lock_lock_recursive`和`__rtld_lock_unlock_recursive`.
+在这个函数中调用了 `__rtld_lock_lock_recursive` 和 `__rtld_lock_unlock_recursive`.
 
-二者均位于`_rtld_global`结构体中,均为函数指针,名为`__dl_rtld_lock_recursive`和`__dl_rtld_unlock_recursive`.
+二者均位于 `_rtld_global` 结构体中，均为函数指针，名为 `__dl_rtld_lock_recursive` 和 `__dl_rtld_unlock_recursive`.
 
-这就是我们所寻找的"hook"函数指针.
+这就是我们所寻找的"hook"函数指针。
 
 ### 综述
 
-显然的,对于上述的几类`hook`指针,只要修改具体的值为`one_gadget`就可以到达 *get shell* 的效果.
+显然的，对于上述的几类 `hook` 指针，只要修改具体的值为 `one_gadget` 就可以到达 *get shell* 的效果。

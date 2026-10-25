@@ -8,7 +8,6 @@ tags: [protobuf]
 
 > 近来做题恰好碰到了，之前听学长、其他师傅说过，刚好趁这个计划学习一下
 
-
 ## 介绍
 **Protobuf**（全称：Protocol Buffers）是 Google 开发的一种轻量、高效的结构化数据序列化协议。它用于将数据结构序列化为紧凑的二进制格式，用于网络通信或数据存储。Protobuf 被设计为跨平台和语言无关的，因此广泛应用于分布式系统、网络通信、远程过程调用（RPC）等场景
 
@@ -53,12 +52,10 @@ make check
 sudo make install
 ```
 
-### 安装python的 protobuf 库
+### 安装 python 的 protobuf 库
 ```bash
 pip3 install protobuf==3.20.3
 ```
-
-
 
 ### 基础知识
 在 proto2 中
@@ -76,7 +73,7 @@ message test {
 然后类似 C/C++ 中写结构体，
 定义 `message`，一个或者多个
 
-其中， 
+其中，
 - `optional/required` 指定属性
 	- optional ：一个 `optional` 字段有两种可能的状态
 		- 字段已设置，并包含一个被明确设置或从线格式解析的值。它将被序列化到线格式中。
@@ -139,7 +136,7 @@ struct ProtobufCMessageDescriptor {
  void    *reserved3;  
 };
 ```
-magic 一般是 0x28AAEEF9,所以也可以通过值全局搜索
+magic 一般是 0x28AAEEF9，所以也可以通过值全局搜索
 n_fields 是字段数量
 fields 是指向字段的
 
@@ -293,18 +290,17 @@ struct ProtobufCMessageUnknownField
 };
 ```
 
-
 ### example
 以 xyctf2025 bot 为例子
 ```
 v7 = &message_response__descriptor;
 ```
-可以看到这样一个赋值语句,
+可以看到这样一个赋值语句，
 点进去发现第一个值是 0x28AAEEF9
 显然是 `ProtobufCMessageDescriptor`
 然后发现名为 Message_response 的 Message
 通过 `n_fields` 字段发现有 4 个字段
-根据 `fields` 字段来到各个字段的结构体 `ProtobufCFieldDescriptor` 
+根据 `fields` 字段来到各个字段的结构体 `ProtobufCFieldDescriptor`
 分析，四个字段分别是 id，receiver，status，error_message
 发现其中还有 default_value 字段，是 proto2
 可逆向出
@@ -354,7 +350,6 @@ message Message_response{
 demo.pc-c.c 和 demo.pc-c.h
 demo_pb2.py 和 \_\_pycache__ 文件夹
 
-
 C 文件用于恢复符号，在其中可找到结构体 MessageRequest
 ```C
 struct  MessageRequest
@@ -369,7 +364,6 @@ struct  MessageRequest
 ```
 将这个结构体导入 ida，有助于逆向分析
 题目漏洞利用不是本文重点，故不过多阐述
-
 
 生成的 python 文件是用于和题目交互的，
 可通过 `import demo_pb2` 导入

