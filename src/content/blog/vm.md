@@ -164,7 +164,7 @@ continue
 ```
 像是这样，继承自 gdb 的 Breakpoint 类，在每次经过断点的时候打印了 rdi 和 rsi 的值
 
-使用方法：`gdb -x ./sc --args ./vvmm` ，其中 `./sc` 就是脚本文件。
+使用方法：`gdb -x ./sc --args ./vvmm`，其中 `./sc` 就是脚本文件。
 
 信息太多会盖住程序自己的输出，所以把 trace 写进 `./vm.log`；顺便在断点里把虚拟机状态也解析出来：
 

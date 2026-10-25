@@ -22,7 +22,7 @@ console.log("hello, key");
 
 console.log("bye, key");
 ```
-在 gdb 使用 run 命令后就会停在中间，只看到打印 *hello, key* 而没有 *bye, key* 。
+在 gdb 使用 run 命令后就会停在中间，只看到打印 *hello, key* 而没有 *bye, key*。
 
 要看变量地址用 `%DebugPrint(obj);`，它会把对象的内存布局整个打出来。
 
@@ -39,7 +39,7 @@ arr = [1, 2, 3];
 ```bash
 gdb --args /path/to/d8 --allow-natives-syntax k.js
 ```
-然后在 gdb 中直接 `run` ，然后看到 arr 对象的一些信息
+然后在 gdb 中直接 `run`，然后看到 arr 对象的一些信息
 ```
 DebugPrint: 0x7b8fb55ab1: [JSArray]
  - map: 0x119adca9d981 <Map[32](PACKED_SMI_ELEMENTS)> [FastProperties]
