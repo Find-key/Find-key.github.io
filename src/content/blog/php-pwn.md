@@ -1,16 +1,14 @@
 ---
 title: "从零开始的 PHP PWN 学习"
-description: "想学 V8 PWN 来着，但是先学了 PHP PWN"
+description: "从写一个 PHP 拓展开始，到越界读写、Zend 内存管理，最后拿一道 note 题完整走一遍利用。"
 pubDate: 2026-04-02
 category: pwn
 tags: [php]
 ---
 
 ## 环境搭建
-> 搭环境是开始的第一步
-
-### docker 环境
-写 dockerfile
+### Docker 环境
+先写 Dockerfile：
 ```bash
 FROM php:8.1-apache
 
@@ -20,12 +18,12 @@ RUN apt update && \
 EXPOSE 80
 ```
 
-构建
+构建镜像：
 ```bash
 docker build -t php81-apache .
 ```
 
-挂载本地目录
+挂载源码目录：
 ```bash
 docker run -it \
 -d \
@@ -38,22 +36,20 @@ docker run -it \
 php81-apache
 ```
 
-#### 启动
+### 启动容器
 ```bash
 docker start php81-apache
 docker exec -it php81-apache bash
 ```
 
 ## 编写 PHP 拓展
-> 搭建好环境就可以自己写拓展了，这和出题一样
-
-### 解压 php 源码
+### 解压源码
 ```bash
 cd /usr/src
 tar -xvf ./php.tar.xz
 ```
 
-### 生成拓展模板
+### 生成模板
 ```bash
 cd php-8.1.34/ext
 
@@ -61,13 +57,13 @@ cd php-8.1.34/ext
 ./ext_skel.php --ext apple --dir /workspace/
 ```
 
-### 权限修改
+### 改权限
 ```bash
 cd /workspace/apple
 chmod -R ugo+rw apple
 ```
 
-### 构建
+### 编译安装
 ```bash
 phpize
 ./configure
@@ -75,45 +71,43 @@ make
 make install
 ```
 
-从回显中注意到安装目录
-_Installing shared extensions:     /usr/local/lib/php/extensions/no-debug-non-zts-20210902/_
+`make install` 的回显里会打印安装目录，例如 `/usr/local/lib/php/extensions/no-debug-non-zts-20210902/`。
 ### 测试
 ```bash
 cp /usr/local/etc/php/php.ini-development /usr/local/etc/php/php.ini
 ```
 
-然后修改 php.ini
-在最末尾加上
+然后编辑 `php.ini`，在末尾加上
 ```
 extension=apple.so
 ```
 
 在容器的 /var/www/html ，创建一个 index.php，内容是
 ```php
-<?
+<?php
   phpinfo();
 ?>
 ```
 然后访问，发现页面中有 apple 部分的信息
 
-### 自定义内容
+## 参数解析与返回值
 
-#### 前置内容
+### 参数解析
 由于 C 和 PHP 的类型不同，编写拓展时，需要先解析参数。ZEND_PARSE_PARAMETERS_START 和 ZEND_PARSE_PARAMETERS_END 是参数解析的核心。Z_PARAM_XXX 系列宏用于指定参数类型。
 
 类型解析如下
 | 类型 | 宏 | 说明 |
-| - | - | - |
+| --- | --- | --- |
 | long | Z_PARAM_LONG | 整数 |
-| double |	Z_PARAM_DOUBLE |	浮点数 |
-| string |	Z_PARAM_STRING |	字符串，需要手动释放内存 |
-| string | (copy)	Z_PARAM_STR |	字符串，自动拷贝，不需要手动释放内存 |
-| bool |	Z_PARAM_BOOL |	布尔值 |
-| array |	Z_PARAM_ARRAY |	数组 |
+| double | Z_PARAM_DOUBLE | 浮点数 |
+| string | Z_PARAM_STRING | 字符串，需要手动释放内存 |
+| string | (copy)	Z_PARAM_STR | 字符串，自动拷贝，不需要手动释放内存 |
+| bool | Z_PARAM_BOOL | 布尔值 |
+| array | Z_PARAM_ARRAY | 数组 |
 | object | Z_PARAM_OBJECT | 对象 |
-| resource | Z_PARAM_RESOURCE |	资源 |
-| null | Z_PARAM_NULL |	NULL 值 |
-| is_null |	Z_PARAM_ZVAL | 任意类型，需要使用 Z_ISNULL 宏判断是否为 NULL |
+| resource | Z_PARAM_RESOURCE | 资源 |
+| null | Z_PARAM_NULL | NULL 值 |
+| is_null | Z_PARAM_ZVAL | 任意类型，需要使用 Z_ISNULL 宏判断是否为 NULL |
 
 例如：
 ```
@@ -136,13 +130,15 @@ PHP_FUNCTION(my_function)
     efree(str); // 释放字符串内存
 }
 ```
-ZEND_PARSE_PARAMETERS_START(2, 3) 表示开始参数解析，第一个参数是最少的参数类型，第二个表示最多的参数类型。
-Z_PARAM_OPTIONAL 表示可选程序，从这个宏开始，下面内容是可选的
+`ZEND_PARSE_PARAMETERS_START(2, 3)` 里的两个数字是必填参数个数的下限和上限。
+`Z_PARAM_OPTIONAL` 表示从这行起，后面的参数都是可选的。
 
-然后是返回值，RETURN_XXX 系列宏用于返回不同类型的值。
+### 返回值
+
+`RETURN_XXX` 系列宏用于返回不同类型的值。
 
 | 类型 | 宏 | 说明 |
-| - | - | - |
+| --- | --- | --- |
 | long | RETURN_LONG | 整数 |
 | double | RETURN_DOUBLE | 浮点数 |
 | string | RETURN_STRING | 字符串，需要手动拷贝字符串 |
@@ -154,7 +150,7 @@ Z_PARAM_OPTIONAL 表示可选程序，从这个宏开始，下面内容是可选
 | null | RETURN_NULL | NULL 值 |
 | void | RETURN_VOID | 没有返回值 |
 
-#### 编写
+### 实现 Recall 函数
 修改 apple.stub.php ，声明函数
 ```php
 ...
@@ -207,22 +203,16 @@ make install
 docker restart php81
 ```
 
-#### 验证内容
+### 验证
 
-##### 验证 phpinfo
-在 ./Src 文件夹下创建文件 index.php ，写如下内容
-```php
-<?
-  phpinfo();
-?>
-```
-./Src 目录挂载了 php81 容器的 /var/www/html 目录，可以直接通过访问容器映射的端口来查看效果
+#### 看 phpinfo
+`./Src` 挂载的就是容器的 `/var/www/html`，前面建好的 `index.php` 直接刷新即可
 在浏览器访问 **http://ip:1724/index.php** ，就能看到 phpinfo() 的执行效果，查看到 apple 部分有 author 字段及内容。ip 请根据实际做对应调整。
 
-##### 验证 Recall 函数
+#### 调 Recall
 在 ./Src 文件夹下创建文件 test.php ，写如下内容
 ```php
-<?
+<?php
   Recall("Do you like apple?\n");
 ?>
 ```
@@ -233,11 +223,11 @@ php test.php
 ```
 看到回显为：`You say: Do you like apple?` ，就是验证成功。
 
-## 漏洞简单研究
+## 漏洞研究
 实际比赛就是先得到有漏洞的 .so 文件（有时可能题目附件直接提供），然后分析。
 由于是本地探究，就自己直接写源码，下面不给出完整生成安装过程，生成安装和前面的步骤是一致的。
 
-### libc
+### 读 libc 地址
 libc 地址获取是比较简单的，直接读取 `/proc/self/maps` 就好
 ```php
 $filename = "/proc/self/maps";
@@ -263,7 +253,7 @@ sscanf($line, "%x", $addr);
 echo "Libc Address: 0x" . dechex($addr) . PHP_EOL;
 ```
 
-### stack
+### 栈：越界读写
 定义两个拓展函数
 ```php
 function GetThing(int $offset): int {}
@@ -303,7 +293,7 @@ PHP_FUNCTION(WriteThing)
 	memcpy(buf, input_str, input_len);
 }
 ```
-任意注意到，是越界读写的漏洞，正常打 ROP 就好
+所以这是一个任意地址读写（越界读 + 越界写），后面按常规 ROP 打即可。
 
 #### exp
 ```php
@@ -360,7 +350,7 @@ $data = [
     0,
     0,
     0,
-    0,、
+    0,
     0,
     $rdi+1,
     $rdi,
@@ -375,15 +365,15 @@ WriteThing($bin);
 ?>
 ```
 
-### heap
-php 内存管理，就是 zend 引擎的内存管理：emalloc 和 efree 。而不是用和 glibc 的那一套 malloc，calloc，free 什么的。不同于 glibc 的各种大小的 chunk，zend 引擎的内存管理只有有三种情况：
+### 堆：Zend 的内存管理
+PHP 的内存管理走 Zend 引擎自己的 `emalloc` / `efree`，不是 glibc 那套 `malloc` / `calloc` / `free`。不同于 glibc 的各种大小的 chunk，zend 引擎的内存管理只有有三种情况：
 | size | name | 机制 |
-| - | - | - |
+| --- | --- | --- |
 | size > 2mb - 4kb | huge | 直接调用操作系统的 malloc（或类似接口）进行分配 |
 | 3kb < size <= 2mb - 4kb | large | 按页分配 |
 | size <= 3kb(3072) | small | 小内存会被分配到特定的 Slot（槽位）中。ZMM 预设了 30 多个不同大小的 Bin（例如 8, 16, 24, ... 3072 字节）。 |
 
-一般的攻击都基于 small 类型的内存，在本文就只讨论 small 类型的内存，在机制上其实和 tcache 是类型的，都是后进先出的单链表结构。
+攻击一般落在 small 上，这里也只讨论 small：机制和 tcache 类似，都是后进先出的单链表。
 ```C
 ptr1 = emalloc(0x60);
 ptr2 = emalloc(0x60);
@@ -394,9 +384,9 @@ efree(ptr1);
 ptr3 = emalloc(0x60);
 ptr4 = emalloc(0x60);
 ```
-最后 ptr3 和 ptr1 的值的一样的，ptr4 和 ptr2 的值是一样的。而 efree 后会产生 **ptr1 -> ptr2** 这样的链表结构，只要改写 ptr1 的内容就能劫持链表。
+最后 ptr3 和 ptr1 的值一样，ptr4 和 ptr2 一样。`efree` 之后会形成 **ptr1 → ptr2** 的链表，改掉 ptr1 的内容就能劫持它。
 
-#### 例题
+### 例题：note
 
 定义增删改查的函数
 ```php
@@ -501,9 +491,9 @@ PHP_FUNCTION(EditNote)
     memcpy(notes[idx].content, new_content, new_content_len);
 }
 ```
-是相对明显的 UAF，编译后由于 got 可写，就通过劫持 got 来劫持执行流
+这是一个比较明显的 UAF：`efree` 之后没有把 `content` 置空，`EditNote` 仍然能写进去。拓展的 GOT 可写，所以直接打 GOT。
 
-##### exp
+#### exp
 ```php
 <?php
 
@@ -571,7 +561,8 @@ ThrowNote(4);
 ?>
 ```
 
-## 参考链接
-[PHP pwn 学习 (1)](https://hornos3.github.io/2024/06/19/PHP-pwn-%E5%AD%A6%E4%B9%A0-1/)
-[[原创]php pwn 分析与 phpgdb 插件](https://bbs.kanxue.com/thread-286446.htm)
-[PHP `Extension` 开发：用 C 语言扩展 PHP 功能与性能优化](https://www.zyxy.net/archives/12582)
+## 参考文献
+
+- [PHP pwn 学习 (1)](https://hornos3.github.io/2024/06/19/PHP-pwn-%E5%AD%A6%E4%B9%A0-1/)
+- [[原创]php pwn 分析与 phpgdb 插件](https://bbs.kanxue.com/thread-286446.htm)
+- [PHP `Extension` 开发：用 C 语言扩展 PHP 功能与性能优化](https://www.zyxy.net/archives/12582)
