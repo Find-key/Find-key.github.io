@@ -16,11 +16,11 @@
 	/* 纸感暖白 + 暖灰层次 */
 	--bg: #fbf9f5;
 	--bg-raised: #ffffff;
-	--text: #1c1a17;
+	--text: #262220;
 	--muted: #736d64;
-	--line: #e7e2d8;
-	--line-soft: #f1ece3;
-	--line-strong: #d6cfc2;
+	--line: #ede8de;
+	--line-soft: #f2ede4;
+	--line-strong: #e0dacd;
 	/* 墨绿：比蓝更沉，和暖白底搭得住；全站只用这一个强调色 */
 	--accent: #1f6f5c;
 	--accent-soft: #e9f0ec;
