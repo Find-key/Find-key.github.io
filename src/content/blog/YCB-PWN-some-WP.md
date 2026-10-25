@@ -1,6 +1,6 @@
 ---
 title: "羊城杯 部分"
-description: "Malloc，Stack_Over_Flow，Vm"
+description: "羊城杯三道 pwn：自建堆的 UAF + 越界拿到任意写、栈迁移接 SROP 打 mprotect、以及一道 VM 题。"
 pubDate: 2025-10-13
 category: wp
 tags: [writeup]
@@ -9,7 +9,7 @@ tags: [writeup]
 ## Malloc
 
 ### 保护
-checksec, 发现是全保护。
+checksec：保护全开。
 ```
 Arch:       amd64-64-little
 RELRO:      Full RELRO
@@ -229,16 +229,13 @@ unsigned __int64 show()
   return v3 - __readfsqword(0x28u);
 }
 ```
-修了一下，大概就是这样
-在 .bss 段模拟了一个堆
-漏洞在于 UAF 和 数组越位，第 0 个 chunk 的 size 和第 16 个 chunk 的 ptr 重合了
-相当于可以一直堆溢出。
+（IDA 里修过类型）大致如上。题目在 `.bss` 上自己模拟了一个堆。
+
+漏洞是 UAF 加数组越界：第 0 个 chunk 的 `size` 和第 16 个 chunk 的指针重合，等于可以无限堆溢出。
 
 ### EXP
-攻击思路：通过 UAF 泄露程序基地址
-然后通过堆溢出修改 fd，申请到 stdout 附近，泄露 libc 地址
-同样地，申请到 environ 附近，泄露栈地址
-最后申请到栈上，打 ROP.
+
+思路：先用 UAF 泄露程序基址；再靠堆溢出改 `fd`，把 chunk 申请到 `stdout` 附近泄 libc、到 `environ` 附近泄栈；最后申请到栈上打 ROP。
 ```python
 from pwn import *
 
@@ -392,7 +389,7 @@ PIE:        PIE enabled
 SHSTK:      Enabled
 IBT:        Enabled
 ```
-没 canary，好耶
+没有 canary。
 
 ### 沙箱
 ```
@@ -472,10 +469,7 @@ signed __int64 bye()
   return sys_exit(0);
 }
 ```
-同样修了一下，能溢出 3 次，
-当然从伪代码看不出栈溢出
-实际上也是模拟，
-以下是 vuln 的部分汇编
+同样修过类型：`vuln` 最多溢出 3 次。伪代码里看不出栈溢出，因为栈是在汇编里手动切过去的：
 ```asm
 mov     rax, cs:buf2
 mov     rbp, rax
@@ -484,14 +478,11 @@ xor     rax, rax
 pop     rbp
 retn
 ```
-漏洞就在于栈溢出
+也就是说，`buf2` 指向的这块内存被当成栈来用，`read` 一写就溢出。
 
 ### EXP
-攻击思路：通过部分溢出覆盖返回地址低位
-跳到 sub_1357(), 泄露程序基地址
-然后利用 bye 的 syscall 打 srop
-栈迁移到已知地址段，再 srop 打 syscall_mprotect
-写 shellcode 再跳转
+
+思路：先部分覆盖返回地址的低字节，跳到 `sub_1357()` 泄露程序基址；再用 `bye` 里的 syscall 打 SROP，把栈迁到已知地址段，第二次 SROP 调 `mprotect` 给出可执行权限，写 shellcode 再跳过去。
 ```python
 from pwn import *
 
@@ -617,10 +608,11 @@ PIE:        No PIE (0x400000)
 SHSTK:      Enabled
 IBT:        Enabled
 ```
-保护最少的一集
+这题保护最少。
 
 ### 沙箱
-无
+
+这题没有沙箱。
 
 ### 逆向分析
 ```C
@@ -1121,14 +1113,11 @@ void __noreturn sub_401239()
   _exit(0);
 }
 ```
-Vm 题逆向最累了
-逆出了个大概
-看到了任意 4 字节地址读写
+VM 题的逆向最费劲。大致逆下来，结论是函数里有任意 4 字节地址读写。
 
 ### EXP
-读出 got 表
-泄露 libc
-然后改 got 表
+
+思路：读 GOT 表泄 libc，再把 GOT 改掉。
 ```python
 from pwn import *
 
