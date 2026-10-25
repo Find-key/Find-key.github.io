@@ -19,7 +19,10 @@ const groups = groupByCategory(posts);
 	<body>
 		<Header variant="home" />
 		<main class="container home">
-			<p class="lead">{SITE.description}</p>
+			<section class="standfirst">
+				<p class="statement">{SITE.description}</p>
+				<span class="mark" aria-hidden="true"></span>
+			</section>
 
 			<section class="index">
 				<div class="index-head">
@@ -104,13 +107,30 @@ const groups = groupByCategory(posts);
 	.home {
 		padding-top: 3rem;
 	}
-	.lead {
-		max-width: 620px;
-		margin: 0 0 2.25rem;
-		color: var(--muted);
-		font-size: 1rem;
-		line-height: 1.8;
-		text-wrap: pretty;
+
+	/* 刊首语：一句简介当这一页的视觉落点——大号衬线、正文色，
+	   下面压一条短饰线收口，避免"一句灰字孤零零挂在上面"。 */
+	.standfirst {
+		padding: 1.5rem 0 3.25rem;
+	}
+	.statement {
+		max-width: 26em;
+		margin: 0;
+		color: var(--text);
+		font-family: var(--font-serif);
+		font-size: clamp(1.28rem, 2.4vw, 1.6rem);
+		font-weight: 500;
+		line-height: 1.6;
+		letter-spacing: 0;
+		/* 折成两行时让两行长度均衡，避免末行只剩一两个字 */
+		text-wrap: balance;
+	}
+	.mark {
+		display: block;
+		width: 48px;
+		height: 2px;
+		margin-top: 1.9rem;
+		background: var(--line-strong);
 	}
 
 	/* ---------- 可展开的分类目录 ---------- */
