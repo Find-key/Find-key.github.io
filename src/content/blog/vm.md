@@ -136,7 +136,6 @@ hexdump 或者 010 之类的工具可以看到值
 ```
 但是对着分析还是太要精力了
 
-
 尝试写 gdb 脚本，思路是当程序运行到 opt0、opt1、opt2、opt3 这些函数的时候，打印出当时的参数
 
 ```gdb script
@@ -156,7 +155,6 @@ class VmTrace(gdb.Breakpoint):
 
         print(f"rdi: {hex(int(rdi))}",end=", ")
         print(f"rsi: {hex(int(rsi))}")
-
 
         return False    # False = 自动 continue
 
@@ -190,7 +188,6 @@ class VmTrace(gdb.Breakpoint):
 
         print(f"rdi: {hex(int(rdi))}, rsi: {hex(int(rsi))}", file=f)
         f.flush()
-
 
         return False    # False = 自动 continue
 
@@ -232,9 +229,7 @@ def analyse(*args):
     num1 = int.from_bytes(inf.read_memory(info_addr + 4, 4), "little", signed=False)
     num2 = int.from_bytes(inf.read_memory(info_addr + 8, 4), "little", signed=False)
 
-
     print(f"Type: {hex(type_)} | val: {hex(val)} | num1: {hex(num1)} | num2: {hex(num2)} || VM ip: 0x{ip:X} | regs: {regs} | sp: 0x{sp:X} | flag: {flag}", file=f)
-
 
 class VmTrace(gdb.Breakpoint):
     def __init__(self, addr):
@@ -262,7 +257,7 @@ continue
 trace 完成，在 vm.log 文件查看结果。
 
 ## 漏洞利用
-在 type 为 0 ，val >> 2 为 0x35 时，程序调用系统调用，对应的 nr 是 num1 
+在 type 为 0 ，val >> 2 为 0x35 时，程序调用系统调用，对应的 nr 是 num1
 在 type 为 0 ，val >> 2 为 0x3b 时，对应的操作为 ret
 
 在 vm.log 找到
@@ -279,7 +274,7 @@ Type: 0x0 | val: 0x3b | num1: 0x0 | num2: 0x0 || VM ip: 0xAD | regs: ['0x5555a2a
 ```
 
 对应的伪代码也就是
-```
+```asm
 write(1, 0x2ffe0, 0x12);
 len = read(0, 0x2ffc4, 0x50);
 write(1, 0x2ffac, 0x6);
@@ -291,10 +286,8 @@ ret     # rsp = 0x2FFDC
 
 然后就是漏洞点，0x2FFDC 显然是在 0x2ffc4 与 0x2ffc4+0x50 中的，也就是可以用 read 覆盖控制执行流。
 
-
 read 的长度足够，可以尝试让解释器执行写入的 payload，思路：控制各个寄存器，然后通过 syscall 拿 shell。
 本文重点在于分析 WP 可以查看 [这里](https://yfor-yfor.github.io/2025/12/07/2025dasctf-wp/#pwn3)
-
 
 ## 模板
 最后给出模板 VM helper ，欢迎各位师傅来交流。
@@ -310,7 +303,6 @@ def analyse(*args):
     inf = gdb.selected_inferior()   # 获取调试实例
 
     ...
-
 
 class MyBreakPoint(gdb.Breakpoint):
     def __init__(self, addr):

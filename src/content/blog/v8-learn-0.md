@@ -7,9 +7,10 @@ tags: [v8]
 order: 1
 ---
 
-## docker
-先写 dockerfile
-```
+## Docker 环境
+
+先写 Dockerfile：
+```bash
 FROM ubuntu:22.04
 
 RUN apt-get update && apt-get install -y \
@@ -24,12 +25,12 @@ RUN git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git $
 WORKDIR /work
 ```
 
-构建
-```
+构建镜像：
+```bash
 docker build -t v8 .
 ```
 
-挂载
+挂载源码目录：
 ```bash
 docker run -it \
 -v ./V8:/work \
@@ -40,10 +41,9 @@ v8 \
 bash
 ```
 
-
-## 构建V8
-来到工作目录，拉取源码
-```
+## 构建 V8
+来到工作目录，拉取源码（`fetch` 来自 depot_tools）：
+```bash
 fetch v8
 ```
 
@@ -76,10 +76,11 @@ v8_enable_verify_heap = true'
 ninja -C out/x64.release.no_pc -j4 d8
 ```
 
+## GDB 配置
 
-## gdb 配置
-### 修改 .gdbinit
-```
+V8 自带两个 gdb 辅助脚本，追加到 `~/.gdbinit` 就能用 `job`、`jsobj` 这类命令：
+
+```bash
 echo "source /home/key/Work/Pwn/Knowledges/V8/v8/tools/gdbinit" >> ~/.gdbinit
 echo "source /home/key/Work/Pwn/Knowledges/V8/v8/tools/gdb-v8-support.py" >> ~/.gdbinit
 ```

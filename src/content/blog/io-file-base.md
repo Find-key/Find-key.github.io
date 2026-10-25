@@ -1,6 +1,6 @@
 ---
-title: "IO_FILE浅析"
-description: "对于 IO_FILE 相关的注解"
+title: "IO_FILE 浅析"
+description: "IO_FILE 的结构、vtable 与几处容易记错的字段"
 pubDate: 2025-03-11
 category: pwn
 tags: [io-file]
@@ -8,9 +8,8 @@ tags: [io-file]
 
 ## 前言
 
-> 由于glibc的不断更新,hook在glibc2.34最终被舍去了
-> IO_FILE就越发受关注了
-
+> glibc 2.34 之后 `__malloc_hook` / `__free_hook` 被移除，利用面随之转向 IO_FILE。
+> 这篇把 `_IO_FILE` 的结构和几个关键字段整理一遍，方便回头查。
 
 ## _IO_FILE
 
@@ -73,8 +72,7 @@ struct _IO_FILE_plus
   const struct _IO_jump_t *vtable;
 };
 ```
-这里的`FILE`就是`_IO_FILE`.
-是利用宏定义换名了
+这里的 `FILE` 就是 `_IO_FILE`，只是用 typedef 换了个名字：
 ```C
 #ifndef __FILE_defined
 #define __FILE_defined 1
@@ -88,8 +86,8 @@ typedef struct _IO_FILE FILE;
 ```
 
 ## _IO_jump_t
-`_IO_FILE_plus`的后半部分就是应该`_IO_jump_t`的指针.
-所谓 **vtable** 就是 **visual table**(虚表)
+`_IO_FILE_plus` 的后半部分是一个指向 `_IO_jump_t` 的指针。
+所谓 **vtable** 是 **virtual table**（虚函数表）的缩写，这里存放的是一组函数指针，调用 `fread`、`fwrite` 这类函数时会先查这张表。
 
 ```C
 struct _IO_jump_t

