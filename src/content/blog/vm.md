@@ -17,9 +17,9 @@ DASCTF 2025 下半年的 VM 题，对着 vmcode 手啃太费劲，就想着能�
 ```C
 void __fastcall __noreturn main(int a1, char **a2, char **a3)
 {
-  int fd; // [rsp+Ch] [rbp-14h]
-  char *buf; // [rsp+10h] [rbp-10h]
-  vm *s; // [rsp+18h] [rbp-8h]
+  int fd;      // [rsp+Ch] [rbp-14h]
+  char *buf;   // [rsp+10h] [rbp-10h]
+  vm *s;       // [rsp+18h] [rbp-8h]
 
   init();
   s = (vm *)malloc(0x30uLL);
@@ -36,8 +36,8 @@ void __fastcall __noreturn main(int a1, char **a2, char **a3)
 
 void __fastcall __noreturn run(vm *m)
 {
-  int type; // eax
-  op *opinfo; // [rsp+18h] [rbp-8h]
+  int type;    // eax
+  op *opinfo;  // [rsp+18h] [rbp-8h]
 
   opinfo = (op *)malloc(0xCuLL);
   memset(opinfo, 0, 8uLL);
@@ -129,7 +129,7 @@ struct op
 00001a0 80c0 bc00 0094 0300 0581 00ec 0100 057d
 00001b0 058d 052b 0008 0000 013a 0e05 0100 0232
 00001c0 0700 0002 0000 a800 0000 8506 a400 0080
-00001d0 2e13 0100 0581 00ec 0100               
+00001d0 2e13 0100 0581 00ec 0100
 00001da
 ```
 但对着十六进制硬啃太费精力。

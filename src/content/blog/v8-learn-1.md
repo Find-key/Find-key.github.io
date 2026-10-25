@@ -105,10 +105,10 @@ pwndbg> tel 0x7b8fb55ab0
 抽象出来，大概是这样：
 ```C
 struct array {
-	map* map;
-	properties* properties;
-	elements* element;
-	long long length;
+    map* map;
+    properties* properties;
+    elements* element;
+    long long length;
 };
 ```
 length 以 Smi 存放，上面打印的原始值是 0x300000000，右移 32 位才是真实的 3。
@@ -224,8 +224,7 @@ DebugPrint: 0x3e9c5b995b69: [JSArray]
  - construction counter: 0
 ```
 
-看起来内容有点多，我分步梳理一下
-首先是 arr
+输出有点长，分步看：先是 `arr`。
 ```
 pwndbg> job 0x3e9c5b995ae9
 0x3e9c5b995ae9: [JSArray]
@@ -243,8 +242,7 @@ pwndbg> job 0x3e9c5b995ae9
            2: 3
  }
 ```
-elements 的指针和 arr 的地址确实差很远，上一次不是偶然
-然后是 f
+`elements` 和 `arr` 的地址确实差很远，上一次不是偶然。接着看 `f`：
 ```
 pwndbg> job 0x3e9c5b995b29
 0x3e9c5b995b29: [JSArray]

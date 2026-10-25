@@ -16,31 +16,31 @@ tags: [io-file]
 ```C
 struct _IO_FILE
 {
-  int _flags;		/* 高位字为_IO_MAGIC，剩余的部分是flag */
-  char *_IO_read_ptr;	/* 正在使用的input缓冲区的input地址 */
-  char *_IO_read_end;	/* input缓冲区的结束地址 */
-  char *_IO_read_base;	/* input缓冲区的基址 */
-  char *_IO_write_base;	/* output缓冲区的基址 */
-  char *_IO_write_ptr;	/*  指向还没输出的那个字节 */
-  char *_IO_write_end;	/* output缓冲区的结束地址 */
-  char *_IO_buf_base;	/* input和output缓冲区的基址 */
-  char *_IO_buf_end;	/* input和output缓冲区的结束地址 */
+  int _flags;                  /* 高位字为_IO_MAGIC，剩余的部分是flag */
+  char *_IO_read_ptr;          /* 正在使用的input缓冲区的input地址 */
+  char *_IO_read_end;          /* input缓冲区的结束地址 */
+  char *_IO_read_base;         /* input缓冲区的基址 */
+  char *_IO_write_base;        /* output缓冲区的基址 */
+  char *_IO_write_ptr;         /*  指向还没输出的那个字节 */
+  char *_IO_write_end;         /* output缓冲区的结束地址 */
+  char *_IO_buf_base;          /* input和output缓冲区的基址 */
+  char *_IO_buf_end;           /* input和output缓冲区的结束地址 */
 
-  char *_IO_save_base; /* Pointer to start of non-current get area. */
-  char *_IO_backup_base;  /* Pointer to first valid character of backup area */
-  char *_IO_save_end; /* Pointer to end of non-current get area. */
+  char *_IO_save_base;         /* Pointer to start of non-current get area. */
+  char *_IO_backup_base;       /* Pointer to first valid character of backup area */
+  char *_IO_save_end;          /* Pointer to end of non-current get area. */
 
   struct _IO_marker *_markers;
 
-  struct _IO_FILE *_chain; /* 存放着一个单链表，用于串联所有的file stream */
+  struct _IO_FILE *_chain;     /* 存放着一个单链表，用于串联所有的file stream */
 
-  int _fileno; /* 与文件相关的文件描述符 */
+  int _fileno;                 /* 与文件相关的文件描述符 */
   int _flags2;
-  __off_t _old_offset; /* This used to be _offset but it's too small.  */
+  __off_t _old_offset;         /* This used to be _offset but it's too small.  */
 
-  /* 1+column number of pbase(); 0 is unknown. */
+                               /* 1+column number of pbase(); 0 is unknown. */
   unsigned short _cur_column;
-  signed char _vtable_offset; /* 存放虚表(virtual table)的偏移 */
+  signed char _vtable_offset;  /* 存放虚表(virtual table)的偏移 */
   char _shortbuf[1];
 
   _IO_lock_t *_lock;
@@ -51,15 +51,15 @@ struct _IO_FILE_complete
 {
   struct _IO_FILE _file;
 #endif
-  __off64_t _offset; /* 存放当前文件的偏移 */
-  /* Wide character stream stuff.  */
+  __off64_t _offset;           /* 存放当前文件的偏移 */
+                               /* Wide character stream stuff.  */
   struct _IO_codecvt *_codecvt;
   struct _IO_wide_data *_wide_data;
   struct _IO_FILE *_freeres_list;
   void *_freeres_buf;
   size_t __pad5;
   int _mode;
-  /* Make sure we don't get into trouble again.  */
+                               /* Make sure we don't get into trouble again.  */
   char _unused2[15 * sizeof (int) - 4 * sizeof (void *) - sizeof (size_t)];
 };
 ```

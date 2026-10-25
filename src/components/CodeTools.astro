@@ -1,0 +1,153 @@
+---
+/**
+ * 文章代码块的交互增强（纯前端，不加依赖）：
+ *   - 右上角「复制」：复制整块内容，成功后短暂显示「已复制」
+ *   - 长代码块默认折叠（超过 FOLD_LINES 行），下方给「展开（N 行）／收起」
+ *   - 折叠只是视觉上的，DOM 里内容完整，不影响搜索与复制
+ */
+---
+
+<script>
+	const FOLD_LINES = 26;
+	const PREVIEW_ROWS = 14;
+
+	async function copyText(text: string, btn: HTMLButtonElement) {
+		const old = btn.textContent;
+		try {
+			await navigator.clipboard.writeText(text);
+			btn.textContent = '已复制';
+		} catch {
+			btn.textContent = '复制失败';
+		}
+		setTimeout(() => {
+			btn.textContent = old;
+		}, 1400);
+	}
+
+	function enhance(pre: HTMLElement) {
+		if (pre.closest('.code-block')) return;
+
+		const wrap = document.createElement('div');
+		wrap.className = 'code-block';
+		pre.parentNode?.insertBefore(wrap, pre);
+		wrap.appendChild(pre);
+
+		const text = pre.innerText.replace(/\n$/, '');
+		const lines = text.split('\n').length;
+
+		const tools = document.createElement('div');
+		tools.className = 'code-tools';
+
+		const copy = document.createElement('button');
+		copy.type = 'button';
+		copy.className = 'code-btn';
+		copy.textContent = '复制';
+		copy.addEventListener('click', () => copyText(text, copy));
+		tools.appendChild(copy);
+
+		if (lines > FOLD_LINES) {
+			const body = document.createElement('div');
+			body.className = 'code-body is-folded';
+			body.style.maxHeight = `${PREVIEW_ROWS * 1.5}rem`;
+			wrap.appendChild(tools);
+			wrap.appendChild(body);
+			body.appendChild(pre);
+
+			const more = document.createElement('button');
+			more.type = 'button';
+			more.className = 'code-more';
+			more.textContent = `展开（共 ${lines} 行）`;
+			more.addEventListener('click', () => {
+				const folded = body.classList.toggle('is-folded');
+				body.style.maxHeight = folded ? `${PREVIEW_ROWS * 1.5}rem` : 'none';
+				more.textContent = folded ? `展开（共 ${lines} 行）` : '收起';
+			});
+			wrap.appendChild(more);
+			return;
+		}
+
+		wrap.appendChild(tools);
+		wrap.appendChild(pre);
+	}
+
+	function run() {
+		document.querySelectorAll<HTMLElement>('.prose pre').forEach(enhance);
+	}
+
+	run();
+	document.addEventListener('astro:page-load', run as EventListener);
+</script>
+
+<style is:global>
+	.code-block {
+		position: relative;
+		margin: 1.6rem 0;
+	}
+	.code-block pre {
+		margin: 0;
+	}
+	.code-body {
+		position: relative;
+		overflow: hidden;
+	}
+	/* 折叠时底部一条渐隐，暗示还有内容 */
+	.code-body.is-folded::after {
+		content: '';
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		height: 3.5rem;
+		pointer-events: none;
+		background: linear-gradient(to bottom, transparent, var(--code-bg) 80%);
+	}
+
+	.code-tools {
+		position: absolute;
+		top: 0.45rem;
+		right: 0.45rem;
+		z-index: 2;
+		display: flex;
+		gap: 0.3rem;
+		opacity: 0;
+		transition: opacity 0.15s ease;
+	}
+	.code-block:hover .code-tools,
+	.code-tools:focus-within {
+		opacity: 1;
+	}
+	@media (hover: none) {
+		.code-tools {
+			opacity: 1;
+		}
+	}
+
+	.code-btn,
+	.code-more {
+		padding: 0.12rem 0.45rem;
+		border: 1px solid var(--line);
+		border-radius: 3px;
+		background: var(--bg);
+		color: var(--muted);
+		font-family: var(--font-mono);
+		font-size: 0.66rem;
+		letter-spacing: 0.04em;
+		cursor: pointer;
+		transition: color 0.15s ease, border-color 0.15s ease;
+	}
+	.code-btn:hover,
+	.code-more:hover {
+		color: var(--text);
+		border-color: var(--line-strong);
+	}
+
+	.code-more {
+		display: block;
+		width: 100%;
+		margin-top: 0.45rem;
+		padding: 0.35rem 0;
+		text-align: center;
+		background: transparent;
+		border-style: dashed;
+	}
+</style>
