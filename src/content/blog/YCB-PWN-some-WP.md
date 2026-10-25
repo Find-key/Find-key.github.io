@@ -1,5 +1,5 @@
 ---
-title: "羊城杯-PWN-部分WP"
+title: "羊城杯 部分"
 description: "Malloc，Stack_Over_Flow，Vm"
 pubDate: 2025-10-13
 category: wp

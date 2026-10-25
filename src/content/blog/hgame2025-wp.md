@@ -1,5 +1,5 @@
 ---
-title: "HGAME2025_WP"
+title: "HGAMECTF 2025"
 description: "HGAME2025的一部分题解"
 pubDate: 2025-02-07
 category: wp
