@@ -2,8 +2,10 @@
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
-import { SITE } from '../consts';
+import { CATEGORIES, SITE } from '../consts';
 import { withBase } from '../utils/url';
+
+const githubReady = !SITE.github.includes('USERNAME');
 ---
 
 <!doctype html>
@@ -14,43 +16,61 @@ import { withBase } from '../utils/url';
 	<body>
 		<Header />
 		<main class="container page">
-			<article class="prose">
+			<article class="about">
 				<h1>关于</h1>
-				<p>
-					我是 {SITE.author}，主要折腾二进制漏洞：pwn 题、利用链、逆向和调试。
-					这里记那些「当时找了两小时、事后一句话」的细节。
-				</p>
-				<p>
-					<!-- TODO: 换成你自己的自我介绍：现在在做什么、关注什么方向、想在这里写什么 -->
-					大部分内容会是 pwn——栈与堆、保护绕过、把别人的 writeup 复现一遍，
-					再写下自己卡住的地方。偶尔也会写内核/嵌入式（Buildroot、QEMU 那一套）
-					和工具链的东西。纯兴趣驱动，想到什么写什么，不保证体系完整。
+
+				<p class="lead">
+					我是 {SITE.author}，平时做嵌入式 Linux，业余打 pwn。这里记踩过的坑，和还没想明白的东西。
 				</p>
 
-				<h2>关于这个站</h2>
-				<p>
-					站点用 <a href="https://astro.build" target="_blank" rel="noopener">Astro</a> 构建，
-					纯静态输出，托管在 GitHub Pages 上；没有后端、没有数据库、没有追踪脚本。
-					文章按<strong>分类</strong>组织而不是按时间堆叠，读一个主题时可以顺着左侧目录一路往下看。
-					构建与项目结构说明见仓库里的 <code>PROJECT.md</code>。
-				</p>
+				<section>
+					<h2>现在</h2>
+					<dl>
+						<dt>在做</dt>
+						<dd>嵌入式 Linux：Buildroot 搭系统、QEMU 里跑、再回真板子验证</dd>
+						<dt>在学</dt>
+						<dd>pwn：栈溢出、堆利用、保护绕过、把别人的 writeup 复现一遍</dd>
+						<dt>顺带看</dt>
+						<dd>终端安全、反病毒，以及各种解释器和文件格式</dd>
+					</dl>
+				</section>
 
-				<h2>联系</h2>
-				<ul>
-					{SITE.github && (
-						<li>
-							GitHub：<a href={SITE.github} target="_blank" rel="noopener">{SITE.github}</a>
-						</li>
-					)}
-					{SITE.email && (
-						<li>
-							邮箱：<a href={`mailto:${SITE.email}`}>{SITE.email}</a>
-						</li>
-					)}
-					<li>
-						RSS：<a href={withBase('/rss.xml')}>订阅</a>
-					</li>
-				</ul>
+				<section>
+					<h2>站点</h2>
+					<dl>
+						<dt>技术</dt>
+						<dd>
+							<a href="https://astro.build" target="_blank" rel="noopener">Astro</a> 静态站，托管在 GitHub Pages；
+							无后端、无数据库、无统计脚本
+						</dd>
+						<dt>组织</dt>
+						<dd>
+							按分类而不是时间堆叠：{CATEGORIES.map((c) => c.name).join(' / ')}；读一个主题可以顺着左侧目录往下看
+						</dd>
+						<dt>构建</dt>
+						<dd>项目结构、写作规范、踩坑记录都在仓库的 <code>PROJECT.md</code></dd>
+					</dl>
+				</section>
+
+				<section>
+					<h2>联系</h2>
+					<dl>
+						{SITE.email && (
+							<>
+								<dt>邮箱</dt>
+								<dd><a href={`mailto:${SITE.email}`}>{SITE.email}</a></dd>
+							</>
+						)}
+						<dt>订阅</dt>
+						<dd><a href={withBase('/rss.xml')}>RSS</a></dd>
+						{githubReady && (
+							<>
+								<dt>GitHub</dt>
+								<dd><a href={SITE.github} target="_blank" rel="noopener">{SITE.github.replace('https://', '')}</a></dd>
+							</>
+						)}
+					</dl>
+				</section>
 			</article>
 		</main>
 		<Footer />
@@ -59,15 +79,76 @@ import { withBase } from '../utils/url';
 
 <style>
 	.page {
-		padding-top: 3.5rem;
+		padding-top: 3.25rem;
 	}
-	.prose {
+	.about {
 		max-width: var(--content-width);
 	}
 	h1 {
-		margin-top: 0;
+		margin: 0 0 1.4rem;
 		font-size: 1.9rem;
 		font-weight: 600;
 		letter-spacing: -0.01em;
+	}
+	/* 开头一段稍大：这一页的"主句" */
+	.lead {
+		max-width: 30em;
+		margin: 0 0 3rem;
+		font-family: var(--font-serif);
+		font-size: 1.16rem;
+		line-height: 1.8;
+		text-wrap: pretty;
+	}
+	section {
+		padding-top: 1.1rem;
+		border-top: 1px solid var(--line-soft);
+	}
+	section + section {
+		margin-top: 2.2rem;
+	}
+	/* 小标题用等宽小字，和首页的分组标签同一套语汇 */
+	h2 {
+		margin: 0 0 1rem;
+		color: var(--muted);
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		font-weight: 400;
+		letter-spacing: 0.14em;
+	}
+	dl {
+		display: grid;
+		grid-template-columns: 4.8em 1fr;
+		column-gap: 1.4rem;
+		row-gap: 0.65rem;
+		margin: 0;
+	}
+	dt {
+		color: var(--muted);
+		font-family: var(--font-mono);
+		font-size: 0.74rem;
+		line-height: 1.9;
+		letter-spacing: 0.04em;
+	}
+	dd {
+		margin: 0;
+		font-size: 0.95rem;
+		line-height: 1.85;
+		text-wrap: pretty;
+	}
+	code {
+		font-size: 0.86em;
+	}
+	@media (max-width: 560px) {
+		dl {
+			grid-template-columns: 1fr;
+			row-gap: 0.25rem;
+		}
+		dt {
+			margin-top: 0.55rem;
+			line-height: 1.5;
+		}
+		.lead {
+			font-size: 1.08rem;
+		}
 	}
 </style>
