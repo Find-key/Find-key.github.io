@@ -64,6 +64,15 @@ struct _IO_FILE_complete
 };
 ```
 
+结构体字段很多，但真正在利用里反复出现的是这几个：
+
+- `_flags`：高 32 位是 `_IO_MAGIC`（`0xFBAD0000`），低位是一组状态位（`_IO_CURRENTLY_PUTTING`、`_IO_NO_WRITES` 之类），决定接下来的读写走哪条分支。FSOP 的第一步往往就是把它改成一个「看起来正常」的值。
+- `_IO_read_ptr` / `_IO_read_end` / `_IO_read_base`：输入缓冲区的当前指针、末尾和基址。
+- `_IO_write_base` / `_IO_write_ptr` / `_IO_write_end`：输出缓冲区三件套。`fwrite`、`puts` 落到底层时写的是 `[_IO_write_base, _IO_write_ptr)` 这段，把 `base` 调小、`ptr` 调大就能顺带泄露内存。
+- `_IO_buf_base` / `_IO_buf_end`：缓冲区边界，分配/扩容缓冲时用。
+- `_chain`：把所有 `FILE` 结构串成一条链表，`_IO_list_all` 指向表头。FSOP 就是把伪造的结构挂到这条链上，等退出流程遍历链表时触发。
+- `_lock`、`_mode`、`_wide_data`：加锁、宽字符流相关，走 `_IO_wfile_jumps` 那条路时会用到。
+
 ## _IO_FILE_plus
 ```C
 struct _IO_FILE_plus
@@ -84,6 +93,8 @@ typedef struct _IO_FILE FILE;
 
 #endif
 ```
+
+所以一个 `_IO_FILE_plus` 就是 `_IO_FILE` 本体加一个 `vtable` 指针。在堆上伪造这个结构时，通常只需要让 `_flags` 和 `vtable` 看起来合法，其余字段按具体利用路径填。
 
 ## _IO_jump_t
 `_IO_FILE_plus` 的后半部分是一个指向 `_IO_jump_t` 的指针。
@@ -116,3 +127,5 @@ struct _IO_jump_t
     JUMP_FIELD(_IO_imbue_t, __imbue);
 };
 ```
+
+glibc 2.24 起对 `vtable` 加了校验：指针必须落在 `__libc_IO_vtables` 段内，直接改成任意地址会被 `_IO_vtable_check` 拦下。于是后续的利用转向 `_wide_data->_wide_vtable`——`_IO_wfile_overflow` 及其调用链会从那里取函数指针，早期版本没有同样的检查。
