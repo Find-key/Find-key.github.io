@@ -1,6 +1,6 @@
 ---
 title: "V8 学习笔记 0x01"
-description: "object 与 double 数组内存存储机制"
+description: "对象数组与浮点数组在内存里的排布"
 pubDate: 2026-04-20
 category: v8
 tags: [v8]
@@ -8,13 +8,11 @@ order: 2
 ---
 
 ## 调试
-在编译好之后，开始学习调试 exp，查看内存信息。
-其实调试就正常用 gdb
+编译好之后就可以调 exp 了。调试还是用 gdb，只是启动时要把 d8 的参数带上：
 ```bash
 gdb --args /path/to/d8 --allow-natives-syntax exp.js
 ```
-但是这样的话，好像不知道该在什么地方打断点
-其实写在 js 层就好了，需要在 exp.js 写 `%SystemBreak();` ，然后程序就会在对应地方停下来。
+问题是不知道在哪下断点。其实在 JS 层就能断：在 exp.js 里写 `%SystemBreak();`，跑到那儿就会停下来。
 
 例如，
 ```js
@@ -26,10 +24,10 @@ console.log("bye, key");
 ```
 在 gdb 使用 run 命令后就会停在中间，只看到打印 *hello, key* 而没有 *bye, key* 。
 
-然后就是变量地址信息，使用 `%DebugPrint(obj);` ，接收一个参数，打印出这个参数的地址信息。
+要看变量地址用 `%DebugPrint(obj);`，它会把对象的内存布局整个打出来。
 
 ## 实验
-简单调试一下样例程序
+拿一个数组做样例：
 ```js
 // k.js
 arr = [1, 2, 3];
@@ -101,9 +99,9 @@ pwndbg> tel 0x7b8fb55ab0
 04:0020│     0x7b8fb55ad0 ◂— 0
 ... ↓     3 skipped
 ```
-回显信息就是刚才的一部分，而 **0x7b8fb55ab1** 其实是真实地址处理后的值，真实地址是**0x7b8fb55ab0** ，二进制位最后的一是标记位，如果是一就代表是指针，如果是零就代表这是个数字。
+`job` 的输出和上面一致。而 **0x7b8fb55ab1** 是加了标记位的值，真实地址是 **0x7b8fb55ab0**：地址最低位是标记位，为 1 表示是指针，为 0 表示是 Smi（小整数）。
 
-根据上面的内容，jsarray 有四个字段，map，properties，elements 和 length
+由此可以推出 JSArray 有四个字段：map、properties、elements、length。
 抽象出来，大概是这样：
 ```C
 struct array {
@@ -113,9 +111,9 @@ struct array {
 	long long length;
 };
 ```
-其中真实的 length 是由 length >> 32 得到的。
+length 以 Smi 存放，上面打印的原始值是 0x300000000，右移 32 位才是真实的 3。
 
-在上面容易发现，element 指针和 array 的地址差得很远。而特别的，不同于整数数组，浮点数数组和对象数组中的 element 和 array 地址是相邻的。对实验代码稍作修改，验证这一点。
+容易注意到，`elements` 指针和数组对象的地址差得很远。而特别的，不同于整数数组，浮点数数组和对象数组中的 element 和 array 地址是相邻的。对实验代码稍作修改，验证这一点。
 ```js
 arr = [1, 2, 3];
 f = [3.0,7.2];
@@ -281,4 +279,4 @@ pwndbg> job 0x3e9c5b995b69
          0-1: 0x3e9c5b995b29 <JSArray[2]>
  }
 ```
-与 f 的情况相同，elements 的指针值和 ff 的地址相邻
+和 f 一样，`elements` 与数组对象相邻。
