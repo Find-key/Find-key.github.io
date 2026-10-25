@@ -16,7 +16,7 @@ export const SITE = {
 	 * 首页顶部那两行自述（每项一行）。用第一人称，别写成"某某的网站"，
 	 * 也别写成分类标签。想改自我介绍只动这里。
 	 */
-	intro: ['我是 Findkey，写二进制漏洞和 pwn。', '偶尔也折腾内核、Buildroot 和 QEMU。'],
+	intro: ['我是 Findkey，做嵌入式 Linux，业余打 pwn。', '这里放踩过的坑，和还没想明白的东西。'],
 	/** 作者名，显示在页脚和文章页 */
 	author: 'Findkey',
 	/** 正式域名：项目站写 https://<用户名>.github.io（不要带 /blog） */

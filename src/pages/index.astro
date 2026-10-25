@@ -123,7 +123,7 @@ const rows = CATEGORIES.map((category) => ({
 		align-items: flex-start;
 		justify-content: space-between;
 		gap: 2rem;
-		padding-bottom: 2.75rem;
+		padding: 0.25rem 0 3.1rem;
 	}
 	.bio {
 		max-width: 34em;
@@ -156,12 +156,13 @@ const rows = CATEGORIES.map((category) => ({
 	}
 
 	/* ---------- 分类分组（2×2） ---------- */
+	/* 单栏：文章量还少，双栏会出现半空格子；一栏一条往下读更稳。
+	   文章多起来也不受影响（每组只露最近 3 篇 + 「全部 N 篇」）。 */
 	.spread {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
-		column-gap: 4rem;
-		row-gap: 2.9rem;
-		padding-top: 1.6rem;
+		grid-template-columns: 1fr;
+		row-gap: 2.2rem;
+		padding-top: 1.75rem;
 	}
 	/* 分组标签小而轻：这一页的主角是文章标题，不是分类名 */
 	.block-head {
