@@ -510,3 +510,4 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | 分类再分：`WP` 独立（4 篇比赛题解从 pwn 拆出），pwn 只留二进制本身；删除重复的 V8 stub（`v8-pwn-0x00-20261025.md`，内容与 `v8-learn-0` 重复）；友链加回头像（`Friend.avatar`，96px 本地 webp，防盗链/失效时用首字母兜底，`onerror` 移除 img 避免破图），列表改双栏；`public/friends/` 约 50K |
 | 2026-10-25 | 友链删掉 wuye、yuoooka、s0lowalker 三条（16 → 13），同步删除 `public/friends/wuye-s.webp` |
 | 2026-10-25 | 友链 Yolo 链接改为 `https://docs.yo1o.top/`，头像取其站点 apple-touch-icon 存为 `public/friends/yolo-s.webp`（原来的头像地址已失效）|
+| 2026-10-25 | 友链头像补齐：Nick（`/_astro/avatar.CHzblvB9_Zr23Yv.webp`）与 Lochad（`/api/media?hash=622a…`）下载为本地 96px webp；wele 改名 wsh，头像指向其站 `/avatar.jpg`（该站拒绝非浏览器请求，只能远程引用，失败时退回首字母）；Lochad 链接改 https |
