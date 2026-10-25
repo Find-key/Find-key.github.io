@@ -80,13 +80,16 @@ const { posts, showDate = true, compact = false } = Astro.props;
 	}
 	.title::after {
 		margin-left: 0.4em;
-		color: var(--accent);
+		color: var(--muted);
 		content: '→';
 		opacity: 0;
 		transition: opacity 0.15s ease;
 	}
 	.row:hover .title {
-		color: var(--accent);
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-decoration-color: var(--line-strong);
+		text-underline-offset: 0.22em;
 	}
 	.row:hover .title::after {
 		opacity: 1;
