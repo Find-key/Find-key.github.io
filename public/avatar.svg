@@ -1,13 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72" width="72" height="72" role="img" aria-label="头像">
-	<circle cx="36" cy="36" r="36" fill="#f2eee4" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 84 84" width="84" height="84" role="img" aria-label="头像">
+	<rect width="84" height="84" fill="#f2eee4" />
 	<text
-		x="36"
-		y="49"
+		x="42"
+		y="57"
 		text-anchor="middle"
 		font-family="Iowan Old Style, Palatino, 'Liberation Serif', Georgia, serif"
-		font-size="36"
+		font-size="40"
 		font-weight="600"
 		fill="#1c1a17"
 	>F</text>
-	<circle cx="36" cy="36" r="35.5" fill="none" stroke="#e0d9c9" stroke-width="1" />
 </svg>
