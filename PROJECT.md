@@ -53,7 +53,7 @@
 - [x] Open Graph 分享卡（`public/og.png`）、favicon 三档（svg / 32 png / apple-touch）
 - [x] GitHub Actions 部署工作流、base 路径（`/blog`）全链路核对
 
-**内容现状**：2 篇 —— `astro-github-pages-notes.md`（已发布）、`qemu-buildroot-vexpress-a9.md`（`draft: true`，只在 dev 可见）。
+**内容现状**：0 篇、0 个分类。`CATEGORIES` 是空数组，`src/content/blog/` 只有 `.gitkeep`；构建会提示 `The collection "blog" does not exist or is empty`，这是空集合的正常提示，写进第一篇就消失。
 
 **待用户操作**
 
@@ -496,3 +496,4 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | favicon 换成 Grapple（`public/Grapple.svg`，Lorc / game-icons.net，CC BY 3.0）：原图 512 渐变 + 细笔画，16px 下是红色涂鸦；改为**单色纸色 + 墨色圆角底 + 描边加粗 16**，并补齐 `favicon-32.png`、`apple-touch-icon.png` 与 `<link>`（svg / 32 / apple-touch 三档）。署名写在 SVG 注释与本文档，若要在页面上可见再加一行 |
 | 2026-10-25 | favicon 回退到 F 字标（Grapple 试过一版后放弃）：`public/favicon.svg` = 墨色圆角底 + 纸色衬线 F（x 微调到 16.5 做视觉居中），`favicon-32.png` / `apple-touch-icon.png` 由它重新导出；删除 `public/Grapple.svg`（需要时 `git show 1afd715:public/Grapple.svg` 可取回） |
 | 2026-10-25 | 清场准备写作：删除 6 篇占位文章与早期填充的 `hello-world.md`（保留 `astro-github-pages-notes.md` 与 QEMU 草稿）；移除已不再使用的 `@astrojs/rss` 依赖；清掉 4 个未使用的 CSS token（`--accent-soft`、`--bg-raised`、`--content-width`、`--radius`）；重写「当前状态」一节使其与现状一致（构建从 35 页降到 14 页）|
+| 2026-10-25 | 彻底清空内容与分类：删掉最后 2 篇文章、`CATEGORIES = []`；`content.config.ts` 的 category 校验改为「有分类时才 refine，空分类时接受任意字符串」，否则清场阶段写第一篇就会被 schema 拒掉；首页/归档/标签的空状态补齐（首页给出「先定分类、再 npm run new」的指引，归档不再显示「共 0 篇」） |
