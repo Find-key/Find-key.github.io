@@ -59,27 +59,29 @@ const rows = CATEGORIES.map((category) => ({
 					<div class="links">
 						{SITE.email && (
 							<span class="contact">
-								<a class="mail" href={`mailto:${SITE.email}`} aria-label={`发邮件到 ${SITE.email}`}>
-									<svg viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2.5" y="4.5" width="15" height="11" rx="1.5" /><path d="M3 5.5 10 11l7-5.5" /></svg>
-									<span class="addr">{SITE.email}</span>
-								</a>
-								<button class="copy" type="button" data-copy={SITE.email} aria-label="复制邮箱地址">
-									<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="7" y="7" width="9" height="10" rx="1.5" /><path d="M13 7V5.5A1.5 1.5 0 0 0 11.5 4H5.5A1.5 1.5 0 0 0 4 5.5v7A1.5 1.5 0 0 0 5.5 14H7" /></svg>
-								</button>
-																{SITE.qq && (
-									<button
-										class="qq"
-										type="button"
-										data-copy={SITE.qq}
-										aria-label={`复制 QQ 号 ${SITE.qq}`}
-										title={`QQ ${SITE.qq}`}>
-										<svg viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M10 3.2c-3.1 0-5.2 2.2-5.2 5 0 1.3.4 2.3 1 3.2-.5.6-.9 1.4-.9 2 0 .4.2.6.6.5.4-.1.8-.4 1.1-.8.9.7 2.1 1.1 3.4 1.1s2.5-.4 3.4-1.1c.3.4.7.7 1.1.8.4.1.6-.1.6-.5 0-.6-.4-1.4-.9-2 .6-.9 1-1.9 1-3.2 0-2.8-2.1-5-5.2-5Z" /></svg>
-										<span class="addr">{SITE.qq}
-								<span class="copy-toast" role="status" aria-live="polite"></span>
-							</span>
+								<span class="item">
+									<a class="mail" href={`mailto:${SITE.email}`} aria-label={`发邮件到 ${SITE.email}`}>
+										<svg viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2.5" y="4.5" width="15" height="11" rx="1.5" /><path d="M3 5.5 10 11l7-5.5" /></svg>
+										<span class="addr">{SITE.email}</span>
+									</a>
+									<button class="copy" type="button" data-copy={SITE.email} aria-label="复制邮箱地址">
+										<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="7" y="7" width="9" height="10" rx="1.5" /><path d="M13 7V5.5A1.5 1.5 0 0 0 11.5 4H5.5A1.5 1.5 0 0 0 4 5.5v7A1.5 1.5 0 0 0 5.5 14H7" /></svg>
 									</button>
+								</span>
+								{SITE.qq && (
+									<span class="item">
+										<button
+											class="qq"
+											type="button"
+											data-copy={SITE.qq}
+											aria-label={`复制 QQ 号 ${SITE.qq}`}
+											title={`QQ ${SITE.qq}`}>
+											<svg viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M10 3.2c-3.1 0-5.2 2.2-5.2 5 0 1.3.4 2.3 1 3.2-.5.6-.9 1.4-.9 2 0 .4.2.6.6.5.4-.1.8-.4 1.1-.8.9.7 2.1 1.1 3.4 1.1s2.5-.4 3.4-1.1c.3.4.7.7 1.1.8.4.1.6-.1.6-.5 0-.6-.4-1.4-.9-2 .6-.9 1-1.9 1-3.2 0-2.8-2.1-5-5.2-5Z" /></svg>
+											<span class="addr">{SITE.qq}</span>
+										</button>
+									</span>
 								)}
-
+								<span class="copy-toast" role="status" aria-live="polite"></span>
 							</span>
 						)}
 
@@ -264,6 +266,9 @@ const rows = CATEGORIES.map((category) => ({
 	.contact:hover {
 		color: var(--text);
 	}
+	.item + .item {
+		margin-left: 0.75rem;
+	}
 	.mail {
 		color: inherit;
 		display: inline-flex;
@@ -305,14 +310,14 @@ const rows = CATEGORIES.map((category) => ({
 			margin-left 0.3s ease,
 			opacity 0.22s ease;
 	}
-	.contact:hover .addr,
-	.contact:focus-within .addr {
+	.item:hover .addr,
+	.item:focus-within .addr {
 		max-width: 13rem;
 		margin-left: 0.5rem;
 		opacity: 1;
 	}
-	.contact:hover .copy,
-	.contact:focus-within .copy {
+	.item:hover .copy,
+	.item:focus-within .copy {
 		max-width: 1.2rem;
 		margin-left: 0.4rem;
 		opacity: 1;
@@ -322,9 +327,12 @@ const rows = CATEGORIES.map((category) => ({
 		color: var(--text);
 	}
 
-	/* QQ：和邮箱同构——一个图标，hover 才展开号码，点击复制 */
+	/* QQ：和邮箱同构，但 hover 只作用于自己这一项 */
+	.item {
+		display: inline-flex;
+		align-items: center;
+	}
 	.qq {
-		margin-left: 0.75rem;
 		display: inline-flex;
 		align-items: center;
 		padding: 0;
@@ -332,12 +340,6 @@ const rows = CATEGORIES.map((category) => ({
 		background: none;
 		color: inherit;
 		cursor: pointer;
-	}
-	.qq:hover .addr,
-	.qq:focus-within .addr {
-		max-width: 9rem;
-		margin-left: 0.45rem;
-		opacity: 1;
 	}
 	/* 复制反馈：展开的地址下方淡入一行小字，1.6s 后消失 */
 	.copy-toast {
