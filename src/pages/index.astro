@@ -26,11 +26,11 @@ const rows = CATEGORIES.map((category) => ({
 		<Header variant="home" />
 		<main class="container home">
 			<section class="intro">
-				<img class="avatar" src={withBase('/avatar.svg')} alt="" width="64" height="64" />
-				<div class="body">
-					<p class="quote" data-hito>过早优化是万恶之源。</p>
-					<p class="src" data-hito-src>— Donald Knuth</p>
-				</div>
+				<img class="avatar" src={withBase('/avatar.svg')} alt="" width="72" height="72" />
+				<blockquote class="quote">
+					<span data-hito>过早优化是万恶之源。</span>
+				</blockquote>
+				<p class="src" data-hito-src>— Donald Knuth</p>
 			</section>
 
 			<div class="index-head">
@@ -95,9 +95,10 @@ const rows = CATEGORIES.map((category) => ({
 			if (!quote || !data.hitokoto) return;
 			quote.textContent = data.hitokoto;
 			if (source) {
-				const from = data.from_who ? `${data.from_who} · ${data.from ?? ''}` : (data.from ?? '');
-				const clean = from.replace(/·\s*$/, '').trim();
-				// 出处为空就整行消失，别留一个孤零零的破折号
+				// from_who 和 from 常常是同一个名字，别拼成"某某 · 某某"
+				const who = (data.from_who ?? '').trim();
+				const what = (data.from ?? '').trim();
+				const clean = who && what && who !== what ? `${who} · ${what}` : who || what;
 				source.textContent = clean ? `— ${clean}` : '';
 			}
 		})
@@ -112,66 +113,53 @@ const rows = CATEGORIES.map((category) => ({
 	}
 
 	/* ---------- 头像 + 一言 ---------- */
-	/* 头像贴左边、出处贴右边，一行里两端都有东西，才不会显得重左轻右 */
+	/* 头像在上、引文居中、出处在下：一整组居中，左右天然对称，
+	   不会像"头像靠左 + 出处甩到最右"那样中间空一大片。 */
 	.intro {
-		display: grid;
-		grid-template-columns: auto 1fr;
+		display: flex;
+		flex-direction: column;
 		align-items: center;
-		gap: 1.25rem;
-		padding-bottom: 2.6rem;
+		gap: 1.15rem;
+		padding: 1.6rem 0 3rem;
+		text-align: center;
 	}
 	.avatar {
-		width: 64px;
-		height: 64px;
+		width: 72px;
+		height: 72px;
 		border-radius: 50%;
 	}
-	.body {
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: 2rem;
-		min-width: 0;
-	}
 	.quote {
+		max-width: 30em;
 		margin: 0;
 		color: var(--text);
 		font-family: var(--font-serif);
-		font-size: 1.1rem;
-		line-height: 1.7;
-		text-wrap: pretty;
+		font-size: 1.28rem;
+		font-weight: 500;
+		line-height: 1.75;
+		letter-spacing: 0;
+		text-wrap: balance;
 	}
 	.src {
-		flex: none;
 		margin: 0;
 		color: var(--muted);
 		font-family: var(--font-mono);
 		font-size: 0.68rem;
-		letter-spacing: 0.04em;
-		white-space: nowrap;
+		letter-spacing: 0.06em;
 	}
 	.src:empty {
 		display: none;
 	}
-
 	@media (max-width: 560px) {
-		/* 手机上出处换到引文下面，不挤出横向滚动 */
 		.intro {
-			align-items: start;
-			gap: 1rem;
+			gap: 0.9rem;
+			padding: 1rem 0 2.4rem;
 		}
 		.avatar {
-			width: 52px;
-			height: 52px;
-		}
-		.body {
-			display: block;
-			padding-top: 0.2rem;
+			width: 60px;
+			height: 60px;
 		}
 		.quote {
-			font-size: 1rem;
-		}
-		.src {
-			margin-top: 0.4rem;
+			font-size: 1.1rem;
 		}
 	}
 
