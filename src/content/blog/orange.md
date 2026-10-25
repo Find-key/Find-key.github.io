@@ -13,14 +13,21 @@ tags: [io-file]
 ## House of orange
 
 ### 条件
-- 可以溢出到 `top chunk` 的 `size` 字段。
+
+只有一个：**能改到 `top chunk` 的 `size` 字段**（堆溢出、越界写都行）。
 
 ### 利用
-- 申请的 `chunk` 大于 `top chunk` 的 `size` 时，会把 `top chunk` 放进 `unsorted bin`。
+
+把 `top chunk` 的 `size` 改小之后，再申请一个比它大的 chunk，`malloc` 会认为 top 不够用，于是：
+
+1. 把这块 `top chunk` 链进 `unsorted bin`；
+2. 用 `mmap` 重新要一块新的 top。
+
+到这一步，`unsorted bin` 里就躺着一个 size 被我们改过的 chunk。接下来只要在合适的时机触发 `malloc`，`unsorted bin` 的整理逻辑就会按 size 把它归到对应的 `small bin`／`large bin`，链表的指针也随之被我们左右。
 
 ## FSOP
 
-核心是把 `_IO_list_all` 劫持到伪造的 `_IO_FILE_plus` 上。
+核心是把 `_IO_list_all` 劫持到伪造的 `_IO_FILE_plus` 上：`_IO_flush_all_lockp` 会沿着 `_IO_list_all` 遍历这条 `_IO_FILE` 链表，对每个结构调用它 `vtable` 里的 `_IO_OVERFLOW`。所以只要让遍历走到一个由我们控制的伪造结构，并且把它的 vtable 换掉（比如指向 `_IO_str_jumps` 附近，让 `_IO_OVERFLOW` 落到 `system`），就能拿到执行流。
 
 `_IO_flush_all_lockp` 会在三种情况下被触发：
 - 执行 `abort` 流程时
@@ -119,8 +126,7 @@ int upgrade()
   return puts("Finish");
 }
 ```
-在 `upgrade()` 中又对 *name* 的 **size** 进行了输入。
-这是非常显然的溢出漏洞。
+`upgrade()` 会再读一次 name 的长度，用的却是攻击者自己填的 size，没有和申请时的大小比对——这就给了堆溢出，也是整条利用链的入口。
 
 #### exp
 ```python
@@ -253,20 +259,19 @@ io.interactive()
 > 调用链：_libc_malloc -> malloc_printerr -> libc_message -> abort -> fflush(_IO_fflush) -> _IO_flush_all -> _IO_flush_all_lockp -> _IO_OVERFLOW
 
 #### 0x61
-关键在于 `_IO_FILE` 的 `_chain` 字段。
-若将 `_IO_list_all` 劫持为 `main_arena+88`，那么对应的 `_chain` 应该是 `main_arena+168`.
-而 `main_arena+168` 是 `small bin[0x60]` 的位置。
+关键在于 `_IO_FILE` 的 `_chain` 字段——它决定遍历时下一个结构在哪。
 
-将 `unsorted bins` 中的 chunk 的 size 位覆盖为 **0x61**
+`_IO_list_all` 被劫持成 `main_arena+88` 之后，按 `_chain` 的偏移（`0x68`）算出来正好是 `main_arena+168`，而那正是 `small bin[0x60]` 的链表头。
 
-再 `malloc` 时会遍历 `unsorted bins`，然后将 `chunk` 放到对应 `small bins/lager bins` 中
+于是把 `unsorted bin` 里那个 chunk 的 size 字段改成 `0x61`（即 0x60 大小的 chunk）：下次 `malloc` 整理 `unsorted bin` 时，它会按这个 size 被挂进 `small bin[0x60]`，而挂进去就会改写这块链表的 `bk`——也就是让 `main_arena+168` 指向我们堆上伪造的结构。
 
-这样就能控制链表的第二个元素，也就是我们伪造的 `_IO_FILE_plus` 结构体。
+遍历走到这里，第二个 `_IO_FILE` 就是我们伪造的 `_IO_FILE_plus`。
 
 #### 概率通过
 
-这个问题的关键在于结构体的 `_mode` 字段。
-`_mode` 字段需要是负数，若为正，则在遍历第一个 `_IO_FILE` 结构体就会触发 `_IO_OVERFLOW`.
+这一步有时能过有时不能，差别在结构体的 `_mode` 字段。
+
+遍历时每个结构都要先过一遍 `_IO_flush_all_lockp` 的检查，`_mode` 为正就会被认定"需要 flush"，直接调用 `_IO_OVERFLOW`。而第一个结构其实是 arena 里的垃圾数据，它一崩，程序就在走到我们伪造的结构之前结束了。所以要让 `_mode` 落在负数区间，把第一个结构跳过去。
 ```C
 int
 _IO_flush_all_lockp (int do_lock) # do_lock = 1
