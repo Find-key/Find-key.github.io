@@ -8,8 +8,8 @@
  *    详见项目根目录 PROJECT.md 的「上线前检查清单」。
  */
 export const SITE = {
-	/** 站点名（浏览器标签、刊头、RSS 标题都用它）。只留名字，别加"的博客"这类后缀 */
-	title: 'Findkey',
+	/** 站点名（浏览器标签、站头字标、RSS 标题都用它） */
+	title: 'Findkey’s Blog',
 	/** 一句话简介，用于 SEO description、刊头下方、RSS 描述 */
 	description: '嵌入式 Linux、QEMU 与工具链的实践记录',
 	/** 作者名，显示在页脚和文章页 */

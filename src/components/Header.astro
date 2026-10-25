@@ -64,10 +64,13 @@ const isActive = (href: string) => current === href || current.startsWith(`${hre
 		margin: 0 auto;
 		padding: 0 1.25rem;
 	}
-	/* 字标：首页是 h1，内页是普通链接；两种都用同一套排版 */
+	/* 字标：首页是 h1，内页是普通链接；两种都用同一套排版和颜色。
+	   注意：内页的 <a> 本身就是 .brand，所以颜色必须写在 .brand 上，
+	   只写 .brand a 的话它会继承全站链接的墨绿色。 */
 	.brand,
 	h1.brand {
 		margin: 0;
+		color: var(--text);
 		font-family: var(--font-serif);
 		font-size: 1.02rem;
 		font-weight: 600;
@@ -77,8 +80,9 @@ const isActive = (href: string) => current === href || current.startsWith(`${hre
 	}
 	.brand a,
 	h1.brand a {
-		color: var(--text);
+		color: inherit;
 	}
+	.brand:hover,
 	.brand a:hover {
 		color: var(--accent);
 		text-decoration: none;
