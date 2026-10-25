@@ -109,7 +109,7 @@ sandbox
  0012: 0x06 0x00 0x00 0x7fff0000  return ALLOW
  0013: 0x06 0x00 0x00 0x00000000  return KILL
 ```
-ban 掉不少常见系统调用，这里用 openat + sendfile 读文件。
+`ban` 掉不少常见系统调用，`open` 和 `execve` 都在名单里，所以只能走 `openat` + `sendfile` + `write` 这条读文件的路。
 ```
 int openat(int dirfd, const char *pathname, int flags, mode_t mode);
 dirfd: 表示目录的文件描述符。如果是 AT_FDCWD，则相对路径是从当前工作目录开始查找。
@@ -412,8 +412,7 @@ LABEL_22:
 ```
 
 ### 分析
-一开始申请了一个大小为 256 的 chunk 写了 flag
-只要再申请回来，然后 display 就好了
+一开始申请了一个大小为 256 的 chunk 写了 flag。`free` 之后它进了 tcache，同大小再 `malloc` 会原样拿回同一块，内容还在——直接 `display` 就是 flag。
 
 ### exp
 ```python
@@ -888,7 +887,7 @@ __int64 sandbox()
 }
 ```
 ### 分析
-先用 SROP 做栈迁移，再用 SROP 打 ORW。
+先用 SROP 做栈迁移，再用 SROP 打 ORW。sigreturn frame 的好处是一次把所有寄存器摆好，不用一个个凑 `pop rdi; ret` 这类 gadget。
 
 ### exp
 ```python

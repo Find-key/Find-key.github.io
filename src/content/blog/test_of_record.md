@@ -236,7 +236,7 @@ int printf(const char *format, ...)
 在 init() 函数中，将 .fini_array 设置为可读可写。
 ret 变量地址与 unk 相连，可以通过 %s 泄露，从而得到 libc 地址。
 
-修改 .fini_array，重复使用格式化字符串漏洞 ROP。
+`init()` 把 `.fini_array` 设成了可写，而程序退出时会依次调用表里的函数指针——改它等于直接改执行流，于是可以在同一道题里第二次、第三次用格式化字符串，把 ROP 链摆上去。
 
 ##### exp
 ```python
@@ -582,7 +582,7 @@ unsigned __int64 __fastcall edit(book *arr)
   return t;
 }
 ```
-在 edit() 函数中，发现 **size** 是用户端输入，可以与 add() 函数中的不同，此处有溢出漏洞。
+`edit()` 的 **size** 由用户输入，和 `add()` 时申请的大小没有比对，于是能写超界；配合 `free` 之后指针不清零，堆块就重叠了。
 
 利用思路：构造堆重叠 -> 泄露 libc -> 劫持 `hook` 为 one_gadget.
 
