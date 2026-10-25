@@ -10,6 +10,24 @@ import { categoryUrl, postUrl, withBase } from '../utils/url';
 const posts = await allPosts();
 const grouped = groupByCategory(posts);
 
+// 把站名 dump 成 hex（ASCII 部分保留可读），当作顶部的装饰性"页码"
+function hexdump(text: string, perLine = 16) {
+	const bytes = [...new TextEncoder().encode(text)];
+	const out: { offset: string; hex: string; ascii: string }[] = [];
+	for (let i = 0; i < bytes.length; i += perLine) {
+		const chunk = bytes.slice(i, i + perLine);
+		out.push({
+			offset: i.toString(16).padStart(8, '0'),
+			hex: chunk.map((b) => b.toString(16).padStart(2, '0')).join(' '),
+			ascii: chunk.map((b) => (b >= 32 && b < 127 ? String.fromCharCode(b) : '.')).join(''),
+		});
+	}
+	return out;
+}
+const dump = hexdump("Findkey's Blog")
+	.map((line) => `${line.offset}  ${line.hex.padEnd(47, ' ')}  |${line.ascii}|`)
+	.join('\n');
+
 const rows = CATEGORIES.map((category) => ({
 	category,
 	items: grouped.find((g) => g.category.slug === category.slug)?.posts ?? [],
@@ -24,10 +42,12 @@ const rows = CATEGORIES.map((category) => ({
 	<body>
 		<Header variant="home" />
 		<main class="container home">
-			<!-- 顶部：两行第一人称 + 右上小照片（照片有明确职责：它就是这个说话的人） -->
+			<!-- 顶部：站名的十六进制 dump（pwn 里天天看的东西）+ 一句主句 -->
 			<section class="intro">
 				<div class="bio">
-					{SITE.intro.map((line) => <p>{line}</p>)}
+					<pre class="dump" aria-hidden="true">{dump}</pre>
+					<p class="statement">{SITE.intro[0]}</p>
+					{SITE.intro.slice(1).map((line) => <p class="sub">{line}</p>)}
 				</div>
 				<img class="photo" src={withBase('/avatar.svg')} alt="" width="84" height="84" />
 			</section>
@@ -63,7 +83,6 @@ const rows = CATEGORIES.map((category) => ({
 														<FormattedDate date={post.data.pubDate} format="short" />
 													</span>
 												</span>
-												<span class="desc">{post.data.description}</span>
 											</a>
 										</li>
 									))}
@@ -99,24 +118,36 @@ const rows = CATEGORIES.map((category) => ({
 		padding: 0.25rem 0 3.1rem;
 	}
 	.bio {
-		max-width: 34em;
-		padding-top: 0.2rem;
+		min-width: 0;
+		max-width: 40em;
+		padding-top: 0.1rem;
 	}
-	.bio p {
+	/* 十六进制 dump：等宽、极淡，只当排版上的"页码"用 */
+	.dump {
+		margin: 0 0 1.75rem;
+		color: rgba(28, 26, 23, 0.4);
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+		line-height: 1.65;
+		letter-spacing: 0.02em;
+		white-space: pre;
+		overflow-x: auto;
+	}
+	.statement {
 		margin: 0;
 		font-family: var(--font-serif);
-		font-size: 1.26rem;
-		line-height: 1.7;
-		letter-spacing: 0;
-		text-wrap: pretty;
+		font-size: clamp(1.55rem, 3.1vw, 2.05rem);
+		font-weight: 500;
+		line-height: 1.45;
+		letter-spacing: -0.01em;
+		text-wrap: balance;
 	}
-	.bio p + p {
+	.sub {
+		margin: 0.7rem 0 0;
 		color: var(--muted);
-		font-size: 0.98rem;
-		line-height: 1.85;
-	}
-	.bio p + p:last-child {
-		margin-top: 0.15rem;
+		font-size: 0.95rem;
+		line-height: 1.8;
+		text-wrap: pretty;
 	}
 	/* 小照片：方角、一圈发丝边，像贴在纸上的证件照 */
 	.photo {
@@ -191,7 +222,9 @@ const rows = CATEGORIES.map((category) => ({
 		list-style: none;
 	}
 	.rows li + li {
-		margin-top: 1.05rem;
+		margin-top: 0.6rem;
+		padding-top: 0.6rem;
+		border-top: 1px solid var(--line);
 	}
 	.rows a {
 		display: block;
@@ -222,15 +255,6 @@ const rows = CATEGORIES.map((category) => ({
 		font-size: 0.66rem;
 		white-space: nowrap;
 	}
-	.desc {
-		display: block;
-		margin-top: 0.25rem;
-		color: var(--muted);
-		font-family: var(--font-serif);
-		font-size: 0.88rem;
-		line-height: 1.7;
-		text-wrap: pretty;
-	}
 	.more {
 		margin: 0.7rem 0 0;
 		font-size: 0.8rem;
@@ -238,6 +262,10 @@ const rows = CATEGORIES.map((category) => ({
 
 
 	@media (max-width: 760px) {
+		/* 手机上一行 dump 太长，横滚还不如不要 */
+		.dump {
+			display: none;
+		}
 		.spread {
 			grid-template-columns: 1fr;
 			row-gap: 2.2rem;
