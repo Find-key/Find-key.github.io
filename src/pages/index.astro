@@ -24,7 +24,9 @@ function hexdump(text: string, perLine = 16) {
 	}
 	return out;
 }
-const flagDump = hexdump(SITE.flag)
+// 一行 dump：ASCII 列是一个 shell 提示符，只有在二进制里泡过的人会读
+const rodata = `pwn@${SITE.author.toLowerCase()}:~>`;
+const rodataDump = hexdump(rodata)
 	.map((line) => `${line.offset}  ${line.hex.padEnd(47, ' ')}  |${line.ascii}|`)
 	.join('\n');
 
@@ -50,7 +52,7 @@ const rows = CATEGORIES.map((category) => ({
 					{SITE.intro.map((line, i) => (
 						<p class:list={['tagline', { lead: i === 0 }]}>{line}</p>
 					))}
-					<pre class="flag" aria-hidden="true">{flagDump}</pre>
+					<pre class="flag" aria-hidden="true">{rodataDump}</pre>
 					<div class="links">
 						{SITE.email && (
 							<a href={`mailto:${SITE.email}`} aria-label="邮箱">
