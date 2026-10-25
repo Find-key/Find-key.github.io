@@ -46,7 +46,6 @@ export const SITE = {
 export const NAV = [
 	{ href: '/posts', label: '归档' },
 	{ href: '/links', label: '友链' },
-	{ href: '/about', label: '关于' },
 ] as const;
 
 export interface Friend {

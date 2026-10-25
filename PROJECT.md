@@ -44,7 +44,7 @@
   - `/posts` **归档**（按年份倒序，紧凑列表，和首页的分类视图互补）
   - 文章页左侧显示**当前分类的文章目录**，底部有同分类的上一篇/下一篇
 - [x] 站头与页脚：
-  - 站头 = 左字标 + 右「归档 / 友链 / 关于」（58px，sticky，当前栏目加 1px 墨绿短下划线）；分类/标签在版权页
+  - 站头 = 左字标 + 右「归档 / 友链」（58px，sticky，当前栏目加 1px 墨绿短下划线）；分类/标签/邮箱/RSS 在版权页
   - 页脚 = 版权页 colophon：装饰符 + 排印说明 + 极简小链接，不再堆链接列表
 - [x] 标签系统（`/tags`、`/tags/<tag>`）、草稿机制（`draft`）
 - [x] 文章页元信息：发布时间、约读几分钟（按字数估算）、更新时间、标签
@@ -125,7 +125,7 @@
 - 小标签用 `.label`（等宽、0.72rem、字距 0.14em、大写）——印刷品小字的感觉
 - 站头（58px，sticky，纸色半透明 + 模糊，底部 1px 分隔线）：
   - 左：**字标**（首页渲染为 `<h1>`，保证每页只有一个 h1；内页是普通链接）
-  - 右：三项链接「归档 / 友链 / 关于」，当前栏目加 1px 墨绿短下划线（首页本身就是分类目录，所以「分类」不放导航，放在版权页）
+  - 右：两项链接「归档 / 友链」，当前栏目加 1px 墨绿短下划线（首页本身就是分类目录，所以「分类」不放导航，放在版权页）
   - 首页**没有居中大名字**——名字就是左上那个字标
 - 首页结构（参考 paco.me / arp242.net）：
   - 顶部 hero（参考 baozongwi 的 hero 结构）：**圆形头像 96px（手机 64）在左**，右边竖排 `名字（衬线 2.25rem）→ 一句题记（衬线 1.06rem + 行末 mono 署名，`SITE.quote`）→ 一行十六进制 dump → 图标行（邮箱 / RSS / GitHub，GitHub 是占位符时不显示）`
@@ -173,7 +173,7 @@ blog/
     ├── assets/             ← 需要 Astro 优化的图片
     ├── components/
     │   ├── BaseHead.astro  ← <head>：SEO / OG / RSS / canonical
-    │   ├── Header.astro    ← ★ 站头：左字标 + 右「分类/友链/关于」
+    │   ├── Header.astro    ← ★ 站头：左字标 + 右「归档/友链」
     │   ├── Footer.astro    ← ★ 版权页 colophon（装饰符 + 排印说明 + 小链接）
     │   ├── PostList.astro  ← 文章行列表（发丝分隔，标题左 / 日期右）
     │   ├── CategoryNav.astro ← ★ 文章页左侧分类目录（sticky）
@@ -185,7 +185,7 @@ blog/
     │   ├── posts/[...slug].astro← 文章详情
     │   ├── categories/[category].astro ← 分类详情（面包屑回首页 #slug）
     │   ├── tags/index.astro / tags/[tag].astro
-    │   ├── about.astro / 404.astro
+    │   ├── 404.astro
     │   ├── links.astro                 ← 友链（数据来自 FRIENDS）
     │   └── rss.xml.js / robots.txt.ts
     ├── styles/global.css   ← ★ 设计 token + 正文排版 + 通用容器
@@ -316,7 +316,6 @@ git push
 - [ ] `src/consts.ts` → `github`：你的 GitHub 主页地址
 - [ ] `src/consts.ts` → `title` / `description` / `author`
 - [ ] `src/consts.ts` → `CATEGORIES`：按你的写作方向调整分类（空分类不会显示）
-- [ ] `src/pages/about.astro`：有一处 `TODO`，换成真实自我介绍
 - [ ] 删掉示例文章 `hello-world.md`、`astro-github-pages-notes.md`（或保留作为参考）
 - [ ] 草稿 `qemu-buildroot-vexpress-a9.md` 补完实测后去掉 `draft: true`
 
@@ -373,7 +372,7 @@ Astro 的 dev toolbar，**只在 `npm run dev` 时出现**，`build` / `preview`
 `https://USERNAME.github.io/blog/#pwn`。分类页面本身的固定地址是 `/categories/pwn/`。
 
 **14. 想加/改导航项怎么办？**
-站头右侧的「友链 / 关于」来自 `src/consts.ts` 的 `NAV`（顺序即显示顺序），加一项写个 href 和 label 即可。
+站头右侧的「归档 / 友链」来自 `src/consts.ts` 的 `NAV`（顺序即显示顺序），加一项写个 href 和 label 即可。
 首页本身就是分类目录，所以「分类」不放导航，放在版权页。
 友链页的数据是另一份：`FRIENDS` 数组，加 `{ name, url, note }` 即可（`/links` 按顺序渲染）。
 RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）。
@@ -477,3 +476,4 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | 关于页再简化：三段短话（我是谁 / 写什么 / 怎么联系），复用 `.prose` 排版，去掉定义列表与分节——上一版信息结构过重，读着乱 |
 | 2026-10-25 | 关于页按真实情况重写（JNU 本科在读 / glibc 堆栈与 IO_FILE / 正往 kernel 走、想自己写内核 / 对 V8 有兴趣 / 在碰 Zig、Rust 读过一点 / 为找工作补终端安全、病毒与免杀）；刻意不写成"研究"，用"在看""刚入门""写不利索"这类实话 |
 | 2026-10-25 | 关于页措辞再修：把短句罗列改成有过渡的长句（"主要的精力放在…完整走过一遍…正慢慢转向…"），自我评价从"写不利索"改为"属于能读懂、写起来还吃力的阶段"，结尾改成邀请式（"想聊技术、换题目，或者只是打个招呼"） |
+| 2026-10-25 | **删除关于页**（`src/pages/about.astro` 与 `NAV` 里的「关于」）：用户认为怎么写都不优雅，联系方式放版权页的邮箱即可；站头导航变为「归档 / 友链」 |
