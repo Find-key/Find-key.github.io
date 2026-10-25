@@ -1,9 +1,11 @@
 ---
 /**
  * 文章代码块的交互增强（纯前端，不加依赖）：
- *   - 右上角「复制」：复制整块内容，成功后短暂显示「已复制」
+ *   - 块顶部一条工具行，右侧「复制」；复制成功短暂显示「已复制」
  *   - 长代码块默认折叠（超过 FOLD_LINES 行），下方给「展开（N 行）／收起」
  *   - 折叠只是视觉上的，DOM 里内容完整，不影响搜索与复制
+ *
+ * 工具行占真实高度（不是悬浮覆盖），所以不会压住第一行代码。
  */
 ---
 
@@ -53,28 +55,27 @@
 		const wrap = document.createElement('div');
 		wrap.className = 'code-block';
 		pre.parentNode?.insertBefore(wrap, pre);
-		wrap.appendChild(pre);
 
 		const text = pre.innerText.replace(/\n$/, '');
 		const lines = text.split('\n').length;
 
-		const tools = document.createElement('div');
-		tools.className = 'code-tools';
+		const head = document.createElement('div');
+		head.className = 'code-head';
 
 		const copy = document.createElement('button');
 		copy.type = 'button';
 		copy.className = 'code-btn';
 		copy.textContent = '复制';
 		copy.addEventListener('click', () => copyText(text, copy));
-		tools.appendChild(copy);
+		head.appendChild(copy);
+		wrap.appendChild(head);
 
 		if (lines > FOLD_LINES) {
 			const body = document.createElement('div');
 			body.className = 'code-body is-folded';
 			body.style.maxHeight = `${PREVIEW_ROWS * 1.5}rem`;
-			wrap.appendChild(tools);
-			wrap.appendChild(body);
 			body.appendChild(pre);
+			wrap.appendChild(body);
 
 			const more = document.createElement('button');
 			more.type = 'button';
@@ -89,7 +90,6 @@
 			return;
 		}
 
-		wrap.appendChild(tools);
 		wrap.appendChild(pre);
 	}
 
@@ -103,12 +103,41 @@
 
 <style is:global>
 	.code-block {
-		position: relative;
 		margin: 1.6rem 0;
+		background: var(--code-bg);
+		border-radius: 4px;
 	}
+	/* Shiki 会给 <pre> 写内联 background-color，必须用 !important 才盖得住，
+	   否则工具行那块背景和代码区背景不是同一个色，看起来按钮"浮在块外面" */
+	.prose .code-block pre,
 	.code-block pre {
-		margin: 0;
+		margin: 0 !important;
+		background: transparent !important;
+		border: 0 !important;
+		border-radius: 0 !important;
+		padding-top: 0.15rem;
 	}
+
+	/* 工具行：真实占位的一行，右侧放按钮 */
+	.code-head {
+		display: flex;
+		justify-content: flex-end;
+		align-items: center;
+		padding: 0.32rem 0.6rem 0;
+		min-height: 0.9rem;
+		opacity: 0;
+		transition: opacity 0.15s ease;
+	}
+	.code-block:hover .code-head,
+	.code-head:focus-within {
+		opacity: 1;
+	}
+	@media (hover: none) {
+		.code-head {
+			opacity: 1;
+		}
+	}
+
 	.code-body {
 		position: relative;
 		overflow: hidden;
@@ -126,31 +155,16 @@
 	}
 
 	.code-tools {
-		position: absolute;
-		top: 0.45rem;
-		right: 0.45rem;
-		z-index: 2;
 		display: flex;
 		gap: 0.3rem;
-		opacity: 0;
-		transition: opacity 0.15s ease;
-	}
-	.code-block:hover .code-tools,
-	.code-tools:focus-within {
-		opacity: 1;
-	}
-	@media (hover: none) {
-		.code-tools {
-			opacity: 1;
-		}
 	}
 
 	.code-btn,
 	.code-more {
-		padding: 0.12rem 0.45rem;
-		border: 1px solid var(--line);
-		border-radius: 3px;
-		background: var(--bg);
+		padding: 0;
+		border: none;
+		border-radius: 0;
+		background: transparent;
 		color: var(--muted);
 		font-family: var(--font-mono);
 		font-size: 0.66rem;
@@ -161,16 +175,20 @@
 	.code-btn:hover,
 	.code-more:hover {
 		color: var(--text);
-		border-color: var(--line-strong);
 	}
 
 	.code-more {
 		display: block;
 		width: 100%;
-		margin-top: 0.45rem;
-		padding: 0.35rem 0;
+		margin-top: 0.15rem;
+		padding: 0.3rem 0;
 		text-align: center;
 		background: transparent;
-		border-style: dashed;
+		border: none;
+		border-top: 1px dashed var(--line);
+		border-radius: 0 0 4px 4px;
+	}
+	.code-more:hover {
+		color: var(--text);
 	}
 </style>
