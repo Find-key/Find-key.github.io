@@ -1,18 +1,16 @@
 ---
-title: "VM helper"
-description: "在分析 VM 题中，运用 gdb 脚本进行 trace 分析 opcode"
+title: "VM 题的 trace 脚本"
+description: "用 gdb 的 Python 断点给 VM 解释器做 trace：每条 opcode、每个寄存器、栈指针都记进日志，省去手啃字节码。"
 pubDate: 2025-12-08
 category: tools
 tags: [gdb-script]
 ---
 
 ## 前言
-在写 DASCTF 2025 下半年赛的 VM 题的时候，觉得分析题目给的 vmcode 很麻烦，就想着能不能 trace 。
-本来想用 frida 也试试的，但是遇到了神秘问题，便尝试使用 gdb 脚本了，发现效果还不错。
+DASCTF 2025 下半年的 VM 题，对着 vmcode 手啃太费劲，就想着能不能直接 trace。先试了 frida，遇到些问题，改用 gdb 的 Python 断点，效果不错。
 
 ## 分析
-附件给了 vvmm 和 vmcode，就是解释器和代码，之前都是让挑战者自己输入代码然后用解释器执行。
-第二次遇到用解释器去跑 vmcode 然后交互的。
+附件是 `vvmm`（解释器）和 `vmcode`（字节码）。常见的题型是让你输入代码、由解释器执行；这次反过来——解释器直接跑给定的 vmcode，再和你交互。
 
 ### 解释器：vvmm
 程序部分
@@ -96,10 +94,10 @@ struct op
   int num2;
 };
 ```
-逆向解释器部分并非本文的重点，笔者就简单写写了，opt 那几个函数我就不给出了
+逆向解释器的细节不是重点，`opt0`~`opt3` 这几个函数就不贴了。
 
 ### 代码：vmcode
-hexdump 或者 010 之类的工具可以看到值
+用 hexdump 或 010 Editor 看一眼：
 ```
 (Pwn) air@Air-key ~/w/P/M/D/2/d/mvmp> hexdump ./vmcode
 0000000 0000 0000 0090 0800 008d 0047 6857 7461
@@ -134,11 +132,11 @@ hexdump 或者 010 之类的工具可以看到值
 00001d0 2e13 0100 0581 00ec 0100               
 00001da
 ```
-但是对着分析还是太要精力了
+但对着十六进制硬啃太费精力。
 
 尝试写 gdb 脚本，思路是当程序运行到 opt0、opt1、opt2、opt3 这些函数的时候，打印出当时的参数
 
-```gdb script
+```gdb
 start
 
 python
@@ -168,38 +166,9 @@ continue
 
 使用方法：`gdb -x ./sc --args ./vvmm` ，其中 `./sc` 就是脚本文件。
 
-运行就会发现打印了好多 rdi 和 rsi 信息，然后是输入，输入完又是一大串信息，这样的话感觉不是很好，所以笔者选择让信息输出到 log 文件中，而不是标准输出，防止 trace 的信息妨碍看程序信息，修改后：
-```gdb script
-start
+信息太多会盖住程序自己的输出，所以把 trace 写进 `./vm.log`；顺便在断点里把虚拟机状态也解析出来：
 
-python
-import gdb
-
-f = open("./vm.log", "w")
-
-class VmTrace(gdb.Breakpoint):
-    def __init__(self, addr):
-        super().__init__(addr, temporary=False)
-
-    def stop(self):
-
-        rdi = gdb.parse_and_eval("$rdi")
-        rsi = gdb.parse_and_eval("$rsi")
-
-        print(f"rdi: {hex(int(rdi))}, rsi: {hex(int(rsi))}", file=f)
-        f.flush()
-
-        return False    # False = 自动 continue
-
-VmTrace(f"*{gdb.parse_and_eval('$rebase(0x14DE)')}")
-
-end
-
-continue
-```
-用同样的方法运行，发现成功将 trace 信息写入文件，那么开始下一步，解析参数。
-
-```gdb script
+```gdb
 start
 
 python
@@ -257,8 +226,7 @@ continue
 trace 完成，在 vm.log 文件查看结果。
 
 ## 漏洞利用
-在 type 为 0 ，val >> 2 为 0x35 时，程序调用系统调用，对应的 nr 是 num1
-在 type 为 0 ，val >> 2 为 0x3b 时，对应的操作为 ret
+`type` 为 0、`val >> 2` 为 `0x35` 时是 syscall，系统调用号放在 `num1`；`val >> 2` 为 `0x3b` 时是 ret。
 
 在 vm.log 找到
 ```
@@ -282,16 +250,16 @@ write(1, 0x2ffc4, len);
 
 ret     # rsp = 0x2FFDC
 ```
-这个 len 是多次 trace 得出的，
+`len` 是几次 trace 后对上的。
 
-然后就是漏洞点，0x2FFDC 显然是在 0x2ffc4 与 0x2ffc4+0x50 中的，也就是可以用 read 覆盖控制执行流。
+漏洞点在这里：`0x2FFDC` 落在 `0x2ffc4` 到 `0x2ffc4+0x50` 之间，`read` 长度足够就能盖住返回地址。
 
-read 的长度足够，可以尝试让解释器执行写入的 payload，思路：控制各个寄存器，然后通过 syscall 拿 shell。
-本文重点在于分析 WP 可以查看 [这里](https://yfor-yfor.github.io/2025/12/07/2025dasctf-wp/#pwn3)
+所以思路是让解释器执行我们写进去的字节码：先把各寄存器安排好，再用 syscall 拿 shell。
+完整的 WP 见[这篇](https://yfor-yfor.github.io/2025/12/07/2025dasctf-wp/#pwn3)，本文只讲 trace 这一环。
 
 ## 模板
-最后给出模板 VM helper ，欢迎各位师傅来交流。
-```gdb script
+最后是一个可以直接改的模板：
+```gdb
 start
 
 python
