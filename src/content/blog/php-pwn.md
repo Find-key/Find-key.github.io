@@ -168,13 +168,13 @@ PHP_FUNCTION(Recall)
 {
     char *str = NULL;
     size_t str_len = 0;
-    
+
     ZEND_PARSE_PARAMETERS_START(1, 1)
-       	Z_PARAM_STRING(str, str_len)
+           Z_PARAM_STRING(str, str_len)
     ZEND_PARSE_PARAMETERS_END();
-    
+
     if (str) {
-       	php_printf("You say: %s", str);
+           php_printf("You say: %s", str);
     }
 }
 
@@ -206,8 +206,7 @@ docker restart php81
 ### 验证
 
 #### 看 phpinfo
-`./Src` 挂载的就是容器的 `/var/www/html`，前面建好的 `index.php` 直接刷新即可
-在浏览器访问 **http://ip:1724/index.php** ，就能看到 phpinfo() 的执行效果，查看到 apple 部分有 author 字段及内容。ip 请根据实际做对应调整。
+`./Src` 挂载的就是容器的 `/var/www/html`，前面建好的 `index.php` 直接刷新即可。浏览器访问 **http://ip:1724/index.php** ，就能看到 phpinfo() 的执行效果，查看到 apple 部分有 author 字段及内容。ip 请根据实际做对应调整。
 
 #### 调 Recall
 在 ./Src 文件夹下创建文件 test.php ，写如下内容
@@ -264,16 +263,16 @@ configure 生成的 Makefile 需要删去 *-O2* 优化，否则会加上 FORTIFY
 ```C
 PHP_FUNCTION(GetThing)
 {
-	zend_long offset;
-	zend_long result;
+    zend_long offset;
+    zend_long result;
 
-	ZEND_PARSE_PARAMETERS_START(1, 1)
-		Z_PARAM_LONG(offset)
-	ZEND_PARSE_PARAMETERS_END();
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(offset)
+    ZEND_PARSE_PARAMETERS_END();
 
-	void *target = (void *)&offset;
-	
-	if (target != NULL) {
+    void *target = (void *)&offset;
+
+    if (target != NULL) {
         memcpy(&result, target+offset, sizeof(result));
     }
 
@@ -282,15 +281,15 @@ PHP_FUNCTION(GetThing)
 
 PHP_FUNCTION(WriteThing)
 {
-	char buf[0x20];
-	char* input_str;
-	size_t input_len;
+    char buf[0x20];
+    char* input_str;
+    size_t input_len;
 
-	ZEND_PARSE_PARAMETERS_START(1, 1)
-		Z_PARAM_STRING(input_str, input_len)
-	ZEND_PARSE_PARAMETERS_END();
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_STRING(input_str, input_len)
+    ZEND_PARSE_PARAMETERS_END();
 
-	memcpy(buf, input_str, input_len);
+    memcpy(buf, input_str, input_len);
 }
 ```
 所以这是一个任意地址读写（越界读 + 越界写），后面按常规 ROP 打即可。
@@ -408,17 +407,17 @@ PHP_FUNCTION(GetNote)
 {
     zend_long idx;
     zend_long size;
-    
+
     ZEND_PARSE_PARAMETERS_START(2, 2)
-       	Z_PARAM_LONG(idx)
-       	Z_PARAM_LONG(size)
+           Z_PARAM_LONG(idx)
+           Z_PARAM_LONG(size)
     ZEND_PARSE_PARAMETERS_END();
-    
+
     if(idx < 0 || idx >= 0x10) {
-       	php_printf("Idx should be between 1 and 15");
-       	RETURN_FALSE;
+           php_printf("Idx should be between 1 and 15");
+           RETURN_FALSE;
     }
-    
+
     notes[idx].size = size;
     notes[idx].content = emalloc(size);
 }
@@ -426,41 +425,40 @@ PHP_FUNCTION(GetNote)
 PHP_FUNCTION(ThrowNote)
 {
     zend_long idx;
-    
+
     ZEND_PARSE_PARAMETERS_START(1, 1)
-       	Z_PARAM_LONG(idx)
+           Z_PARAM_LONG(idx)
     ZEND_PARSE_PARAMETERS_END();
-    
+
     if(idx < 0 || idx >= 0x10) {
-       	php_printf("Idx should be between 1 and 15");
-       	RETURN_FALSE;
+           php_printf("Idx should be between 1 and 15");
+           RETURN_FALSE;
     }
-    
+
     if(notes[idx].content == NULL) {
-       	RETURN_FALSE;
+           RETURN_FALSE;
     }
-    
+
     efree(notes[idx].content);
 }
 
 PHP_FUNCTION(ViewNote)
 {
     zend_long idx;
-    
+
     ZEND_PARSE_PARAMETERS_START(1, 1)
-       	Z_PARAM_LONG(idx)
+           Z_PARAM_LONG(idx)
     ZEND_PARSE_PARAMETERS_END();
-    
+
     if(idx < 0 || idx >= 0x10) {
-       	php_printf("Idx should be between 1 and 15");
-       	RETURN_FALSE;
+           php_printf("Idx should be between 1 and 15");
+           RETURN_FALSE;
     }
-    
+
     if(notes[idx].content == NULL) {
-       	RETURN_EMPTY_STRING();
+           RETURN_EMPTY_STRING();
     }
-    
-    
+
     RETURN_STRINGL(notes[idx].content, notes[idx].size);
 }
 
@@ -469,25 +467,25 @@ PHP_FUNCTION(EditNote)
     zend_long idx;
     char *new_content;
     size_t new_content_len;
-    
+
     ZEND_PARSE_PARAMETERS_START(2, 2)
         Z_PARAM_LONG(idx)
         Z_PARAM_STRING(new_content, new_content_len)
     ZEND_PARSE_PARAMETERS_END();
-    
+
     if(idx < 0 || idx >= 0x10) {
-       	php_printf("Idx should be between 1 and 15");
-       	RETURN_FALSE;
+           php_printf("Idx should be between 1 and 15");
+           RETURN_FALSE;
     }
-    
+
     if(notes[idx].content == NULL) {
-       	RETURN_FALSE;
+           RETURN_FALSE;
     }
-    
+
     if (new_content_len >= notes[idx].size) {
-       	RETURN_FALSE;
+           RETURN_FALSE;
     }
-    
+
     memcpy(notes[idx].content, new_content, new_content_len);
 }
 ```

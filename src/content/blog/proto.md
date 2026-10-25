@@ -89,46 +89,46 @@ _required_ 被移除，其他的与 proto2 类似。
 
 #### ProtobufCMessageDescriptor
 ```C
-struct ProtobufCMessageDescriptor {  
- /** Magic value checked to ensure that the API is used correctly. */  
- uint32_t   magic;  
-  
- /** The qualified name (e.g., "namespace.Type"). */  
- const char   *name;  
- /** The unqualified name as given in the .proto file (e.g., "Type"). */  
- const char   *short_name;  
- /** Identifier used in generated C code. */  
- const char   *c_name;  
- /** The dot-separated namespace. */  
- const char   *package_name;  
-  
- /**  
-  * Size in bytes of the C structure representing an instance of this  
-  * type of message.  
-  */  
- size_t    sizeof_message;  
-  
- /** Number of elements in `fields`. */  
- unsigned   n_fields;  
- /** Field descriptors, sorted by tag number. */  
- const ProtobufCFieldDescriptor *fields;  
- /** Used for looking up fields by name. */  
- const unsigned   *fields_sorted_by_name;  
-  
- /** Number of elements in `field_ranges`. */  
- unsigned   n_field_ranges;  
- /** Used for looking up fields by id. */  
- const ProtobufCIntRange  *field_ranges;  
-  
- /** Message initialisation function. */  
+struct ProtobufCMessageDescriptor {
+ /** Magic value checked to ensure that the API is used correctly. */
+ uint32_t   magic;
+
+ /** The qualified name (e.g., "namespace.Type"). */
+ const char   *name;
+ /** The unqualified name as given in the .proto file (e.g., "Type"). */
+ const char   *short_name;
+ /** Identifier used in generated C code. */
+ const char   *c_name;
+ /** The dot-separated namespace. */
+ const char   *package_name;
+
+ /**
+  * Size in bytes of the C structure representing an instance of this
+  * type of message.
+  */
+ size_t    sizeof_message;
+
+ /** Number of elements in `fields`. */
+ unsigned   n_fields;
+ /** Field descriptors, sorted by tag number. */
+ const ProtobufCFieldDescriptor *fields;
+ /** Used for looking up fields by name. */
+ const unsigned   *fields_sorted_by_name;
+
+ /** Number of elements in `field_ranges`. */
+ unsigned   n_field_ranges;
+ /** Used for looking up fields by id. */
+ const ProtobufCIntRange  *field_ranges;
+
+ /** Message initialisation function. */
  ProtobufCMessageInit message_init;  (函数指针)
-  
- /** Reserved for future use. */  
- void    *reserved1;  
- /** Reserved for future use. */  
- void    *reserved2;  
- /** Reserved for future use. */  
- void    *reserved3;  
+
+ /** Reserved for future use. */
+ void    *reserved1;
+ /** Reserved for future use. */
+ void    *reserved2;
+ /** Reserved for future use. */
+ void    *reserved3;
 };
 ```
 `magic` 通常是 `0x28AAEEF9`，可以拿它做全局搜索，快速定位 descriptor。
@@ -137,60 +137,60 @@ n_fields 是字段数量
 
 #### ProtobufCFieldDescriptor
 ```C
-struct ProtobufCFieldDescriptor {  
- /** Name of the field as given in the .proto file. */  
- const char  *name;  
-  
- /** Tag value of the field as given in the .proto file. */  
- uint32_t  id;  
-  
- /** Whether the field is `REQUIRED`, `OPTIONAL`, or `REPEATED`. */  
- ProtobufCLabel  label;  
-  
- /** The type of the field. */  
- ProtobufCType  type;  
-  
- /**  
-  * The offset in bytes of the message's C structure's quantifier field  
-  * (the `has_MEMBER` field for optional members or the `n_MEMBER` field  
-  * for repeated members or the case enum for oneofs).  
-  */  
- unsigned  quantifier_offset;  
-  
- /**  
-  * The offset in bytes into the message's C structure for the member  
-  * itself.  
-  */  
- unsigned  offset;  
-  
- /**  
-  * A type-specific descriptor.  
-  *  
-  * If `type` is `PROTOBUF_C_TYPE_ENUM`, then `descriptor` points to the  
-  * corresponding `ProtobufCEnumDescriptor`.  
-  *  
-  * If `type` is `PROTOBUF_C_TYPE_MESSAGE`, then `descriptor` points to  
-  * the corresponding `ProtobufCMessageDescriptor`.  
-  *  
-  * Otherwise this field is NULL.  
-  */  
- const void  *descriptor; /* for MESSAGE and ENUM types */  
-  
- /** The default value for this field, if defined. May be NULL. */  
- const void  *default_value;  
-  
- /**  
-  * A flag word. Zero or more of the bits defined in the  
-  * `ProtobufCFieldFlag` enum may be set.  
-  */  
- uint32_t  flags;  
-  
- /** Reserved for future use. */  
- unsigned  reserved_flags;  
- /** Reserved for future use. */  
- void   *reserved2;  
- /** Reserved for future use. */  
- void   *reserved3;  
+struct ProtobufCFieldDescriptor {
+                           /** Name of the field as given in the .proto file. */
+ const char  *name;
+
+                           /** Tag value of the field as given in the .proto file. */
+ uint32_t  id;
+
+                           /** Whether the field is `REQUIRED`, `OPTIONAL`, or `REPEATED`. */
+ ProtobufCLabel  label;
+
+                           /** The type of the field. */
+ ProtobufCType  type;
+
+                           /**
+  * The offset in bytes of the message's C structure's quantifier field
+  * (the `has_MEMBER` field for optional members or the `n_MEMBER` field
+  * for repeated members or the case enum for oneofs).
+  */
+ unsigned  quantifier_offset;
+
+                           /**
+  * The offset in bytes into the message's C structure for the member
+  * itself.
+  */
+ unsigned  offset;
+
+                           /**
+  * A type-specific descriptor.
+  *
+  * If `type` is `PROTOBUF_C_TYPE_ENUM`, then `descriptor` points to the
+  * corresponding `ProtobufCEnumDescriptor`.
+  *
+  * If `type` is `PROTOBUF_C_TYPE_MESSAGE`, then `descriptor` points to
+  * the corresponding `ProtobufCMessageDescriptor`.
+  *
+  * Otherwise this field is NULL.
+  */
+ const void  *descriptor;  /* for MESSAGE and ENUM types */
+
+                           /** The default value for this field, if defined. May be NULL. */
+ const void  *default_value;
+
+                           /**
+  * A flag word. Zero or more of the bits defined in the
+  * `ProtobufCFieldFlag` enum may be set.
+  */
+ uint32_t  flags;
+
+                           /** Reserved for future use. */
+ unsigned  reserved_flags;
+                           /** Reserved for future use. */
+ void   *reserved2;
+                           /** Reserved for future use. */
+ void   *reserved3;
 };
 ```
 name 是字段名
@@ -201,48 +201,48 @@ default_value 在 proto2 存在，在 proto3 不存在，可以通过这个判�
 
 #### Label 与 Type
 ```C
-enum ProtobufCLabel{  
- /** A well-formed message must have exactly one of this field. */  
- PROTOBUF_C_LABEL_REQUIRED,  
-  
- /**  
-  * A well-formed message can have zero or one of this field (but not  
-  * more than one).  
-  */  
- PROTOBUF_C_LABEL_OPTIONAL,  
-  
- /**  
-  * This field can be repeated any number of times (including zero) in a  
-  * well-formed message. The order of the repeated values will be  
-  * preserved.  
-  */  
- PROTOBUF_C_LABEL_REPEATED,  
-  
- /**  
-  * This field has no label. This is valid only in proto3 and is  
-  * equivalent to OPTIONAL but no "has" quantifier will be consulted.  
-  */  
- PROTOBUF_C_LABEL_NONE,  
+enum ProtobufCLabel{
+                            /** A well-formed message must have exactly one of this field. */
+ PROTOBUF_C_LABEL_REQUIRED,
+
+                            /**
+  * A well-formed message can have zero or one of this field (but not
+  * more than one).
+  */
+ PROTOBUF_C_LABEL_OPTIONAL,
+
+                            /**
+  * This field can be repeated any number of times (including zero) in a
+  * well-formed message. The order of the repeated values will be
+  * preserved.
+  */
+ PROTOBUF_C_LABEL_REPEATED,
+
+                            /**
+  * This field has no label. This is valid only in proto3 and is
+  * equivalent to OPTIONAL but no "has" quantifier will be consulted.
+  */
+ PROTOBUF_C_LABEL_NONE,
 };
 
-enum ProtobufCType {  
- PROTOBUF_C_TYPE_INT32,      /**< int32 */  
- PROTOBUF_C_TYPE_SINT32,     /**< signed int32 */  
- PROTOBUF_C_TYPE_SFIXED32,   /**< signed int32 (4 bytes) */  
- PROTOBUF_C_TYPE_INT64,      /**< int64 */  
- PROTOBUF_C_TYPE_SINT64,     /**< signed int64 */  
- PROTOBUF_C_TYPE_SFIXED64,   /**< signed int64 (8 bytes) */  
- PROTOBUF_C_TYPE_UINT32,     /**< unsigned int32 */  
- PROTOBUF_C_TYPE_FIXED32,    /**< unsigned int32 (4 bytes) */  
- PROTOBUF_C_TYPE_UINT64,     /**< unsigned int64 */  
- PROTOBUF_C_TYPE_FIXED64,    /**< unsigned int64 (8 bytes) */  
- PROTOBUF_C_TYPE_FLOAT,      /**< float */  
- PROTOBUF_C_TYPE_DOUBLE,     /**< double */  
- PROTOBUF_C_TYPE_BOOL,       /**< boolean */  
- PROTOBUF_C_TYPE_ENUM,       /**< enumerated type */  
- PROTOBUF_C_TYPE_STRING,     /**< UTF-8 or ASCII string */  
- PROTOBUF_C_TYPE_BYTES,      /**< arbitrary byte sequence */  
- PROTOBUF_C_TYPE_MESSAGE,    /**< nested message */  
+enum ProtobufCType {
+ PROTOBUF_C_TYPE_INT32,     /**< int32 */
+ PROTOBUF_C_TYPE_SINT32,    /**< signed int32 */
+ PROTOBUF_C_TYPE_SFIXED32,  /**< signed int32 (4 bytes) */
+ PROTOBUF_C_TYPE_INT64,     /**< int64 */
+ PROTOBUF_C_TYPE_SINT64,    /**< signed int64 */
+ PROTOBUF_C_TYPE_SFIXED64,  /**< signed int64 (8 bytes) */
+ PROTOBUF_C_TYPE_UINT32,    /**< unsigned int32 */
+ PROTOBUF_C_TYPE_FIXED32,   /**< unsigned int32 (4 bytes) */
+ PROTOBUF_C_TYPE_UINT64,    /**< unsigned int64 */
+ PROTOBUF_C_TYPE_FIXED64,   /**< unsigned int64 (8 bytes) */
+ PROTOBUF_C_TYPE_FLOAT,     /**< float */
+ PROTOBUF_C_TYPE_DOUBLE,    /**< double */
+ PROTOBUF_C_TYPE_BOOL,      /**< boolean */
+ PROTOBUF_C_TYPE_ENUM,      /**< enumerated type */
+ PROTOBUF_C_TYPE_STRING,    /**< UTF-8 or ASCII string */
+ PROTOBUF_C_TYPE_BYTES,     /**< arbitrary byte sequence */
+ PROTOBUF_C_TYPE_MESSAGE,   /**< nested message */
 };
 ```
 
@@ -278,10 +278,10 @@ struct ProtobufCIntRange
 ```C
 struct ProtobufCMessageUnknownField
 {
-	uint32_t tag;
-	ProtobufCWireType wire_type;
-	size_t len;
-	uint8_t *data;
+    uint32_t tag;
+    ProtobufCWireType wire_type;
+    size_t len;
+    uint8_t *data;
 };
 ```
 
@@ -292,9 +292,7 @@ v7 = &message_response__descriptor;
 ```
 `v7 = &message_response__descriptor;` 这样的赋值，跟进去看第一个值是不是 `0x28AAEEF9`，就能确认它是 `ProtobufCMessageDescriptor`：
 然后发现名为 Message_response 的 Message
-通过 `n_fields` 字段发现有 4 个字段
-根据 `fields` 字段来到各个字段的结构体 `ProtobufCFieldDescriptor`
-四个字段依次是 id、receiver、status、error_message。
+`n_fields` 说有 4 个字段；顺着 `fields` 找到每个字段的 `ProtobufCFieldDescriptor`，四个字段依次是 id、receiver、status、error_message。
 结构体里有 `default_value`，说明这是 proto2。
 于是可以还原出：
 ```
@@ -355,8 +353,7 @@ struct  MessageRequest
   int32_t actionid;
 };
 ```
-将这个结构体导入 ida，有助于逆向分析
-这题具体的利用不是本文重点，略过。
+把这个结构体导入 IDA，逆向会轻松很多。这题具体的利用不是本文重点，略过。
 
 python 文件用来和题目交互，`import demo_pb2` 就能构造消息。
 例如，

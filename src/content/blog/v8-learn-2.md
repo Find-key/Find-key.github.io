@@ -11,16 +11,16 @@ order: 3
 上一篇看到，浮点数组和对象数组的 `elements` 都紧跟在数组对象后面。
 ```C
 struct array {
-	map* map;
-	properties* properties;
-	elements* element;
-	long long length;
+    map* map;
+    properties* properties;
+    elements* element;
+    long long length;
 };
 
 struct elements {
-	map* map;
-	long long length;
-	type val[];
+    map* map;
+    long long length;
+    type val[];
 }
 ```
 并且，elements 与 array 相邻。
@@ -180,7 +180,8 @@ function writeval(addr, val) {
 ```
 
 ### 执行流劫持
-在有了 AAR 和 AAW 后，就应该想着劫持执行流了
+有了 AAR 和 AAW 之后，就该想执行流了。
+
 老版本还能靠 `__free_hook` 这类东西，新版本没这条路了；这里换一条：JavaScript 支持注入 WebAssembly 代码。
 
 > WebAssembly (Wasm) 是一种**二进制指令格式**，旨在作为一种可移植的编译目标，用于在现代 Web 浏览器中运行高性能的应用程序。

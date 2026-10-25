@@ -13,20 +13,20 @@ tags: [iot]
 ---------------------------------------------------------------------------
 DECIMAL         HEXADECIMAL     DESCRIPTION
 ---------------------------------------------------------------------------
-0               0x0             DLOB firmware header, 
-								header size: 108 bytes, 
+0               0x0             DLOB firmware header,
+								header size: 108 bytes,
 								data size: 3792928
 
-108             0x6C            LZMA compressed data, 
-								properties: 0x5D, 
-								dictionary size: 33554432 bytes, 
-								compressed size: 979100 bytes, 
+108             0x6C            LZMA compressed data,
+								properties: 0x5D,
+								dictionary size: 33554432 bytes,
+								compressed size: 979100 bytes,
 								uncompressed size: 3017436 bytes
 
-983180          0xF008C         SquashFS file system, little endian, 
-								version: 4.0, compression: lzma, 
-                                inode count: 1526, block size: 262144, 
-                                image size: 2808054 bytes, 
+983180          0xF008C         SquashFS file system, little endian,
+								version: 4.0, compression: lzma,
+                                inode count: 1526, block size: 262144,
+                                image size: 2808054 bytes,
                                 created: 2011-05-12 14:14:40
 ---------------------------------------------------------------------------
 Analyzed 1 file for 85 file signatures (187 magic patterns) in 131.0 milliseconds
@@ -41,7 +41,7 @@ Analyzed 1 file for 85 file signatures (187 magic patterns) in 131.0 millisecond
 sudo binwalk -e ./DIR-815_FW_1.01b14.bin
 # 或者用 dd 命令
 dd if=DIR-815_FW_1.01b14.bin of=squashfs.sqsh bs=1 skip=$((0xF008C)) status=progress
-sudo sasquatch ./squashfs.sqsh 
+sudo sasquatch ./squashfs.sqsh
 ```
 用 `sudo` 是因为文件系统里有 `/dev` 这类设备节点，不 root 建不出来。
 
@@ -57,7 +57,7 @@ sudo sasquatch ./squashfs.sqsh
 64M 够用，不够再改大。
 ```bash
 mkdir mnt
-dd if=/dev/zero of=rootfs.ext2 bs=1M count=64 
+dd if=/dev/zero of=rootfs.ext2 bs=1M count=64
 
 sudo mount -o loop rootfs.ext2 mnt
 ```
@@ -274,13 +274,13 @@ v4 的内容在 sess_get_uid 中被修改。
 ```C
 void __fastcall sess_get_uid(sobj *ptr)
 {
-  sobj *key_obj; // $s2
-  char *HTTP_COOKIE; // $v0
-  sobj *val_obj; // $s3
-  char *HTTP_COOKIE_ptr; // $s4
-  int flag; // $s1
-  int val; // $s0
-  char *string; // $v0
+  sobj *key_obj;          // $s2
+  char *HTTP_COOKIE;      // $v0
+  sobj *val_obj;          // $s3
+  char *HTTP_COOKIE_ptr;  // $s4
+  int flag;               // $s1
+  int val;                // $s0
+  char *string;           // $v0
 
   key_obj = sobj_new();
   val_obj = sobj_new();
@@ -381,33 +381,33 @@ xmldbc_ephp(0, 0, v27, stdout);
 ### 必须是 POST
 ```C
 ...
-	REQUEST_METHOD = getenv("REQUEST_METHOD");
-	if ( !REQUEST_METHOD ) {
-	    v1 = "no REQUEST";
+    REQUEST_METHOD = getenv("REQUEST_METHOD");
+    if ( !REQUEST_METHOD ) {
+        v1 = "no REQUEST";
 LABEL_7:
-	    obj_2 = 0;
-	    obj1 = 0;
+        obj_2 = 0;
+        obj1 = 0;
 LABEL_34:
-	    v9 = -1;
+        v9 = -1;
     goto LABEL_25;
-	}
-	if ( strcasecmp(REQUEST_METHOD, "POST") ) {
+    }
+    if ( strcasecmp(REQUEST_METHOD, "POST") ) {
     v1 = "unsupported HTTP request";
     goto LABEL_7;
-	}
+    }
 ...
 LABEL_25:
-	    printf("HTTP/1.1 200 OK\r\nContent-Type: text/xml\r\n\r\n<hedwig><result>FAILED</result><message>%s</message></hedwig>",
-	    v1);
-	}
+        printf("HTTP/1.1 200 OK\r\nContent-Type: text/xml\r\n\r\n<hedwig><result>FAILED</result><message>%s</message></hedwig>",
+        v1);
+    }
 LABEL_26:
-	if ( haystack )
-	    free(haystack);
-	if ( obj_2 )
-	    sobj_del(obj_2);
-	if ( obj1 )
-	    sobj_del(obj1);
-	return v9;
+    if ( haystack )
+        free(haystack);
+    if ( obj_2 )
+        sobj_del(obj_2);
+    if ( obj1 )
+        sobj_del(obj1);
+    return v9;
 }
 ```
 所以请求必须是 POST。
@@ -430,16 +430,16 @@ int __fastcall cgibin_parse_request(void (*func)(), int num, unsigned int a3)
 {
 ...
 
-	if ( getenv("CONTENT_TYPE") && (CONTENT_LENGTH_STR = getenv("CONTENT_LENGTH")) != 0 )
-	    CONTENT_LENGTH = atoi(CONTENT_LENGTH_STR);
-	else
-	    CONTENT_LENGTH = 0;
-	v20.k_obj = sobj_new();
+    if ( getenv("CONTENT_TYPE") && (CONTENT_LENGTH_STR = getenv("CONTENT_LENGTH")) != 0 )
+        CONTENT_LENGTH = atoi(CONTENT_LENGTH_STR);
+    else
+        CONTENT_LENGTH = 0;
+    v20.k_obj = sobj_new();
     v8 = sobj_new();
     v20.v_obj = v8;
-	v9 = -1;
-	if ( v20.k_obj && v8 ) {
-	    v10 = getenv("REQUEST_URI");
+    v9 = -1;
+    if ( v20.k_obj && v8 ) {
+        v10 = getenv("REQUEST_URI");
     if ( v10 )
     {
       v11 = strchr(v10, 63);
@@ -496,11 +496,11 @@ int __fastcall cgibin_parse_request(void (*func)(), int num, unsigned int a3)
 
 ```C
 int __fastcall sub_403B10(void (*func)(), int num, size_t len, const char *str) {
-	if ( !strncasecmp(str, "x-www-form-urlencoded", 0x15u) )
-	    return sub_402FFC(func, num, len);
-	sub_402CE8(len);
-	sub_403794("read_ct_application", str);
-	return -1;
+    if ( !strncasecmp(str, "x-www-form-urlencoded", 0x15u) )
+        return sub_402FFC(func, num, len);
+    sub_402CE8(len);
+    sub_403794("read_ct_application", str);
+    return -1;
 }
 ```
 要走 `sub_402FFC`，`&CONTENT_TYPE[len]` 必须等于 `x-www-form-urlencoded`，合起来就是请求头 `Content-Type: application/x-www-form-urlencoded`。

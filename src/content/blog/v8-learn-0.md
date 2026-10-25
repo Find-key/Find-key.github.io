@@ -50,7 +50,7 @@ fetch v8
 ### debug 构建
 ```bash
 cd v8
-tools/dev/v8gen.py x64.debug  
+tools/dev/v8gen.py x64.debug
 ninja -C out.gn/x64.debug -j2 d8
 ```
 

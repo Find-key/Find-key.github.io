@@ -39,9 +39,9 @@ IBT:        Enabled
 ```C
 void __fastcall __noreturn main(__int64 a1, char **a2, char **a3)
 {
-  char nothing; // [rsp+3h] [rbp-Dh] BYREF
-  int c; // [rsp+4h] [rbp-Ch] BYREF
-  unsigned __int64 v5; // [rsp+8h] [rbp-8h]
+  char nothing;                      // [rsp+3h] [rbp-Dh] BYREF
+  int c;                             // [rsp+4h] [rbp-Ch] BYREF
+  unsigned __int64 v5;               // [rsp+8h] [rbp-8h]
 
   v5 = __readfsqword(0x28u);
   initstream();
@@ -80,11 +80,11 @@ void __fastcall __noreturn main(__int64 a1, char **a2, char **a3)
 
 void create()
 {
-  unsigned int v0; // ebx
-  char v1; // [rsp+Fh] [rbp-21h] BYREF
-  unsigned int idx; // [rsp+10h] [rbp-20h] BYREF
-  unsigned int size; // [rsp+14h] [rbp-1Ch] BYREF
-  unsigned __int64 v4; // [rsp+18h] [rbp-18h]
+  unsigned int v0;                   // ebx
+  char v1;                           // [rsp+Fh] [rbp-21h] BYREF
+  unsigned int idx;                  // [rsp+10h] [rbp-20h] BYREF
+  unsigned int size;                 // [rsp+14h] [rbp-1Ch] BYREF
+  unsigned __int64 v4;               // [rsp+18h] [rbp-18h]
 
   v4 = __readfsqword(0x28u);
   puts("Index");
@@ -104,19 +104,19 @@ void create()
 
 chunk_head **__fastcall alloc(unsigned int size)
 {
-  signed int real_size; // [rsp+1Ch] [rbp-14h]
-  unsigned int low; // [rsp+20h] [rbp-10h]
-  int line; // [rsp+24h] [rbp-Ch]
-  chunk_head *v5; // [rsp+28h] [rbp-8h]
-  chunk_head *ptr; // [rsp+28h] [rbp-8h]
+  signed int real_size;              // [rsp+1Ch] [rbp-14h]
+  unsigned int low;                  // [rsp+20h] [rbp-10h]
+  int line;                          // [rsp+24h] [rbp-Ch]
+  chunk_head *v5;                    // [rsp+28h] [rbp-8h]
+  chunk_head *ptr;                   // [rsp+28h] [rbp-8h]
 
   low = size & 0xF;
   if ( low > 8 )
     real_size = size - low + 32;
   else
-    real_size = size - low + 16;                // fix size
+    real_size = size - low + 16;     // fix size
   line = real_size / 16;
-  if ( bins[real_size / 16] )                   // bins?
+  if ( bins[real_size / 16] )        // bins?
   {
     v5 = bins[line];
     bins[line] = v5->next;
@@ -131,7 +131,7 @@ chunk_head **__fastcall alloc(unsigned int size)
       exit(0);
     }
     ptr = chunk_pointer;
-    LOBYTE(chunk_pointer->pre) = 1;             // 上标志位
+    LOBYTE(chunk_pointer->pre) = 1;  // 上标志位
     ptr->size = real_size;
     chunk_pointer = (chunk_pointer + real_size);// 移动
     cap -= real_size;
@@ -142,9 +142,9 @@ chunk_head **__fastcall alloc(unsigned int size)
 
 void delete()
 {
-  char v0; // [rsp+3h] [rbp-Dh] BYREF
-  unsigned int idx; // [rsp+4h] [rbp-Ch] BYREF
-  unsigned __int64 v2; // [rsp+8h] [rbp-8h]
+  char v0;                           // [rsp+3h] [rbp-Dh] BYREF
+  unsigned int idx;                  // [rsp+4h] [rbp-Ch] BYREF
+  unsigned __int64 v2;               // [rsp+8h] [rbp-8h]
 
   v2 = __readfsqword(0x28u);
   puts("Index");
@@ -152,7 +152,7 @@ void delete()
   if ( idx <= 0x10 )
   {
     freee(idx);
-    chunk.size_list[idx] = 0LL;                 // uaf?
+    chunk.size_list[idx] = 0LL;      // uaf?
     puts("Success");
   }
   else
@@ -163,10 +163,10 @@ void delete()
 
 void __fastcall freee(int a1)
 {
-  int size; // kr00_4
-  int num; // [rsp+14h] [rbp-1Ch]
-  chunk_head *ptr; // [rsp+20h] [rbp-10h]
-  chunk_head *header; // [rsp+28h] [rbp-8h]
+  int size;                          // kr00_4
+  int num;                           // [rsp+14h] [rbp-1Ch]
+  chunk_head *ptr;                   // [rsp+20h] [rbp-10h]
+  chunk_head *header;                // [rsp+28h] [rbp-8h]
 
   header = (chunk.arr_list[a1] - 16);
   size = header->size;
@@ -189,10 +189,10 @@ void __fastcall freee(int a1)
 
 void edit()
 {
-  char v0; // [rsp+Fh] [rbp-11h] BYREF
-  unsigned int v1; // [rsp+10h] [rbp-10h] BYREF
-  unsigned int size; // [rsp+14h] [rbp-Ch] BYREF
-  unsigned __int64 v3; // [rsp+18h] [rbp-8h]
+  char v0;                           // [rsp+Fh] [rbp-11h] BYREF
+  unsigned int v1;                   // [rsp+10h] [rbp-10h] BYREF
+  unsigned int size;                 // [rsp+14h] [rbp-Ch] BYREF
+  unsigned __int64 v3;               // [rsp+18h] [rbp-8h]
 
   v3 = __readfsqword(0x28u);
   puts("Index");
@@ -210,9 +210,9 @@ void edit()
 
 unsigned __int64 show()
 {
-  char v1; // [rsp+3h] [rbp-Dh] BYREF
-  unsigned int idx; // [rsp+4h] [rbp-Ch] BYREF
-  unsigned __int64 v3; // [rsp+8h] [rbp-8h]
+  char v1;                           // [rsp+3h] [rbp-Dh] BYREF
+  unsigned int idx;                  // [rsp+4h] [rbp-Ch] BYREF
+  unsigned __int64 v3;               // [rsp+8h] [rbp-8h]
 
   v3 = __readfsqword(0x28u);
   puts("Index");
@@ -499,7 +499,7 @@ scc = asm('''
     mov rdi, 0xffffff9c
     mov rax, 0x101
     syscall
-               
+
     mov rsi, rax
     mov rdi, 1
     xor rdx, rdx
@@ -618,7 +618,7 @@ IBT:        Enabled
 ```C
 void __fastcall __noreturn main(__int64 a1, char **a2, char **a3)
 {
-  vm *vm; // [rsp+8h] [rbp-8h]
+  vm *vm;                          // [rsp+8h] [rbp-8h]
 
   init();
   vm = malloc(0x50uLL);
@@ -640,8 +640,8 @@ void init()
 
 void __fastcall __noreturn run(vm *vm)
 {
-  int c; // eax
-  x *s; // [rsp+18h] [rbp-8h]
+  int c;                           // eax
+  x *s;                            // [rsp+18h] [rbp-8h]
 
   s = malloc(0xCuLL);
   memset(s, 0, 8uLL);
@@ -680,22 +680,22 @@ void __fastcall __noreturn run(vm *vm)
 
 __int64 __fastcall getoptype(vm *vm, x *s)
 {
-  char *code; // rsi
-  unsigned int ip; // eax
-  int type; // eax
-  char *v5; // rsi
-  unsigned int v6; // eax
-  char *v7; // rsi
-  unsigned int v8; // eax
-  __int64 result; // rax
-  char *v10; // rsi
-  unsigned int v11; // eax
-  char *v12; // rsi
-  unsigned int v13; // eax
-  char *code3; // rsi
-  unsigned int ip3; // eax
-  unsigned __int8 v17; // [rsp+17h] [rbp-9h]
-  unsigned int i; // [rsp+18h] [rbp-8h]
+  char *code;                      // rsi
+  unsigned int ip;                 // eax
+  int type;                        // eax
+  char *v5;                        // rsi
+  unsigned int v6;                 // eax
+  char *v7;                        // rsi
+  unsigned int v8;                 // eax
+  __int64 result;                  // rax
+  char *v10;                       // rsi
+  unsigned int v11;                // eax
+  char *v12;                       // rsi
+  unsigned int v13;                // eax
+  char *code3;                     // rsi
+  unsigned int ip3;                // eax
+  unsigned __int8 v17;             // [rsp+17h] [rbp-9h]
+  unsigned int i;                  // [rsp+18h] [rbp-8h]
 
   code = vm->code;
   ip = vm->ip;
@@ -759,8 +759,8 @@ __int64 __fastcall getoptype(vm *vm, x *s)
 
 void __fastcall op0(vm *vm, x *s)
 {
-  int v2; // edx
-  int v3; // edx
+  int v2;                          // edx
+  int v3;                          // edx
 
   switch ( s->t >> 2 )
   {
@@ -924,7 +924,7 @@ LABEL_7:
 
 void __fastcall op2(vm *vm, x *s)
 {
-  unsigned int v2; // [rsp+1Ch] [rbp-4h]
+  unsigned int v2;                 // [rsp+1Ch] [rbp-4h]
 
   switch ( s->t >> 2 )
   {
@@ -1045,16 +1045,16 @@ void __fastcall op3(vm *vm, x *s)
       vm->regs[s->codeval] -= s->codeval2;
       break;
     case 12:
-      if ( g0x1000(s->codeval2) )               // byte
+      if ( g0x1000(s->codeval2) )  // byte
         out();
       vm->regs[s->codeval] = vm->code[s->codeval2];
       break;
-    case 13:                                    // word
+    case 13:                       // word
       if ( g0x1000(s->codeval2) )
         out();
       vm->regs[s->codeval] = *&vm->code[s->codeval2];
       break;
-    case 14:                                    // dword
+    case 14:                       // dword
       if ( g0x1000(s->codeval2) )
         out();
       vm->regs[s->codeval] = *&vm->code[s->codeval2];

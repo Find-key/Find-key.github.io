@@ -34,22 +34,22 @@ tags: [io-file]
 ```C
 void __fastcall __noreturn main(__int64 a1, char **a2, char **a3)
 {
-  int v3; // eax
+  int v3;      // eax
 
   int(a1, a2, a3);
   while ( 1 )
   {
     while ( 1 )
     {
-      menu();                                   //   puts("+++++++++++++++++++++++++++++++++++++");
-                                                //   puts("@          House of Orange          @");
-                                                //   puts("+++++++++++++++++++++++++++++++++++++");
-                                                //   puts(" 1. Build the house                  ");
-                                                //   puts(" 2. See the house                    ");
-                                                //   puts(" 3. Upgrade the house                ");
-                                                //   puts(" 4. Give up                          ");
-                                                //   puts("+++++++++++++++++++++++++++++++++++++");
-                                                //   return printf("Your choice : ");
+      menu();  //   puts("+++++++++++++++++++++++++++++++++++++");
+               //   puts("@          House of Orange          @");
+               //   puts("+++++++++++++++++++++++++++++++++++++");
+               //   puts(" 1. Build the house                  ");
+               //   puts(" 2. See the house                    ");
+               //   puts(" 3. Upgrade the house                ");
+               //   puts(" 4. Give up                          ");
+               //   puts("+++++++++++++++++++++++++++++++++++++");
+               //   return printf("Your choice : ");
       v3 = getc();
       if ( v3 != 2 )
         break;
@@ -86,9 +86,9 @@ LABEL_13:
 ```C
 int upgrade()
 {
-  aaa *one; // rbx
-  unsigned int v2; // [rsp+8h] [rbp-18h]
-  int v3; // [rsp+Ch] [rbp-14h]
+  aaa *one;         // rbx
+  unsigned int v2;  // [rsp+8h] [rbp-18h]
+  int v3;           // [rsp+Ch] [rbp-14h]
 
   if ( chance > 2u )
     return puts("You can't upgrade more");
