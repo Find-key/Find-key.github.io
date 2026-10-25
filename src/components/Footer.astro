@@ -21,22 +21,6 @@ const githubLabel = SITE.github.replace(/^https?:\/\//, '').replace(/\/$/, '');
 			<a href={withBase('/tags')}>标签</a>
 		</p>
 
-		<p class="contact">
-			{/* 邮箱不挂 mailto：点一下不该弹出邮件客户端 */}
-			<span class="mail">{SITE.email}</span>
-			{SITE.qq && (
-				<>
-					<span class="sep" aria-hidden="true">·</span>
-					<span>QQ {SITE.qq}</span>
-				</>
-			)}
-			{githubReady && (
-				<>
-					<span class="sep" aria-hidden="true">·</span>
-					<a href={SITE.github} target="_blank" rel="noopener">{githubLabel}</a>
-				</>
-			)}
-		</p>
 
 		<p class="sign">
 			{SITE.author} · {cn}
