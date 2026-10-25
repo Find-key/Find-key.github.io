@@ -370,6 +370,10 @@ Astro 的 dev toolbar，**只在 `npm run dev` 时出现**，`build` / `preview`
 友链页的数据是另一份：`FRIENDS` 数组，加 `{ name, url, note }` 即可（`/links` 按顺序渲染）。
 RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）。
 
+**15. 改了 `src/consts.ts`（分类/导航/标题）后页面没变？**
+`astro dev` 对 `consts.ts` 这类模块的热更新不稳定，会出现"分类还是旧的、新分类不显示"。
+`npx astro dev stop` 再 `npx astro dev --background` 就正常。`npm run build` 的产物始终是最新的。
+
 ---
 
 ## 11. 待办 / 可选增强
@@ -448,3 +452,4 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | 理顺分类层级：删除 `/categories` 分类总览页（首页本身就是目录）；首页每分类只列最近 4 篇，多了才给「该分类共 N 篇 →」；分类页面包屑改「首页 / 分类名」、底部「← 返回首页」（带 `#slug`，回去时手风琴自动展开）；文章页面包屑同步；版权页去掉「分类」；404 的「看分类」改为「看归档」 |
 | 2026-10-25 | 首页顶部改为「刊首语」：简介从一行灰字改成大号衬线（正文色、clamp 1.28–1.6rem），下方 48×2px 短饰线收口；加 `text-wrap: balance` 让手机上折行的两行长度均衡 |
 | 2026-10-25 | 内容方向改为 pwn：`SITE.description` → 「二进制漏洞分析与利用（pwn）」；分类重构为 pwn / 内核与嵌入式 / 站务与工具 / 随笔（原 embedded→kernel、site→meta，两篇示例文章 frontmatter 同步）；关于页与示例文章的口吻改成 pwn 视角；注意 pwn 分类暂时为空，**空分类不会出现在首页**，写第一篇后自动出现 |
+| 2026-10-25 | 新增 `docs/post-template-pwn.md`：pwn writeup 骨架（环境 / 保护 / 漏洞点 / 思路 / 利用 / 踩坑 / 小结）；补 FAQ「改了 consts.ts 后 dev 没更新」|
