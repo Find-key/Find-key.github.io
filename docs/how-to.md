@@ -145,3 +145,19 @@ export const FRIENDS: Friend[] = [
 | 首页分类是旧的 | `consts.ts` 热更新失效，重启 dev |
 | 链接 404 / 变成 `/blog/blog/` | 手写了 `/blog/...`；站内路径一律用 `withBase()` / `postUrl()` |
 | 文章不出现 | 看是不是 `draft: true`，或者日期在未来（未来日期不会自动隐藏，但排序会靠前） |
+
+---
+
+## 六、从旧站迁内容（备忘）
+
+旧 Hexo 站在 `../Saved-blog-doc`，只取内容、不取主题：
+
+| 旧字段 | 新字段 | 说明 |
+| --- | --- | --- |
+| `title` | `title` | 多余空格合并 |
+| `date` | `pubDate` | 只取日期部分 |
+| `tags: A, B` | `tags: [a, b]` | 转小写、空格转连字符 |
+| `excerpt` | `description` | 没有就用正文第一段 |
+| 目录/文件名 | 分类 | 手工判断 |
+
+友链在旧站 `source/_data/links.yml`（`name` / `link` / `description` → `FRIENDS` 的 `name` / `url` / `note`）。

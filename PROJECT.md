@@ -54,7 +54,12 @@
 - [x] Open Graph 分享卡（`public/og.png`）、favicon 三档（svg / 32 png / apple-touch）
 - [x] GitHub Actions 部署工作流、base 路径（`/blog`）全链路核对
 
-**内容现状**：0 篇、0 个分类。`CATEGORIES` 是空数组，`src/content/blog/` 只有 `.gitkeep`；构建会提示 `The collection "blog" does not exist or is empty`，这是空集合的正常提示，写进第一篇就消失。
+**内容现状**：17 篇文章、4 个分类、16 条友链（从旧 Hexo 站 `../Saved-blog-doc` 迁入）。
+
+- 分类：`pwn`（11）、`V8`（3）、`嵌入式与 IoT`（1）、`工具与笔记`（2）
+- 友链：16 条，来自旧站 `source/_data/links.yml`
+- 迁移时统一了 frontmatter（`date`→`pubDate`、`tags` 单串→数组并转小写连字符、`excerpt`→`description`），
+  正文若以 `###` 开头则整体提一级标题，保证目录层级从 h2 起
 
 **待用户操作**
 
@@ -499,3 +504,4 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | 清场准备写作：删除 6 篇占位文章与早期填充的 `hello-world.md`（保留 `astro-github-pages-notes.md` 与 QEMU 草稿）；移除已不再使用的 `@astrojs/rss` 依赖；清掉 4 个未使用的 CSS token（`--accent-soft`、`--bg-raised`、`--content-width`、`--radius`）；重写「当前状态」一节使其与现状一致（构建从 35 页降到 14 页）|
 | 2026-10-25 | 彻底清空内容与分类：删掉最后 2 篇文章、`CATEGORIES = []`；`content.config.ts` 的 category 校验改为「有分类时才 refine，空分类时接受任意字符串」，否则清场阶段写第一篇就会被 schema 拒掉；首页/归档/标签的空状态补齐（首页给出「先定分类、再 npm run new」的指引，归档不再显示「共 0 篇」） |
 | 2026-10-25 | 新增本机写作后台 `scripts/admin.mjs`（`npm run admin` → 127.0.0.1:4322）：零依赖 Node 服务 + 单页界面，可增删改文章（frontmatter 自动生成、改名自动删旧文件）、增删分类（重写 `consts.ts` 的 `#region categories` 并自动重启 dev）；`consts.ts` 的分类块改用 `#region` 标记 + `CategoryItem` 接口以便程序改写；补端口占用提示 |
+| 2026-10-25 | 从旧 Hexo 站 `../Saved-blog-doc` 迁入内容（只要内容，不要主题/构建配置）：16 篇文章 → `src/content/blog/`（保留原 slug；`date`→`pubDate`、`excerpt`→`description`、`tags` 转小写连字符数组；v8 三篇加 `order: 1/2/3`；`orange` 以 `###` 开头，整体提一级）；分类定为 pwn / V8 / 嵌入式与 IoT / 工具与笔记；16 条友链从 `source/_data/links.yml` 写入 `FRIENDS`；顺手把新 stub 的 `tags: [V8]` 改成小写避免重复标签页 |
