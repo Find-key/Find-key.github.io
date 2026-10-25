@@ -39,7 +39,7 @@ arr = [1, 2, 3];
 ```bash
 gdb --args /path/to/d8 --allow-natives-syntax k.js
 ```
-然后在 gdb 中直接 `run`，然后看到 arr 对象的一些信息
+在 gdb 里 `run` 起来，`%DebugPrint(arr)` 会把 `arr` 的布局打出来：
 ```
 DebugPrint: 0x7b8fb55ab1: [JSArray]
  - map: 0x119adca9d981 <Map[32](PACKED_SMI_ELEMENTS)> [FastProperties]
@@ -74,7 +74,7 @@ DebugPrint: 0x7b8fb55ab1: [JSArray]
  - dependent code: 0x36dda0040e39 <Other heap object (WEAK_ARRAY_LIST_TYPE)>
  - construction counter: 0
 ```
-注意到 **0x7b8fb55ab1** 这样一串大概是地址的值，可以在 gdb 中用 `job` 命令查看，再配合 `tel` 命令
+打印里 `0x7b8fb55ab1` 这样一串是带了标记位的地址。用 `job` 看它指向的 Map 结构，用 `tel` 看这块内存的字节排布：
 ```
 pwndbg> job 0x7b8fb55ab1
 0x7b8fb55ab1: [JSArray]
@@ -113,7 +113,7 @@ struct array {
 ```
 length 以 Smi 存放，上面打印的原始值是 0x300000000，右移 32 位才是真实的 3。
 
-容易注意到，`elements` 指针和数组对象的地址差得很远。而特别的，不同于整数数组，浮点数数组和对象数组中的 element 和 array 地址是相邻的。对实验代码稍作修改，验证这一点。
+先看普通数组：`elements` 指针和数组对象本身的地址差得很远。但浮点数组和对象数组不一样——它们的 `elements` 就紧跟在数组对象后面。把实验代码稍作修改就能验证。
 ```js
 arr = [1, 2, 3];
 f = [3.0,7.2];
@@ -259,9 +259,9 @@ pwndbg> job 0x3e9c5b995b29
            1: 7.2 (0x401ccccccccccccd)
  }
 ```
-elements 的指针值和 f 的地址相近，仅相差 0x20，而这其实就是相邻，element 两个元素占 0x10，而 map 字段和 length 字段又占 0x10
+`elements` 和 `f` 的地址只差 `0x20`，正好是"相邻"：两个 element 占 `0x10`，`map` 和 `length` 两个字段又占 `0x10`，加起来刚好 `0x20`。
 
-最后是 ff
+最后是 `ff`：
 ```
 pwndbg> job 0x3e9c5b995b69
 0x3e9c5b995b69: [JSArray]
@@ -278,3 +278,5 @@ pwndbg> job 0x3e9c5b995b69
  }
 ```
 和 f 一样，`elements` 与数组对象相邻。
+
+到这里结论就明确了：**浮点数组和对象数组的 `elements` 紧跟在数组对象后面**。只要能把 `length` 改大，越界读写落到的就是相邻内存——下一篇从这一步往下走。
