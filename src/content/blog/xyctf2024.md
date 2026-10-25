@@ -1,5 +1,5 @@
 ---
-title: "XYCTF2024 复现"
+title: "XYCTF 2024 复现"
 description: "久违地找了个比赛复现"
 pubDate: 2025-04-10
 category: wp
