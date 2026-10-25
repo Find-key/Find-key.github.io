@@ -521,3 +521,4 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | 修正代码块工具栏的三处渲染问题：① 工具行改为真实占位（原来 absolute 悬浮，会压住首行代码）；② Shiki 给 `<pre>` 写了内联 `background-color`，且 `.prose pre` 自带 1px 边框 + 8px 圆角，导致工具栏和代码区看起来是两块——统一改成 `background: transparent !important; border: 0 !important`，让外层 `.code-block` 的米色底成为唯一背景；③ 按钮改成无边框小字（原来是纸色小方块，在米色底上像浮着的补丁） |
 | 2026-10-25 | 全站措辞第二轮（补机制，不只是改标点）：orange 补 House of Orange 因果链与 FSOP 遍历、v8 0x01/0x02 补推导与 0x20 算式、YCB 三题补假堆/3 次机会/opcode 分发、proto 补字段描述符读法、dir-815 补调用链与 haystack 来源、ret2dl 补 reloc_index 为何是字节偏移、php-pwn 补 emalloc 绕开 glibc 的后果、两篇合集各补关键机制 |
 | 2026-10-25 | hero 联系方式拆成两个独立 `.item`：hover 只展开自己那项（之前悬停 QQ 会把邮箱地址也撑开）。favicon 换成几何绘制的「0x」（描边 0 + 交叉 x，不依赖字体），并重新导出 favicon-32.png / apple-touch-icon.png |
+| 2026-10-25 | hero 的 QQ 图标由气泡换成字母 Q（圆 + 斜穿出圈的短尾）；对齐用"墨迹包围盒中心"量化校准：信封与 Q 的 bbox 中心都落在 (9.95, 9.95)，尺寸 16.1×12.1 vs 12.5×12.5 |
