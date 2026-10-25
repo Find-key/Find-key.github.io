@@ -11,44 +11,72 @@ interface Heading {
 
 interface Props {
 	headings: Heading[];
+	/** sidebar：桌面左侧固定目录；inline：窄屏正文顶部的可折叠目录 */
+	variant?: 'sidebar' | 'inline';
 }
 
 const items = Astro.props.headings.filter((h) => h.depth === 2 || h.depth === 3);
+const variant = Astro.props.variant ?? 'sidebar';
 ---
 
 {
-	items.length > 0 && (
-		<aside class="sidebar">
-			<span class="label">目录</span>
-			<ol class="toc">
-				{items.map((h) => (
-					<li class:list={[`d${h.depth}`]}>
-						<a href={`#${h.slug}`} data-heading={h.slug}>
-							{h.text}
-						</a>
-					</li>
-				))}
-			</ol>
-		</aside>
-	)
+	items.length > 0 &&
+		(variant === 'sidebar' ? (
+			<aside class="sidebar">
+				<span class="label">目录</span>
+				<ol class="toc">
+					{items.map((h) => (
+						<li class:list={[`d${h.depth}`]}>
+							<a href={`#${h.slug}`} data-heading={h.slug}>
+								{h.text}
+							</a>
+						</li>
+					))}
+				</ol>
+			</aside>
+		) : (
+			<details class="toc-inline">
+				<summary>目录</summary>
+				<ol class="toc">
+					{items.map((h) => (
+						<li class:list={[`d${h.depth}`]}>
+							<a href={`#${h.slug}`} data-heading={h.slug}>
+								{h.text}
+							</a>
+						</li>
+					))}
+				</ol>
+			</details>
+		))
 }
 
 <script>
-	const links = new Map<string, HTMLAnchorElement>();
-	document.querySelectorAll<HTMLAnchorElement>('.toc a[data-heading]').forEach((link) => {
+	const links = new Map<string, HTMLAnchorElement[]>();
+	document.querySelectorAll<HTMLAnchorElement>('a[data-heading]').forEach((link) => {
 		const id = link.dataset.heading;
-		if (id) links.set(id, link);
+		if (!id) return;
+		const list = links.get(id) ?? [];
+		list.push(link);
+		links.set(id, list);
 	});
 
 	const targets = Array.from(document.querySelectorAll<HTMLElement>('.prose h2[id], .prose h3[id]'));
+
+	// 窄屏点完目录就收起来，免得展开的列表挡在正文里
+	document.querySelectorAll<HTMLAnchorElement>('.toc-inline a[data-heading]').forEach((link) => {
+		link.addEventListener('click', () => {
+			const panel = link.closest('details');
+			if (panel) panel.open = false;
+		});
+	});
 
 	if (links.size > 0 && targets.length > 0) {
 		const observer = new IntersectionObserver(
 			(entries) => {
 				for (const entry of entries) {
 					if (!entry.isIntersecting) continue;
-					links.forEach((link) => link.classList.remove('active'));
-					links.get(entry.target.id)?.classList.add('active');
+					links.forEach((list) => list.forEach((link) => link.classList.remove('active')));
+					links.get(entry.target.id)?.forEach((link) => link.classList.add('active'));
 				}
 			},
 			// 视口上方留出站头高度，下方留 65%，让"当前小节"落在上半屏
@@ -85,7 +113,10 @@ const items = Astro.props.headings.filter((h) => h.depth === 2 || h.depth === 3)
 	}
 	.toc a {
 		position: relative;
-		display: block;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
 		padding: 0.28rem 0 0.28rem 0.85rem;
 		color: var(--muted);
 		text-decoration: none;
@@ -112,9 +143,42 @@ const items = Astro.props.headings.filter((h) => h.depth === 2 || h.depth === 3)
 		background: var(--line-strong);
 		content: '';
 	}
+	/* ---------- 窄屏：正文顶部的可折叠目录 ---------- */
+	.toc-inline {
+		display: none;
+		margin: 1.5rem 0 0;
+		padding: 0.75rem 0;
+		border-top: 1px solid var(--line);
+		border-bottom: 1px solid var(--line);
+		font-size: 0.84rem;
+	}
+	.toc-inline summary {
+		color: var(--muted);
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
+		letter-spacing: 0.12em;
+		cursor: pointer;
+		list-style: none;
+	}
+	.toc-inline summary::-webkit-details-marker {
+		display: none;
+	}
+	.toc-inline summary::after {
+		margin-left: 0.5rem;
+		content: '+';
+	}
+	.toc-inline[open] summary::after {
+		content: '−';
+	}
+	.toc-inline .toc {
+		margin-top: 0.55rem;
+	}
 	@media (max-width: 900px) {
 		.sidebar {
 			display: none;
+		}
+		.toc-inline {
+			display: block;
 		}
 	}
 </style>
