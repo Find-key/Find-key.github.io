@@ -17,10 +17,15 @@ const githubReady = !SITE.github.includes('USERNAME');
 		<main class="container page">
 			<article class="prose about">
 				<h1>关于</h1>
-				<p>我是 {SITE.author}，平时做嵌入式 Linux，业余打 pwn。这里记踩过的坑，和还没想明白的东西。</p>
 				<p>
-					写的多是 pwn——栈、堆、保护绕过；也会写终端安全、反病毒，以及内核和工具链上的一些折腾。
-					想到什么写什么，不保证成体系。
+					我是 {SITE.author}，JNU 本科在读。主要在看二进制漏洞：glibc 的堆、栈和 IO_FILE 过了一遍，
+					现在慢慢往 kernel 走，目标是哪天能自己写一个内核出来。
+				</p>
+				<p>
+					对 V8 这类引擎漏洞也有兴趣。语言上在碰 Zig，Rust 读过一点，都还写不利索。
+				</p>
+				<p>
+					为了找工作，最近在补终端安全、病毒和免杀，刚入门。
 				</p>
 				{SITE.email && (
 					<p>
