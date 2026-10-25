@@ -1,0 +1,120 @@
+---
+/**
+ * 文章页左侧目录：按正文的 h2 / h3 生成，滚动时高亮当前小节。
+ * 之前这里是「当前分类下的文章列表」，容易被误读成目录；分类的入口在面包屑和底部上下篇。
+ */
+interface Heading {
+	depth: number;
+	slug: string;
+	text: string;
+}
+
+interface Props {
+	headings: Heading[];
+}
+
+const items = Astro.props.headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+
+{
+	items.length > 0 && (
+		<aside class="sidebar">
+			<span class="label">目录</span>
+			<ol class="toc">
+				{items.map((h) => (
+					<li class:list={[`d${h.depth}`]}>
+						<a href={`#${h.slug}`} data-heading={h.slug}>
+							{h.text}
+						</a>
+					</li>
+				))}
+			</ol>
+		</aside>
+	)
+}
+
+<script>
+	const links = new Map<string, HTMLAnchorElement>();
+	document.querySelectorAll<HTMLAnchorElement>('.toc a[data-heading]').forEach((link) => {
+		const id = link.dataset.heading;
+		if (id) links.set(id, link);
+	});
+
+	const targets = Array.from(document.querySelectorAll<HTMLElement>('.prose h2[id], .prose h3[id]'));
+
+	if (links.size > 0 && targets.length > 0) {
+		const observer = new IntersectionObserver(
+			(entries) => {
+				for (const entry of entries) {
+					if (!entry.isIntersecting) continue;
+					links.forEach((link) => link.classList.remove('active'));
+					links.get(entry.target.id)?.classList.add('active');
+				}
+			},
+			// 视口上方留出站头高度，下方留 65%，让"当前小节"落在上半屏
+			{ rootMargin: '-84px 0px -65% 0px' },
+		);
+		targets.forEach((target) => observer.observe(target));
+	}
+</script>
+
+<style>
+	.sidebar {
+		position: sticky;
+		top: calc(var(--header-height) + 1.75rem);
+		max-height: calc(100vh - var(--header-height) - 4rem);
+		overflow-y: auto;
+		font-size: 0.8rem;
+		line-height: 1.6;
+	}
+	.label {
+		display: block;
+		margin-bottom: 0.7rem;
+		color: var(--muted);
+		font-family: var(--font-mono);
+		font-size: 0.66rem;
+		letter-spacing: 0.12em;
+	}
+	.toc {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.toc li {
+		margin: 0;
+	}
+	.toc a {
+		position: relative;
+		display: block;
+		padding: 0.28rem 0 0.28rem 0.85rem;
+		color: var(--muted);
+		text-decoration: none;
+		transition: color 0.15s ease;
+		text-wrap: pretty;
+	}
+	.toc .d3 a {
+		padding-left: 1.7rem;
+		font-size: 0.76rem;
+	}
+	.toc a:hover {
+		color: var(--text);
+	}
+	/* 当前位置：左侧 1px 竖线 + 正文色 */
+	.toc a.active {
+		color: var(--text);
+	}
+	.toc a.active::before {
+		position: absolute;
+		top: 0.3rem;
+		bottom: 0.3rem;
+		left: 0;
+		width: 1px;
+		background: var(--line-strong);
+		content: '';
+	}
+	@media (max-width: 900px) {
+		.sidebar {
+			display: none;
+		}
+	}
+</style>

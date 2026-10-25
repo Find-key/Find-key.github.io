@@ -176,7 +176,7 @@ blog/
     │   ├── Header.astro    ← ★ 站头：左字标 + 右「归档/友链」
     │   ├── Footer.astro    ← ★ 版权页 colophon（装饰符 + 排印说明 + 小链接）
     │   ├── PostList.astro  ← 文章行列表（发丝分隔，标题左 / 日期右）
-    │   ├── CategoryNav.astro ← ★ 文章页左侧分类目录（sticky）
+    │   ├── Toc.astro        ← ★ 文章页左侧目录（由正文 h2/h3 生成，滚动高亮）
     │   └── FormattedDate.astro
     ├── layouts/BlogPost.astro ← 文章页：左目录 + 右正文 + 上下篇
     ├── pages/
@@ -479,3 +479,4 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | **删除关于页**（`src/pages/about.astro` 与 `NAV` 里的「关于」）：用户认为怎么写都不优雅，联系方式放版权页的邮箱即可；站头导航变为「归档 / 友链」 |
 | 2026-10-25 | 删除 RSS：移除页脚链接、hero 图标、`<head>` 的 alternate 与 `src/pages/rss.xml.js` 路由（要恢复就 `git show` 拿回该文件并重加这三处）；同时全站去掉 `mailto:`——页脚与友链页显示纯文本邮箱，hero 的邮箱图标改为**点击复制到剪贴板** |
 | 2026-10-25 | 邮箱改为「展开式联系条」（按用户指定的方案）：默认只显示信封图标，图标是 `mailto:` 链接（点击发信）；hover / focus 时整条横向展开（max-width 过渡 0.3s）露出完整地址，右侧跟复制按钮；点复制在展开条下方淡入「已复制」1.6s；触屏（<760px）无 hover，地址与复制按钮常显 |
+| 2026-10-25 | 文章页左侧从「本分类的文章列表」改为**文章目录**：`render(post)` 取 `headings`，过滤 h2/h3 生成锚点列表，sticky 且用 IntersectionObserver 高亮当前小节（左侧 1px 竖线）；<900px 隐藏；删除 `CategoryNav.astro`（分类入口仍在面包屑与底部上下篇） |
