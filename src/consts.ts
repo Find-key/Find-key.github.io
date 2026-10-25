@@ -66,9 +66,9 @@ export interface Friend {
 export const FRIENDS: Friend[] = [
 	{ name: 'Gubai', url: 'https://www.gubaiovo.com/', note: '超厉害的顾白', avatar: '/friends/gubai-s.webp' },
 	{ name: 'KuLiPai', url: 'https://doc.kulipai.top/', note: '安卓大手子', avatar: '/friends/kulipai-s.webp' },
-	{ name: 'Eleven.', url: 'https://imconfident11.github.io/', note: '不断进步的逆向人', avatar: '/friends/eleven-s.webp' },
-	{ name: 'Kamiya', url: 'https://blog.kamiya.run/', note: 'Hello! I\'m KAMIYA!', avatar: '/friends/kamiya-s.webp' },
-	{ name: 'Sally', url: 'https://sally-0000.github.io/', note: '都会一点点', avatar: '/friends/sally-s.webp' },
+	{ name: 'Eleven.', url: 'https://imconfident11.github.io/', note: 'Make that move you\'re afraid of making.', avatar: '/friends/eleven-s.webp' },
+	{ name: 'Kamiya', url: 'https://blog.kamiya.run/', note: '近在咫尺，却邈以山河', avatar: '/friends/kamiya-s.webp' },
+	{ name: 'Sally', url: 'https://sally-0000.github.io/', note: '一个pwn手的blog', avatar: '/friends/sally-s.webp' },
 	{ name: 'sadsnowcat', url: 'https://sadsnowcat.github.io/', note: '为了没有泪水的明天', avatar: '/friends/sadsnowcat-s.webp' },
 	{ name: 'Nick', url: 'https://nickchen.top/', note: '越平静，越汹涌', avatar: '/friends/nick-s.webp' },
 	{ name: 'wsh', url: 'https://wele.vercel.app/', note: 'wele - wele', avatar: 'https://wele.vercel.app/avatar.jpg' },
