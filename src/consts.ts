@@ -61,7 +61,24 @@ export interface Friend {
  * 友链。/links 页面按这个数组的顺序渲染。
  * 加一条就是补一项：{ name: '站点名', url: 'https://…', note: '一句话' }
  */
-export const FRIENDS: Friend[] = [];
+export const FRIENDS: Friend[] = [
+	{ name: 'Gubai', url: 'https://www.gubaiovo.com/', note: '超厉害的顾白' },
+	{ name: 'KuLiPai', url: 'https://doc.kulipai.top/', note: '安卓大手子' },
+	{ name: 'Eleven.', url: 'https://imconfident11.github.io/', note: '不断进步的逆向人' },
+	{ name: 'Kamiya', url: 'https://blog.kamiya.run/', note: 'Hello! I\'m KAMIYA!' },
+	{ name: 'Sally', url: 'https://sally-0000.github.io/', note: '都会一点点' },
+	{ name: 'sadsnowcat', url: 'https://sadsnowcat.github.io/', note: '为了没有泪水的明天' },
+	{ name: 'Nick', url: 'https://nickchen.top/', note: '越平静，越汹涌' },
+	{ name: 'wuye', url: 'https://www.mgoyy.cn/', note: '逆向选手的自我修养' },
+	{ name: 'wele', url: 'https://wele.vercel.app/', note: 'wele - wele' },
+	{ name: 'yuoooka', url: 'https://yuoooka.cn/', note: '区' },
+	{ name: 's0lowalker', url: 'https://s0lowalker.github.io/', note: 'WebSecurity Learner' },
+	{ name: 'yfor', url: 'https://yfor-yfor.github.io/', note: 'yfor, 为什么不是 wifi' },
+	{ name: 'Yolo', url: 'https://yo1o.top/', note: '超厉害的 MISC 选手' },
+	{ name: 'Y&Y', url: 'https://singlehorn.github.io/', note: '保持好奇心' },
+	{ name: 'Lochad', url: 'http://lochad.top/', note: '后辈 pwn 手' },
+	{ name: 'sysNow', url: 'https://sysnow.xyz/', note: 'to be a pwn master' },
+];
 
 /**
  * 分类体系 —— 文章按分类组织，而不是按时间堆在一条流里。
@@ -81,9 +98,12 @@ export interface CategoryItem {
 }
 
 // #region categories
-// 这一段由 scripts/admin.mjs 维护；手写也可以，保持格式即可
+// 这一段由 `npm run admin` 的后台维护；手写也可以，保持格式即可
 export const CATEGORIES: CategoryItem[] = [
-	{ slug: 'pwn', name: 'pwn', description: '二进制漏洞与利用：栈、堆、保护绕过、利用链。' },
+	{ slug: 'pwn', name: 'pwn', description: '二进制漏洞与利用：栈、堆、IO_FILE、保护绕过、利用链。' },
+	{ slug: 'v8', name: 'V8', description: 'V8 引擎：环境搭建、对象在内存里的样子、OOB 与利用。' },
+	{ slug: 'iot', name: '嵌入式与 IoT', description: '路由器等设备的固件与漏洞复现。' },
+	{ slug: 'tools', name: '工具与笔记', description: 'GDB 脚本、protobuf 之类的工具笔记。' },
 ];
 // #endregion
 
