@@ -41,7 +41,7 @@ const host = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$/, '')
 						<p>还没有友链。</p>
 						<p class="hint">
 							想交换链接的话，写信给我：
-							{SITE.email ? <a href={`mailto:${SITE.email}`}>{SITE.email}</a> : '（邮箱待填）'}
+							{SITE.email ? <span class="mail">{SITE.email}</span> : '（邮箱待填）'}
 						</p>
 					</div>
 				)
