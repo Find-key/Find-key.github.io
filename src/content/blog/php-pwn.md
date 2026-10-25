@@ -82,13 +82,15 @@ cp /usr/local/etc/php/php.ini-development /usr/local/etc/php/php.ini
 extension=apple.so
 ```
 
-在容器的 /var/www/html，创建一个 index.php，内容是
+然后在**宿主机**的 `./Src` 下建一个 `index.php`（这个目录挂载到容器的 `/var/www/html`）：
+
 ```php
 <?php
   phpinfo();
 ?>
 ```
-然后访问，发现页面中有 apple 部分的信息
+
+浏览器打开 `http://<容器 IP>:1724/index.php`，页面上出现 `apple` 一节，就说明拓展加载成功了。
 
 ## 参数解析与返回值
 
@@ -101,7 +103,7 @@ extension=apple.so
 | long | Z_PARAM_LONG | 整数 |
 | double | Z_PARAM_DOUBLE | 浮点数 |
 | string | Z_PARAM_STRING | 字符串，需要手动释放内存 |
-| string | (copy)	Z_PARAM_STR | 字符串，自动拷贝，不需要手动释放内存 |
+| string（拷贝） | Z_PARAM_STR | 字符串，自动拷贝，不需要手动释放内存 |
 | bool | Z_PARAM_BOOL | 布尔值 |
 | array | Z_PARAM_ARRAY | 数组 |
 | object | Z_PARAM_OBJECT | 对象 |
@@ -142,7 +144,7 @@ PHP_FUNCTION(my_function)
 | long | RETURN_LONG | 整数 |
 | double | RETURN_DOUBLE | 浮点数 |
 | string | RETURN_STRING | 字符串，需要手动拷贝字符串 |
-| string | (copy)	RETURN_STR | 字符串，自动拷贝，不需要手动释放内存 |
+| string（拷贝） | RETURN_STR | 字符串，自动拷贝，不需要手动释放内存 |
 | bool | RETURN_TRUE, RETURN_FALSE | 布尔值 |
 | array | RETURN_ARR | 数组，返回的是 zend_array * 指针，需要先创建 zend_array 结构体 |
 | object | RETURN_OBJ | 对象，返回的是 zend_object * 指针，需要先创建 zend_object 结构体 |
@@ -206,7 +208,8 @@ docker restart php81
 ### 验证
 
 #### 看 phpinfo
-`./Src` 挂载的就是容器的 `/var/www/html`，前面建好的 `index.php` 直接刷新即可。浏览器访问 **http://ip:1724/index.php**，就能看到 phpinfo() 的执行效果，查看到 apple 部分有 author 字段及内容。ip 请根据实际做对应调整。
+
+`PHP_MINFO_FUNCTION` 里加的那行 `php_info_print_table_row` 会显示在同一节里。重新 `make && make install`、再 `docker restart php81`，然后刷新刚才那个 `index.php`——`apple` 一节会多出 `author = key`，页面本身不用改。
 
 #### 调 Recall
 在 ./Src 文件夹下创建文件 test.php，写如下内容
