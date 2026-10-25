@@ -2,7 +2,7 @@
 title: "jnctf_wp"
 description: "校赛的 PWN 算 ak 了,记录一下参加的最后一届校赛."
 pubDate: 2025-03-27
-category: pwn
+category: wp
 tags: [writeup]
 ---
 

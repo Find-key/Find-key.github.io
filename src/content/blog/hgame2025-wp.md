@@ -2,7 +2,7 @@
 title: "HGAME2025_WP"
 description: "HGAME2025的一部分题解"
 pubDate: 2025-02-07
-category: pwn
+category: wp
 tags: [writeup]
 ---
 
