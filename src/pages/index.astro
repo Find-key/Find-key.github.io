@@ -46,8 +46,6 @@ const rows = CATEGORIES.map((category) => ({
 								<span class="count">{items.length > 0 ? `${items.length} 篇` : '还没有文章'}</span>
 							</header>
 
-							<p class="desc">{category.description}</p>
-
 							{items.length > 0 && (
 								<ul class="rows">
 									{items.slice(0, 3).map((post) => (
@@ -65,7 +63,7 @@ const rows = CATEGORIES.map((category) => ({
 
 							{items.length > 3 && (
 								<p class="more">
-									<a href={categoryUrl(category.slug)}>该分类共 {items.length} 篇</a>
+									<a href={categoryUrl(category.slug)}>全部 {items.length} 篇 →</a>
 								</p>
 							)}
 						</section>
@@ -137,17 +135,8 @@ const rows = CATEGORIES.map((category) => ({
 		white-space: nowrap;
 	}
 
-	.desc {
-		max-width: 34ch;
-		margin: 0.5rem 0 0;
-		color: var(--muted);
-		font-size: 0.84rem;
-		line-height: 1.7;
-		text-wrap: pretty;
-	}
-
 	.rows {
-		margin: 0.9rem 0 0;
+		margin: 0.75rem 0 0;
 		padding: 0;
 		list-style: none;
 	}

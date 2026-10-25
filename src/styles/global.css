@@ -78,9 +78,9 @@ body {
 	overflow-wrap: break-word;
 }
 
-/* 内容不足一屏时，页脚也贴住视口底部 */
+/* 不再把页脚推到底：内容短时页脚紧跟正文，避免中间空一大段 */
 main {
-	flex: 1 0 auto;
+	flex: 0 0 auto;
 }
 
 ::selection {
