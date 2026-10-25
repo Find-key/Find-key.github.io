@@ -293,6 +293,8 @@ v7 = &message_response__descriptor;
 `v7 = &message_response__descriptor;` 这样的赋值，跟进去看第一个值是不是 `0x28AAEEF9`，就能确认它是 `ProtobufCMessageDescriptor`：
 然后发现名为 Message_response 的 Message
 `n_fields` 说有 4 个字段；顺着 `fields` 找到每个字段的 `ProtobufCFieldDescriptor`，四个字段依次是 id、receiver、status、error_message。
+
+怎么读这些描述符：`type` 给出类型（对应 `ProtobufCType` 枚举），`label` 给出 required / optional / repeated，`id` 就是字段编号，字段名则要从 `name` 指向的字符串里取。把枚举值和 `.proto` 语法对着翻译一遍，结构体声明就还原出来了。
 结构体里有 `default_value`，说明这是 proto2。
 于是可以还原出：
 ```
