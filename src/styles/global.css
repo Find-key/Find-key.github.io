@@ -15,7 +15,6 @@
 :root {
 	/* 纸感暖白 + 暖灰层次 */
 	--bg: #fbf9f5;
-	--bg-raised: #ffffff;
 	--text: #262220;
 	--muted: #736d64;
 	--line: #ede8de;
@@ -23,10 +22,8 @@
 	--line-strong: #e0dacd;
 	/* 墨绿：比蓝更沉，和暖白底搭得住；全站只用这一个强调色 */
 	--accent: #1f6f5c;
-	--accent-soft: #e9f0ec;
 	--code-bg: #f2eee6;
 
-	--radius: 10px;
 
 	/* 拉丁字符优先衬线，中文回落思源宋体。
 	   拉丁字体必须排在中文字体前面：Noto Serif CJK 也有拉丁字形，
@@ -44,7 +41,6 @@
 		monospace;
 
 	/* 正文列 700；主栏 1000（减左右各 20 padding → 内容区 960） */
-	--content-width: 700px;
 	--page-width: 1000px;
 	--header-height: 58px;
 }

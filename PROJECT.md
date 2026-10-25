@@ -32,29 +32,35 @@
 
 ## 2. 当前状态
 
-已完成（本地已验证可构建、可预览）：
+本地已验证可构建、可预览；内容已清空到「可以开始写」的状态。
 
-- [x] Astro 项目骨架、内容集合、TypeScript 严格模式
-- [x] 站点元信息与分类体系集中管理（`src/consts.ts`）
-- [x] 分类式信息架构：
-  - 首页 = **分类目录跨页**（2×2 网格）：每个分类一格 = 编号 + 大号衬线分类名（点击进分类页）+ 篇数 + 一句简介 + 最近 3 篇（标题 / 日期）；空分类标「还没有文章」。没有刊首语、没有把某篇文章供在顶上
-  - 首页每个分类只列**最近 4 篇**，超过 4 篇才出现「该分类共 N 篇 →」链接（避免"点进去看到同一个列表"）
-  - `/categories/<slug>` 分类页：面包屑「首页 / 分类名」（首页链接带 `#slug`，回去时手风琴自动展开该项），底部「← 返回首页」
-  - 没有"分类总览"页——首页本身就是分类目录
-  - `/posts` **归档**（按年份倒序，紧凑列表，和首页的分类视图互补）
-  - 文章页左侧显示**当前分类的文章目录**，底部有同分类的上一篇/下一篇
-- [x] 站头与页脚：
-  - 站头 = 左字标 + 右「归档 / 友链」（58px，sticky，当前栏目加 1px 墨绿短下划线）；分类/标签/邮箱/RSS 在版权页
-  - 页脚 = 版权页 colophon：装饰符 + 排印说明 + 极简小链接，不再堆链接列表
-- [x] 标签系统（`/tags`、`/tags/<tag>`）、草稿机制（`draft`）
-- [x] 文章页元信息：发布时间、约读几分钟（按字数估算）、更新时间、标签
-- [x] 简约视觉：单色背景、系统字体栈（无 webfont 请求）、发丝分隔线、正文 700px 单栏
-- [x] RSS、sitemap、robots.txt、Open Graph / Twitter 卡片
-- [x] base 路径（`/blog`）正确性：站内链接、canonical、og:image、RSS 全部核对过
-- [x] GitHub Actions 部署工作流
-- [ ] GitHub 仓库创建 + 首次推送（待用户操作，见第 7 节）
-- [ ] Pages 发布源切到 GitHub Actions（待用户操作）
-- [ ] 替换 `USERNAME` 占位符（域名、GitHub 链接）
+**页面结构**
+
+- 首页 = hero（圆形头像 + 名字 + 一句题记 + 一行十六进制 dump + 联系方式）+「文章」分类列表
+  - 分类双栏排列，每类最多列 3 篇（标题 / 日期），超过 3 篇给「全部 N 篇 →」
+  - 空分类显示「还没有文章」，不可点（不生成分类页）；分组数为奇数时最后一格横跨两栏
+- `/categories/<slug>`：面包屑「首页 / 分类名」+ 该分类全部文章 + 「← 返回首页」
+- `/posts` **归档**：按年份倒序的紧凑列表（标题 + 日期），和首页的分类视图互补
+- 文章页：面包屑 → 标题 / 日期 / 约读时长 / 标签 → 左侧**正文目录**（h2/h3，滚动高亮；<900px 变成正文顶部的可折叠目录）→ 正文 → 同分类上下篇
+- `/links` 友链、`/tags` 与 `/tags/<tag>`、404、`robots.txt`、`sitemap`
+
+**基础设施**
+
+- [x] Astro 静态站，内容集合 + frontmatter 类型校验，构建时校验分类
+- [x] 元信息 / 导航 / 分类 / 友链集中在 `src/consts.ts`；站内链接统一走 `utils/url.ts`
+- [x] 站头：左字标 `Findkey’s Blog` + 右「归档 / 友链」；页脚：版权页（归档 / 标签 / 邮箱纯文本 / 署名）
+- [x] 草稿机制（`draft`）、`npm run new` 生成文章骨架、`docs/how-to.md` 日常操作
+- [x] Open Graph 分享卡（`public/og.png`）、favicon 三档（svg / 32 png / apple-touch）
+- [x] GitHub Actions 部署工作流、base 路径（`/blog`）全链路核对
+
+**内容现状**：2 篇 —— `astro-github-pages-notes.md`（已发布）、`qemu-buildroot-vexpress-a9.md`（`draft: true`，只在 dev 可见）。
+
+**待用户操作**
+
+- [ ] `src/consts.ts` 里的 `USERNAME` 换成真实 GitHub 用户名（`url`、`github`）
+- [ ] 建仓库 `blog` → `git remote add` → `git branch -M main` → push
+- [ ] 仓库 Settings → Pages → Source 选 **GitHub Actions**
+- [ ] 换头像照片（`public/avatar.svg` 目前是 F 占位）
 
 ---
 
@@ -489,3 +495,4 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | 标签页名改回 `Findkey’s Blog`（试过 `0xFindkey` 后否掉）：标签页、站头字标、分享卡三处统一成同一个名字，不再分叉 |
 | 2026-10-25 | favicon 换成 Grapple（`public/Grapple.svg`，Lorc / game-icons.net，CC BY 3.0）：原图 512 渐变 + 细笔画，16px 下是红色涂鸦；改为**单色纸色 + 墨色圆角底 + 描边加粗 16**，并补齐 `favicon-32.png`、`apple-touch-icon.png` 与 `<link>`（svg / 32 / apple-touch 三档）。署名写在 SVG 注释与本文档，若要在页面上可见再加一行 |
 | 2026-10-25 | favicon 回退到 F 字标（Grapple 试过一版后放弃）：`public/favicon.svg` = 墨色圆角底 + 纸色衬线 F（x 微调到 16.5 做视觉居中），`favicon-32.png` / `apple-touch-icon.png` 由它重新导出；删除 `public/Grapple.svg`（需要时 `git show 1afd715:public/Grapple.svg` 可取回） |
+| 2026-10-25 | 清场准备写作：删除 6 篇占位文章与早期填充的 `hello-world.md`（保留 `astro-github-pages-notes.md` 与 QEMU 草稿）；移除已不再使用的 `@astrojs/rss` 依赖；清掉 4 个未使用的 CSS token（`--accent-soft`、`--bg-raised`、`--content-width`、`--radius`）；重写「当前状态」一节使其与现状一致（构建从 35 页降到 14 页）|
