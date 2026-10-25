@@ -50,6 +50,7 @@
 - [x] 元信息 / 导航 / 分类 / 友链集中在 `src/consts.ts`；站内链接统一走 `utils/url.ts`
 - [x] 站头：左字标 `Findkey’s Blog` + 右「归档 / 友链」；页脚：版权页（归档 / 标签 / 邮箱纯文本 / 署名）
 - [x] 草稿机制（`draft`）、`npm run new` 生成文章骨架、`docs/how-to.md` 日常操作
+- [x] 本机写作后台 `npm run admin`（零依赖 Node 服务，127.0.0.1:4322）：文章增删改 + 分类增删，改写真实文件；分类变化后自动重启 dev
 - [x] Open Graph 分享卡（`public/og.png`）、favicon 三档（svg / 32 png / apple-touch）
 - [x] GitHub Actions 部署工作流、base 路径（`/blog`）全链路核对
 
@@ -497,3 +498,4 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | favicon 回退到 F 字标（Grapple 试过一版后放弃）：`public/favicon.svg` = 墨色圆角底 + 纸色衬线 F（x 微调到 16.5 做视觉居中），`favicon-32.png` / `apple-touch-icon.png` 由它重新导出；删除 `public/Grapple.svg`（需要时 `git show 1afd715:public/Grapple.svg` 可取回） |
 | 2026-10-25 | 清场准备写作：删除 6 篇占位文章与早期填充的 `hello-world.md`（保留 `astro-github-pages-notes.md` 与 QEMU 草稿）；移除已不再使用的 `@astrojs/rss` 依赖；清掉 4 个未使用的 CSS token（`--accent-soft`、`--bg-raised`、`--content-width`、`--radius`）；重写「当前状态」一节使其与现状一致（构建从 35 页降到 14 页）|
 | 2026-10-25 | 彻底清空内容与分类：删掉最后 2 篇文章、`CATEGORIES = []`；`content.config.ts` 的 category 校验改为「有分类时才 refine，空分类时接受任意字符串」，否则清场阶段写第一篇就会被 schema 拒掉；首页/归档/标签的空状态补齐（首页给出「先定分类、再 npm run new」的指引，归档不再显示「共 0 篇」） |
+| 2026-10-25 | 新增本机写作后台 `scripts/admin.mjs`（`npm run admin` → 127.0.0.1:4322）：零依赖 Node 服务 + 单页界面，可增删改文章（frontmatter 自动生成、改名自动删旧文件）、增删分类（重写 `consts.ts` 的 `#region categories` 并自动重启 dev）；`consts.ts` 的分类块改用 `#region` 标记 + `CategoryItem` 接口以便程序改写；补端口占用提示 |
