@@ -98,7 +98,7 @@ echo "[+] starting shell"
 exec /bin/sh
 ```
 
-在 mnt/htdocs/ 目录下，创建 httpd.conf ，内容如下
+在 mnt/htdocs/ 目录下，创建 httpd.conf，内容如下
 ```
 Umask 026
 PIDFile /var/run/httpd.pid
@@ -190,12 +190,12 @@ Server
 }
 ```
 
-然后使用 `sudo chmod 750 init` 修改 init 的权限为 750 。
+然后使用 `sudo chmod 750 init` 修改 init 的权限为 750。
 
 传入一个 静态编译的 gdbserver 到 mnt 目录下。
 下载链接：[Releases · guyush1/gdb-static](https://github.com/guyush1/gdb-static/releases)
 
-最后，解除挂载： `sudo umount mnt` 。
+最后，解除挂载： `sudo umount mnt`。
 
 ### 运行
 创建 run.sh，内容如下

@@ -131,9 +131,9 @@ struct ProtobufCMessageDescriptor {
  void    *reserved3;
 };
 ```
-`magic` 通常是 `0x28AAEEF9`，可以拿它做全局搜索，快速定位 descriptor。
-n_fields 是字段数量
-`fields` 指向字段描述符数组。
+- `magic`：通常是 `0x28AAEEF9`，可以拿它做全局搜索，快速定位 descriptor。
+- `n_fields`：字段个数。
+- `fields`：指向字段描述符数组。
 
 #### ProtobufCFieldDescriptor
 ```C
@@ -193,11 +193,11 @@ struct ProtobufCFieldDescriptor {
  void   *reserved3;
 };
 ```
-name 是字段名
-id 是字段编号
-label 是修饰符
-type 是字段类型
-default_value 在 proto2 存在，在 proto3 不存在，可以通过这个判断版本
+- `name`：字段名。
+- `id`：字段编号。
+- `label`：修饰符。
+- `type`：字段类型。
+- `default_value`：proto2 有、proto3 没有，可以据此判断版本。
 
 #### Label 与 Type
 ```C
@@ -337,9 +337,7 @@ message Message_response{
 存成 `demo.proto`。
 使用 `protoc --c_out=. ./demo.proto` 和 `protoc --python_out=. ./demo.proto`
 
-在当前目录生成了 c 文件和 python 文件
-demo.pb-c.c 和 demo.pb-c.h
-demo_pb2.py 和 `__pycache__` 目录
+当前目录下会生成 C 和 Python 两组文件：`demo.pb-c.c`、`demo.pb-c.h`，以及 `demo_pb2.py` 和 `__pycache__` 目录。
 
 C 文件用于恢复符号，在其中可找到结构体 MessageRequest
 ```C

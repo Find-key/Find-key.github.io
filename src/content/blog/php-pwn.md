@@ -82,7 +82,7 @@ cp /usr/local/etc/php/php.ini-development /usr/local/etc/php/php.ini
 extension=apple.so
 ```
 
-在容器的 /var/www/html ，创建一个 index.php，内容是
+在容器的 /var/www/html，创建一个 index.php，内容是
 ```php
 <?php
   phpinfo();
@@ -151,7 +151,7 @@ PHP_FUNCTION(my_function)
 | void | RETURN_VOID | 没有返回值 |
 
 ### 实现 Recall 函数
-修改 apple.stub.php ，声明函数
+修改 apple.stub.php，声明函数
 ```php
 ...
 function Recall(string $str = ""): void {}
@@ -161,7 +161,7 @@ function Recall(string $str = ""): void {}
 然后运行 `php /usr/src/php-8.1.34/build/gen_stub.php --ext=apple ./apple.stub.php`
 这一步会在 apple_arginfo.h 添加一些函数声明的内容。
 
-找到源码 apple.c ，开始添加内容
+找到源码 apple.c，开始添加内容
 ```C
 ...
 PHP_FUNCTION(Recall)
@@ -206,21 +206,21 @@ docker restart php81
 ### 验证
 
 #### 看 phpinfo
-`./Src` 挂载的就是容器的 `/var/www/html`，前面建好的 `index.php` 直接刷新即可。浏览器访问 **http://ip:1724/index.php** ，就能看到 phpinfo() 的执行效果，查看到 apple 部分有 author 字段及内容。ip 请根据实际做对应调整。
+`./Src` 挂载的就是容器的 `/var/www/html`，前面建好的 `index.php` 直接刷新即可。浏览器访问 **http://ip:1724/index.php**，就能看到 phpinfo() 的执行效果，查看到 apple 部分有 author 字段及内容。ip 请根据实际做对应调整。
 
 #### 调 Recall
-在 ./Src 文件夹下创建文件 test.php ，写如下内容
+在 ./Src 文件夹下创建文件 test.php，写如下内容
 ```php
 <?php
   Recall("Do you like apple?\n");
 ?>
 ```
 
-来到容器中，cd /var/www/html ，直接运行 test.php
+来到容器中，cd /var/www/html，直接运行 test.php
 ```
 php test.php
 ```
-看到回显为：`You say: Do you like apple?` ，就是验证成功。
+看到回显为：`You say: Do you like apple?`，就是验证成功。
 
 ## 漏洞研究
 实际比赛就是先得到有漏洞的 .so 文件（有时可能题目附件直接提供），然后分析。

@@ -784,7 +784,7 @@ unsigned __int64 edit_heap()
 
 edit_heap() 函数会请求输入**size**，故存在溢出。
 
-思路：通过 *unsafe unlink* ，修改 heap 地址数组，劫持 atoi() 为 system()
+思路：通过 *unsafe unlink*，修改 heap 地址数组，劫持 atoi() 为 system()
 
 ##### exp
 ```python
