@@ -32,6 +32,7 @@ export const SITE = {
  * 首页已经是分类目录，所以「分类」不再放站头，改放版权页。
  */
 export const NAV = [
+	{ href: '/posts', label: '归档' },
 	{ href: '/links', label: '友链' },
 	{ href: '/about', label: '关于' },
 ] as const;
