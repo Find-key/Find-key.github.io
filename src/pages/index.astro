@@ -26,15 +26,15 @@ const rows = CATEGORIES.map((category) => ({
 		<Header variant="home" />
 		<main class="container home">
 			<section class="intro">
-				<img class="avatar" src={withBase('/avatar.svg')} alt="" width="56" height="56" />
-				<div class="lines">
+				<img class="avatar" src={withBase('/avatar.svg')} alt="" width="64" height="64" />
+				<div class="body">
 					<p class="quote" data-hito>过早优化是万恶之源。</p>
-					<p class="src" data-hito-src>Donald Knuth</p>
+					<p class="src" data-hito-src>— Donald Knuth</p>
 				</div>
 			</section>
 
 			<div class="index-head">
-				<span class="label">分类目录</span>
+				<span class="label">文章</span>
 			</div>
 
 			<div class="spread">
@@ -96,7 +96,9 @@ const rows = CATEGORIES.map((category) => ({
 			quote.textContent = data.hitokoto;
 			if (source) {
 				const from = data.from_who ? `${data.from_who} · ${data.from ?? ''}` : (data.from ?? '');
-				source.textContent = from.replace(/·\s*$/, '').trim();
+				const clean = from.replace(/·\s*$/, '').trim();
+				// 出处为空就整行消失，别留一个孤零零的破折号
+				source.textContent = clean ? `— ${clean}` : '';
 			}
 		})
 		.catch(() => {
@@ -110,40 +112,67 @@ const rows = CATEGORIES.map((category) => ({
 	}
 
 	/* ---------- 头像 + 一言 ---------- */
+	/* 头像贴左边、出处贴右边，一行里两端都有东西，才不会显得重左轻右 */
 	.intro {
-		display: flex;
-		align-items: flex-start;
-		gap: 1.15rem;
+		display: grid;
+		grid-template-columns: auto 1fr;
+		align-items: center;
+		gap: 1.25rem;
 		padding-bottom: 2.6rem;
 	}
 	.avatar {
-		flex: none;
-		width: 56px;
-		height: 56px;
+		width: 64px;
+		height: 64px;
 		border-radius: 50%;
 	}
-	.lines {
+	.body {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 2rem;
 		min-width: 0;
-		padding-top: 0.15rem;
 	}
 	.quote {
-		max-width: 34em;
 		margin: 0;
 		color: var(--text);
 		font-family: var(--font-serif);
-		font-size: 1.02rem;
-		line-height: 1.75;
+		font-size: 1.1rem;
+		line-height: 1.7;
 		text-wrap: pretty;
 	}
 	.src {
-		margin: 0.4rem 0 0;
+		flex: none;
+		margin: 0;
 		color: var(--muted);
 		font-family: var(--font-mono);
 		font-size: 0.68rem;
 		letter-spacing: 0.04em;
+		white-space: nowrap;
 	}
 	.src:empty {
 		display: none;
+	}
+
+	@media (max-width: 560px) {
+		/* 手机上出处换到引文下面，不挤出横向滚动 */
+		.intro {
+			align-items: start;
+			gap: 1rem;
+		}
+		.avatar {
+			width: 52px;
+			height: 52px;
+		}
+		.body {
+			display: block;
+			padding-top: 0.2rem;
+		}
+		.quote {
+			font-size: 1rem;
+		}
+		.src {
+			margin-top: 0.4rem;
+		}
 	}
 
 	.index-head {
