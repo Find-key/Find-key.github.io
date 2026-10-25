@@ -1,6 +1,6 @@
 ---
 title: "JNCTF 2025"
-description: "校赛的 PWN 算 ak 了,记录一下参加的最后一届校赛."
+description: "最后一届校赛，PWN 方向全做完了，把 Signin、ezbase、两道 shellcode 和 hvm 记一遍。"
 pubDate: 2025-03-27
 category: wp
 tags: [writeup]
@@ -10,7 +10,7 @@ tags: [writeup]
 
 ### 探索版
 
-简单运行一下，发现只有几个功能
+先跑起来看看，功能不多：
 ```
 register    #注册
 sign_in     #登录
@@ -20,79 +20,52 @@ help        #命令列表
 quit        #退出
 ```
 
-由于给了 rust 源代码，可以直接读代码(如果看不懂可以直接问 ai)
-又发现一点功能
+题目给了 Rust 源码，直接读代码就行（读不懂的部分可以问 AI）。隐藏的命令还有：
 ```
 unregister      #注销
 become_admin    #成为管理员
 get_flag        #获得flag
 ```
 
-执行 `get_flag`
-回显 `You are not signed in!`
-
-要先登录
-没号就注册吧
-按照 `help` 里的提示
+直接 `get_flag`，提示 `You are not signed in!`——那就先注册再登录：
 ```
 register asd 123    #用户名和密码随便给
 sign_in asd 123     #登录刚才注册的用户
 ```
 
-尝试 `get_flag`
-回显 `You are not an admin!`
+登录后 `get_flag` 变成 `You are not an admin!`；再试 `become_admin`，它要你确认是不是 root，回 `y` 得到 `You are not root, you cannot do this!`。
 
-试试 `become_admin`
-回显 `Are you root? (y/n)`
-回个 `y`
-回显 `You are not root, you cannot do this!`
-
-貌似要用户名是 root，尝试注册一个
+看起来用户名必须是 root，那就注册一个：
 ```
 register root 123
 ```
 回显 `Name already exists!`
 
-试试直接注销
+先把它注销掉：
 ```
 unregister root
 ```
-成功了
-
-注册为 root,
+成功了。再以 root 注册：
 ```
 register root 123
 ```
 
-登录
+再登录，然后走一遍 `become_admin`：
 ```
 sign_in root 123
 ```
 
-然后 `become_admin`
-回显 `Are you root? (y/n)`
-回个 `y`
-回显 `You are now an admin!`
-
-然后 `get_flag`
+这次回显变成 `You are now an admin!`，再 `get_flag` 就到手了。
 
 ## ezbase
 
 程序开了 pie 保护
 
-玩了一下
-是输入一段长度为$4k$ $(k \in Z^*)$的 `base64` 密文，
-然后程序会输出明文和长度。
+输入一段长度为 $4k$（$k \in Z^*$）的 base64 密文，程序解码后输出明文和长度。
 
-最多输入 0x40，但是解密字符和输入是相邻的，
-如果完全输入了 0x40，就也会把解码后的当密文
-就会继续解码，存在溢出
-**(当然，溢出会有上限，不过存在后门函数，够用了)**
+最多只读 0x40 字节，但解码缓冲区紧挨着输入缓冲区：输入写满 0x40 时，解码结果会被当成下一轮密文继续解，于是可以一路解码到溢出。溢出长度有限，不过题目给了后门函数，够用了。
 
-笔者用的溯源法，从最后的溢出字节反向还原
-payload 的构成，
-
-需要 base64 解码三次才能溢出到返回地址。
+做法是从溢出字节倒推 payload——需要解码三次才能覆盖到返回地址。
 
 ```python
 from pwn import *
@@ -125,11 +98,9 @@ io.interactive()
 
 ## shellcode_master?
 
-很平常的 shellcode 题，但是清空了基本所有寄存器
-`open`,`read`,`write` 要找一个可写段。
+常规 shellcode 题，只是几乎清空了所有寄存器；`open` / `read` / `write` 之前还得先找个可写段。
 
-发现 mmap 给的写 shellcode 的地址和可写段有固定偏移，
-可以通过偏移找到其地址。
+发现 shellcode 的 mmap 地址和可写段之间偏移固定，可以据此算出可写段地址。
 
 ```python
 from pwn import *
@@ -182,14 +153,11 @@ io.interactive()
 
 ## shellcode_master_revenge
 
-> 据出题人本人所言，
-> 上述解法为非预期解法
-> 故 revenge 诞生。
+> 按出题人的说法，上面的解法属于非预期，于是有了 revenge 版。
 
-大体没有改变，只是 mmap 的地址固定了，就是 0x114514000.
+题目没大改，只是 mmap 的地址固定成 `0x114514000`。
 
-可写段不能通过固定偏移寻找。
-只能爆破。
+可写段位置不再固定，只能爆破。
 
 ```python
 from pwn import *
@@ -257,18 +225,15 @@ while not io.recv(timeout=0.02):
 print(io.recvall())
 io.interactive()
 ```
-由于是远程 io，所有速度较慢。
-关于这一点，事实上，可以优化，只是赛时没想到。
+远程 io 很慢；其实还有优化空间，赛时没想到。
 
-还有一点，这是一个概率出的脚本。
-当 stack 地址大于我的假设地址，应该就跑不出来。
+另外这是概率脚本：栈地址高于假设值时打不通。
 
 ## hvm
 
-一个 `vm pwn`
-需要手搓 `opcode`
+VM PWN，需要手搓 opcode。
 
-以下是一些可能用到的 opcode
+可能用到的 opcode：
 ```
 code_map = {
     'rd': b'\xd1',
@@ -286,13 +251,9 @@ code_map = {
 
 申请的 chunk 索引为 `0-15`，大小为 `0x480-0x500`
 
-但是读写数据为做检测
-也就是说，申请的 `0x480` 的 chunk，可以访问它 `0x500` 的内容。
-这就是越界读写。
+但读写没有长度检测：申请 `0x480` 的 chunk，却能访问到 `0x500`，这就是越界读写。
 
-该题最后是 glibc2.25
-
-可以考虑使用 `House of obstack`.
+这题的环境是 glibc 2.25，可以用 House of obstack。
 
 **PS: opcode 是通过 read 函数读入的，有些字符无法读入**
 
