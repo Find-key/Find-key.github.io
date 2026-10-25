@@ -1,7 +1,7 @@
 ---
 /**
- * 版权页（colophon）。窄栏、居中、只留必要信息：
- * 装饰符 + 一行小链接 + 署名。排印说明这类"自述"不再往页脚堆。
+ * 版权页（colophon）。窄栏、居中：
+ * 一行站内链接 + 一行联系方式（纯文本，点了不会触发发信）+ 署名。
  */
 import { SITE } from '../consts';
 import { withBase } from '../utils/url';
@@ -9,22 +9,34 @@ import { withBase } from '../utils/url';
 const year = String(new Date().getFullYear());
 const cn = [...year].map((d) => '〇一二三四五六七八九'[Number(d)] ?? d).join('');
 
-// 占位符还在（USERNAME）就先不渲染，免得页脚挂个死链
-const ready = (url: string) => url && !url.includes('USERNAME');
+// 占位符还在（USERNAME）就先不渲染，免得挂个死链
+const githubReady = SITE.github && !SITE.github.includes('USERNAME');
+const githubLabel = SITE.github.replace(/^https?:\/\//, '').replace(/\/$/, '');
 ---
 
 <footer class="colophon">
 	<div class="inner">
-		<p class="ornament" aria-hidden="true">※</p>
-
 		<p class="links">
 			<a href={withBase('/posts')}>归档</a>
 			<a href={withBase('/tags')}>标签</a>
-			{ready(SITE.github) && (
-				<a href={SITE.github} target="_blank" rel="noopener">GitHub</a>
-			)}
-			{SITE.email && <a href={`mailto:${SITE.email}`}>邮箱</a>}
 			<a href={withBase('/rss.xml')}>RSS</a>
+		</p>
+
+		<p class="contact">
+			{/* 邮箱不挂 mailto：点一下不该弹出邮件客户端 */}
+			<span class="mail">{SITE.email}</span>
+			{SITE.qq && (
+				<>
+					<span class="sep" aria-hidden="true">·</span>
+					<span>QQ {SITE.qq}</span>
+				</>
+			)}
+			{githubReady && (
+				<>
+					<span class="sep" aria-hidden="true">·</span>
+					<a href={SITE.github} target="_blank" rel="noopener">{githubLabel}</a>
+				</>
+			)}
 		</p>
 
 		<p class="sign">
@@ -46,16 +58,13 @@ const ready = (url: string) => url && !url.includes('USERNAME');
 		border-top: 1px solid var(--line);
 		text-align: center;
 	}
-	.ornament {
-		display: none;
-	}
 	.links {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
 		justify-content: center;
 		gap: 0.45rem 1.1rem;
-		margin: 0 0 0.85rem;
+		margin: 0 0 0.75rem;
 		font-size: 0.8rem;
 	}
 	.links a {
@@ -65,12 +74,37 @@ const ready = (url: string) => url && !url.includes('USERNAME');
 		color: var(--text);
 		text-decoration: none;
 	}
+	/* 联系方式：纯文本为主，选中即可复制 */
+	.contact {
+		margin: 0 0 0.85rem;
+		color: var(--muted);
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
+		line-height: 1.9;
+		letter-spacing: 0.03em;
+	}
+	.contact .mail {
+		user-select: all;
+	}
+	.contact .sep {
+		margin: 0 0.5em;
+		opacity: 0.5;
+	}
+	.contact a {
+		color: inherit;
+		text-decoration: none;
+		border-bottom: 1px solid var(--line-strong);
+	}
+	.contact a:hover {
+		color: var(--text);
+		border-bottom-color: var(--muted);
+	}
 	.sign {
 		margin: 0;
 		color: var(--muted);
 		font-family: var(--font-mono);
-		font-size: 0.68rem;
+		font-size: 0.66rem;
 		letter-spacing: 0.06em;
-		opacity: 0.75;
+		opacity: 0.6;
 	}
 </style>
