@@ -1,14 +1,21 @@
 ---
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
+import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 import PostList from '../components/PostList.astro';
 import { CATEGORIES, SITE } from '../consts';
 import { allPosts, groupByCategory } from '../utils/posts';
-import { categoryUrl, withBase } from '../utils/url';
+import { categoryUrl, postUrl, withBase } from '../utils/url';
 
 const posts = await allPosts();
 const grouped = groupByCategory(posts);
+
+// 最新一篇：给首页一个视觉重心（内容本身当"封面"，不用编一句自我介绍）
+const latest = [...posts].sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())[0];
+const latestCategory = latest
+	? CATEGORIES.find((category) => category.slug === latest.data.category)
+	: undefined;
 
 // 按 CATEGORIES 的顺序列全部分类，空分类也显示（只显示"还没有文章"），
 // 否则新建的分类要等第一篇写完才看得见，容易以为配置没生效。
@@ -28,6 +35,22 @@ const firstOpen = rows.findIndex((row) => row.items.length > 0);
 	<body>
 		<Header variant="home" />
 		<main class="container home">
+			{
+				latest && (
+					<section class="latest">
+						<a href={postUrl(latest.id)}>
+							<p class="latest-meta">
+								<span>{latestCategory?.name}</span>
+								<span class="sep">·</span>
+								<FormattedDate date={latest.data.pubDate} />
+							</p>
+							<h2 class="latest-title">{latest.data.title}</h2>
+							<p class="latest-desc">{latest.data.description}</p>
+						</a>
+					</section>
+				)
+			}
+
 			<section class="index">
 				<div class="index-head">
 					<span class="label">分类目录</span>
@@ -90,10 +113,6 @@ const firstOpen = rows.findIndex((row) => row.items.length > 0);
 					)
 				}
 			</section>
-
-			<p class="all">
-				<a href={withBase('/posts')}>归档 →</a>
-			</p>
 		</main>
 		<Footer />
 	</body>
@@ -122,7 +141,47 @@ const firstOpen = rows.findIndex((row) => row.items.length > 0);
 
 <style>
 	.home {
-		padding-top: 2.75rem;
+		padding-top: 0.5rem;
+	}
+
+	/* ---------- 最新一篇（首页的视觉重心） ---------- */
+	.latest {
+		padding: 2.75rem 0 2.75rem;
+		border-bottom: 1px solid var(--line-strong);
+	}
+	.latest-meta {
+		display: flex;
+		align-items: baseline;
+		gap: 0.5rem;
+		margin: 0 0 0.7rem;
+		color: var(--muted);
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+		letter-spacing: 0.04em;
+	}
+	.latest-meta .sep {
+		color: var(--line-strong);
+	}
+	.latest-title {
+		margin: 0 0 0.5em;
+		color: var(--text);
+		font-family: var(--font-serif);
+		font-size: clamp(1.55rem, 2.6vw, 1.95rem);
+		font-weight: 600;
+		line-height: 1.4;
+		letter-spacing: -0.005em;
+		text-wrap: balance;
+	}
+	.latest a:hover .latest-title {
+		color: var(--accent);
+	}
+	.latest-desc {
+		max-width: 40em;
+		margin: 0;
+		color: var(--muted);
+		font-size: 0.95rem;
+		line-height: 1.78;
+		text-wrap: pretty;
 	}
 
 	/* ---------- 可展开的分类目录 ---------- */

@@ -21,9 +21,13 @@ const { posts, showDate = true, compact = false } = Astro.props;
 					<span class="line">
 						<span class="title">{post.data.title}</span>
 						{showDate && (
-							<span class="date">
-								<FormattedDate date={post.data.pubDate} format="short" />
-							</span>
+							<>
+								{/* 印刷品目录里的引导点：把标题和日期之间的空白连起来 */}
+								<span class="leader" aria-hidden="true" />
+								<span class="date">
+									<FormattedDate date={post.data.pubDate} format="short" />
+								</span>
+							</>
 						)}
 					</span>
 					<span class="desc">{post.data.description}</span>
@@ -54,7 +58,8 @@ const { posts, showDate = true, compact = false } = Astro.props;
 		display: flex;
 		align-items: baseline;
 		justify-content: space-between;
-		gap: 1.25rem;
+		/* 中间有引导点撑开，gap 收窄一点，标题和点数之间才不会出现大空洞 */
+		gap: 0.6rem;
 	}
 	.title {
 		font-family: var(--font-serif);
@@ -63,6 +68,15 @@ const { posts, showDate = true, compact = false } = Astro.props;
 		font-weight: 600;
 		line-height: 1.55;
 		letter-spacing: 0;
+	}
+	/* 引导点：虚线下沿对齐基线，密度低到不抢字 */
+	.leader {
+		flex: 1 1 auto;
+		min-width: 0.75rem;
+		height: 1px;
+		margin-bottom: 0.32em;
+		border-bottom: 1px dotted var(--line-strong);
+		opacity: 0.55;
 	}
 	.title::after {
 		margin-left: 0.4em;
