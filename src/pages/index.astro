@@ -245,8 +245,10 @@ const rows = CATEGORIES.map((category) => ({
 		color: var(--text);
 	}
 	.name a:hover {
-		color: var(--accent);
-		text-decoration: none;
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-decoration-color: var(--line-strong);
+		text-underline-offset: 0.22em;
 	}
 	.name-plain {
 		color: var(--muted);
@@ -267,16 +269,21 @@ const rows = CATEGORIES.map((category) => ({
 	.rows li + li {
 		margin-top: 0.6rem;
 		padding-top: 0.6rem;
-		border-top: 1px solid var(--line);
+		/* 比分组那条线淡一档，避免整页被横线切碎 */
+		border-top: 1px solid var(--line-soft);
 	}
 	.rows a {
 		display: block;
 	}
-	.rows a:hover {
+	.rows a:hover,
+	.rows a:hover .t {
 		text-decoration: none;
 	}
 	.rows a:hover .t {
-		color: var(--accent);
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-decoration-color: var(--line-strong);
+		text-underline-offset: 0.22em;
 	}
 	.line {
 		display: flex;
@@ -299,8 +306,19 @@ const rows = CATEGORIES.map((category) => ({
 		white-space: nowrap;
 	}
 	.more {
-		margin: 0.7rem 0 0;
-		font-size: 0.8rem;
+		margin: 0.75rem 0 0;
+		text-align: right;
+		font-size: 0.78rem;
+	}
+	.more a {
+		color: var(--muted);
+	}
+	.more a:hover {
+		color: var(--text);
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-decoration-color: var(--line-strong);
+		text-underline-offset: 0.22em;
 	}
 
 

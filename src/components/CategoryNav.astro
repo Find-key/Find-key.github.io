@@ -53,8 +53,10 @@ const { category, posts, currentId } = Astro.props;
 		font-weight: 600;
 	}
 	.category:hover {
-		color: var(--accent);
-		text-decoration: none;
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-decoration-color: var(--line-strong);
+		text-underline-offset: 0.22em;
 	}
 	.list {
 		margin: 0;

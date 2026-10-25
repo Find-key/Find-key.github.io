@@ -84,8 +84,10 @@ const isActive = (href: string) => current === href || current.startsWith(`${hre
 	}
 	.brand:hover,
 	.brand a:hover {
-		color: var(--accent);
-		text-decoration: none;
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-decoration-color: var(--line-strong);
+		text-underline-offset: 0.22em;
 	}
 	.nav {
 		display: flex;
