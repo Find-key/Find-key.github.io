@@ -10,8 +10,13 @@
 export const SITE = {
 	/** 站点名（浏览器标签、站头字标、RSS 标题都用它） */
 	title: 'Findkey’s Blog',
-	/** 一句话简介，用于 SEO description、首页刊首语、RSS 描述 */
+	/** 一句话简介，用于 SEO description、RSS 描述 */
 	description: '二进制漏洞分析与利用（pwn）',
+	/**
+	 * 首页顶部那两行自述（每项一行）。用第一人称，别写成"某某的网站"，
+	 * 也别写成分类标签。想改自我介绍只动这里。
+	 */
+	intro: ['我是 Findkey，写二进制漏洞和 pwn。', '偶尔也折腾内核、Buildroot 和 QEMU。'],
 	/** 作者名，显示在页脚和文章页 */
 	author: 'Findkey',
 	/** 正式域名：项目站写 https://<用户名>.github.io（不要带 /blog） */

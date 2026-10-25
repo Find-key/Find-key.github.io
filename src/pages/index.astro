@@ -10,7 +10,6 @@ import { categoryUrl, postUrl, withBase } from '../utils/url';
 const posts = await allPosts();
 const grouped = groupByCategory(posts);
 
-// 首页 = 分类目录（跨页式）：按 CATEGORIES 全量列出，空分类标注"还没有文章"
 const rows = CATEGORIES.map((category) => ({
 	category,
 	items: grouped.find((g) => g.category.slug === category.slug)?.posts ?? [],
@@ -25,12 +24,12 @@ const rows = CATEGORIES.map((category) => ({
 	<body>
 		<Header variant="home" />
 		<main class="container home">
+			<!-- 顶部：两行第一人称 + 右上小照片（照片有明确职责：它就是这个说话的人） -->
 			<section class="intro">
-				<img class="avatar" src={withBase('/avatar.svg')} alt="" width="72" height="72" />
-				<blockquote class="quote">
-					<span data-hito>过早优化是万恶之源。</span>
-				</blockquote>
-				<p class="src" data-hito-src>— Donald Knuth</p>
+				<div class="bio">
+					{SITE.intro.map((line) => <p>{line}</p>)}
+				</div>
+				<img class="photo" src={withBase('/avatar.svg')} alt="" width="84" height="84" />
 			</section>
 
 			<div class="index-head">
@@ -45,7 +44,6 @@ const rows = CATEGORIES.map((category) => ({
 								<span class="num">{String(i + 1).padStart(2, '0')}</span>
 								<h2 class="name">
 									{items.length > 0 ? (
-										/* 空分类没有详情页，就不能给链接 */
 										<a href={categoryUrl(category.slug)}>{category.name}</a>
 									) : (
 										<span class="name-plain">{category.name}</span>
@@ -59,10 +57,13 @@ const rows = CATEGORIES.map((category) => ({
 									{items.slice(0, 3).map((post) => (
 										<li>
 											<a href={postUrl(post.id)}>
-												<span class="t">{post.data.title}</span>
-												<span class="d">
-													<FormattedDate date={post.data.pubDate} format="short" />
+												<span class="line">
+													<span class="t">{post.data.title}</span>
+													<span class="d">
+														<FormattedDate date={post.data.pubDate} format="short" />
+													</span>
 												</span>
+												<span class="desc">{post.data.description}</span>
 											</a>
 										</li>
 									))}
@@ -78,14 +79,19 @@ const rows = CATEGORIES.map((category) => ({
 					))
 				}
 			</div>
+
+			<!-- 页尾一句：位置和 paco.me 的 Now 一样，但当收尾而不是开头 -->
+			<section class="closing">
+				<p class="quote" data-hito>过早优化是万恶之源。</p>
+				<p class="src" data-hito-src>— Donald Knuth</p>
+			</section>
 		</main>
 		<Footer />
 	</body>
 </html>
 
 <script>
-	// 一言：静态构建时先放一句兜底，页面加载后再去换。
-	// 拿不到就保持兜底，不做任何占位骨架、不阻塞渲染。
+	// 一言：构建时先把兜底那句渲染进 HTML，加载后再换成随机的；失败保持兜底。
 	const quote = document.querySelector('[data-hito]');
 	const source = document.querySelector('[data-hito-src]');
 
@@ -95,7 +101,6 @@ const rows = CATEGORIES.map((category) => ({
 			if (!quote || !data.hitokoto) return;
 			quote.textContent = data.hitokoto;
 			if (source) {
-				// from_who 和 from 常常是同一个名字，别拼成"某某 · 某某"
 				const who = (data.from_who ?? '').trim();
 				const what = (data.from ?? '').trim();
 				const clean = who && what && who !== what ? `${who} · ${what}` : who || what;
@@ -103,64 +108,46 @@ const rows = CATEGORIES.map((category) => ({
 			}
 		})
 		.catch(() => {
-			/* 离线或被墙时静默失败，保留兜底那句 */
+			/* 离线或被墙时保留兜底 */
 		});
 </script>
 
 <style>
 	.home {
-		padding-top: 2.75rem;
+		padding-top: 2.25rem;
 	}
 
-	/* ---------- 头像 + 一言 ---------- */
-	/* 头像在上、引文居中、出处在下：一整组居中，左右天然对称，
-	   不会像"头像靠左 + 出处甩到最右"那样中间空一大片。 */
+	/* ---------- 顶部：自述 + 照片 ---------- */
 	.intro {
 		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 1.15rem;
-		padding: 1.6rem 0 3rem;
-		text-align: center;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 2rem;
+		padding-bottom: 2.75rem;
 	}
-	.avatar {
-		width: 72px;
-		height: 72px;
-		border-radius: 50%;
+	.bio {
+		max-width: 34em;
+		padding-top: 0.2rem;
 	}
-	.quote {
-		max-width: 30em;
+	.bio p {
 		margin: 0;
-		color: var(--text);
 		font-family: var(--font-serif);
-		font-size: 1.28rem;
-		font-weight: 500;
-		line-height: 1.75;
+		font-size: 1.16rem;
+		line-height: 1.8;
 		letter-spacing: 0;
-		text-wrap: balance;
+		text-wrap: pretty;
 	}
-	.src {
-		margin: 0;
+	.bio p + p {
 		color: var(--muted);
-		font-family: var(--font-mono);
-		font-size: 0.68rem;
-		letter-spacing: 0.06em;
+		font-size: 0.98rem;
 	}
-	.src:empty {
-		display: none;
-	}
-	@media (max-width: 560px) {
-		.intro {
-			gap: 0.9rem;
-			padding: 1rem 0 2.4rem;
-		}
-		.avatar {
-			width: 60px;
-			height: 60px;
-		}
-		.quote {
-			font-size: 1.1rem;
-		}
+	/* 小照片：方角、一圈发丝边，像贴在纸上的证件照 */
+	.photo {
+		flex: none;
+		width: 84px;
+		height: 84px;
+		border: 1px solid var(--line);
+		border-radius: 2px;
 	}
 
 	.index-head {
@@ -168,19 +155,18 @@ const rows = CATEGORIES.map((category) => ({
 		border-bottom: 1px solid var(--text);
 	}
 
-	/* 跨页式：两栏分类，栏间靠留白分开，每个分类顶上一道发丝线 */
+	/* ---------- 分类分组（2×2） ---------- */
 	.spread {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		column-gap: 3.5rem;
-		row-gap: 2.9rem;
+		row-gap: 2.7rem;
+		padding-top: 1.4rem;
 	}
-
 	.block {
-		padding-top: 1.15rem;
+		padding-top: 1.1rem;
 		border-top: 1px solid var(--line);
 	}
-
 	.block-head {
 		display: flex;
 		align-items: baseline;
@@ -195,7 +181,7 @@ const rows = CATEGORIES.map((category) => ({
 	.name {
 		flex: 1;
 		margin: 0;
-		font-size: 1.5rem;
+		font-size: 1.42rem;
 		font-weight: 600;
 		line-height: 1.3;
 		letter-spacing: -0.005em;
@@ -219,33 +205,36 @@ const rows = CATEGORIES.map((category) => ({
 	}
 
 	.rows {
-		margin: 0.75rem 0 0;
+		margin: 0.85rem 0 0;
 		padding: 0;
 		list-style: none;
 	}
 	.rows li + li {
+		margin-top: 0.7rem;
+		padding-top: 0.7rem;
 		border-top: 1px solid var(--line);
 	}
 	.rows a {
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: 1rem;
-		padding: 0.5rem 0;
+		display: block;
 	}
-	/* 整行是链接，但悬停只变字色，不画下划线（下划线留给正文里的链接） */
 	.rows a:hover {
 		text-decoration: none;
 	}
 	.rows a:hover .t {
 		color: var(--accent);
 	}
+	.line {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.8rem;
+	}
 	.t {
 		color: var(--text);
 		font-family: var(--font-serif);
-		font-size: 0.98rem;
+		font-size: 1rem;
 		font-weight: 600;
-		line-height: 1.5;
+		line-height: 1.55;
 	}
 	.d {
 		flex: none;
@@ -254,19 +243,65 @@ const rows = CATEGORIES.map((category) => ({
 		font-size: 0.66rem;
 		white-space: nowrap;
 	}
-
+	.desc {
+		display: block;
+		margin-top: 0.2rem;
+		color: var(--muted);
+		font-size: 0.83rem;
+		line-height: 1.65;
+		text-wrap: pretty;
+	}
 	.more {
-		margin: 0.6rem 0 0;
+		margin: 0.7rem 0 0;
 		font-size: 0.8rem;
 	}
 
-	@media (max-width: 720px) {
+	/* ---------- 页尾一句 ---------- */
+	.closing {
+		margin-top: 3rem;
+		padding-top: 1.4rem;
+		border-top: 1px solid var(--line);
+	}
+	.quote {
+		max-width: 34em;
+		margin: 0;
+		color: var(--text);
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.75;
+		text-wrap: pretty;
+	}
+	.src {
+		margin: 0.35rem 0 0;
+		color: var(--muted);
+		font-family: var(--font-mono);
+		font-size: 0.66rem;
+		letter-spacing: 0.05em;
+	}
+	.src:empty {
+		display: none;
+	}
+
+	@media (max-width: 760px) {
 		.spread {
 			grid-template-columns: 1fr;
 			row-gap: 2.2rem;
 		}
 		.name {
-			font-size: 1.3rem;
+			font-size: 1.28rem;
+		}
+		.intro {
+			gap: 1rem;
+		}
+		.photo {
+			width: 56px;
+			height: 56px;
+		}
+		.bio p {
+			font-size: 1.08rem;
+		}
+		.bio p + p {
+			font-size: 0.94rem;
 		}
 	}
 </style>
