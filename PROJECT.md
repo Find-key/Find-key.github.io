@@ -515,3 +515,4 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | 友链：删除 wsh（12 条），Yolo → `to be continued`，Lochad → `more what, more why.` |
 | 2026-10-25 | 友链：wsh 加回（desc 改 `wsh 的 web 笔记`，位置在 Nick 之后），新增 Fa1lSnow（`blog.fa1lsnow.com`，desc `林雪落的小玩意`，头像取自其站 `/uploads/avatar.jpg` 存为 96px webp）；共 14 条 |
 | 2026-10-25 | WP 分类四篇改标题：羊城杯-PWN-部分WP → 羊城杯 部分；XYCTF2024 复现 → XYCTF 2024 复现；jnctf_wp → JNCTF 2025；HGAME2025_WP → HGAMECTF 2025 |
+| 2026-10-25 | 支持数学公式：`remark-math` + `rehype-katex`（构建时渲染成静态 HTML，前端零 JS）；Astro 7 默认用 Sätteri，需额外安装 `@astrojs/markdown-remark` 才能用 remark/rehype 插件；文章页引入 `katex.min.css`（字体随构建进 dist/_astro）；`.katex-display` 窄屏可横向滚动 |

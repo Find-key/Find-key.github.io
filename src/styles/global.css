@@ -303,3 +303,14 @@ h3 {
 		line-height: 1.85;
 	}
 }
+
+/* KaTeX：行内公式跟随正文，块级公式在窄屏可横向滚动，不撑破栏宽 */
+.katex {
+	font-size: 1.02em;
+}
+.katex-display {
+	margin: 1.6rem 0;
+	overflow-x: auto;
+	overflow-y: hidden;
+	padding: 0.3rem 0;
+}
