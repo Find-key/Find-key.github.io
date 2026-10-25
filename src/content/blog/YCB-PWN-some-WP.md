@@ -2,7 +2,7 @@
 title: "羊城杯-PWN-部分WP"
 description: "Malloc，Stack_Over_Flow，Vm"
 pubDate: 2025-10-13
-category: pwn
+category: wp
 tags: [writeup]
 ---
 

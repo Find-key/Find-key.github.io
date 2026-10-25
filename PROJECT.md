@@ -56,8 +56,10 @@
 
 **内容现状**：17 篇文章、4 个分类、16 条友链（从旧 Hexo 站 `../Saved-blog-doc` 迁入）。
 
-- 分类：`pwn`（11）、`V8`（3）、`嵌入式与 IoT`（1）、`工具与笔记`（2）
-- 友链：16 条，来自旧站 `source/_data/links.yml`
+- 分类：`pwn`（6）、`WP`（4）、`V8`（3）、`嵌入式与 IoT`（1）、`工具与笔记`（2）
+  - `pwn` 收二进制本身（glibc 堆栈、IO_FILE、ret2dl、调用链、PHP PWN）
+  - `WP` 单独收比赛题解（羊城杯、XYCTF、校赛、HGAME）
+- 友链：16 条，来自旧站 `source/_data/links.yml`；头像已下载到 `public/friends/`（96px webp，约 50K），防盗链的站点自动退回首字母
 - 迁移时统一了 frontmatter（`date`→`pubDate`、`tags` 单串→数组并转小写连字符、`excerpt`→`description`），
   正文若以 `###` 开头则整体提一级标题，保证目录层级从 h2 起
 
@@ -505,3 +507,4 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | 彻底清空内容与分类：删掉最后 2 篇文章、`CATEGORIES = []`；`content.config.ts` 的 category 校验改为「有分类时才 refine，空分类时接受任意字符串」，否则清场阶段写第一篇就会被 schema 拒掉；首页/归档/标签的空状态补齐（首页给出「先定分类、再 npm run new」的指引，归档不再显示「共 0 篇」） |
 | 2026-10-25 | 新增本机写作后台 `scripts/admin.mjs`（`npm run admin` → 127.0.0.1:4322）：零依赖 Node 服务 + 单页界面，可增删改文章（frontmatter 自动生成、改名自动删旧文件）、增删分类（重写 `consts.ts` 的 `#region categories` 并自动重启 dev）；`consts.ts` 的分类块改用 `#region` 标记 + `CategoryItem` 接口以便程序改写；补端口占用提示 |
 | 2026-10-25 | 从旧 Hexo 站 `../Saved-blog-doc` 迁入内容（只要内容，不要主题/构建配置）：16 篇文章 → `src/content/blog/`（保留原 slug；`date`→`pubDate`、`excerpt`→`description`、`tags` 转小写连字符数组；v8 三篇加 `order: 1/2/3`；`orange` 以 `###` 开头，整体提一级）；分类定为 pwn / V8 / 嵌入式与 IoT / 工具与笔记；16 条友链从 `source/_data/links.yml` 写入 `FRIENDS`；顺手把新 stub 的 `tags: [V8]` 改成小写避免重复标签页 |
+| 2026-10-25 | 分类再分：`WP` 独立（4 篇比赛题解从 pwn 拆出），pwn 只留二进制本身；删除重复的 V8 stub（`v8-pwn-0x00-20261025.md`，内容与 `v8-learn-0` 重复）；友链加回头像（`Friend.avatar`，96px 本地 webp，防盗链/失效时用首字母兜底，`onerror` 移除 img 避免破图），列表改双栏；`public/friends/` 约 50K |
