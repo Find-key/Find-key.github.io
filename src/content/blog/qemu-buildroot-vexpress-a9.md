@@ -1,11 +1,10 @@
 ---
 title: 用 QEMU 跑 Buildroot 的 vexpress-a9 最小系统
-description: 一条 make、一条 qemu-system-arm，把 Buildroot 的镜像塞进 SD 卡控制器启动。附我踩过的几个参数坑。
+description: "一条 make、一条 qemu-system-arm，把 Buildroot 的镜像塞进 SD 卡控制器启动。附我踩过的几个参数坑。"
 pubDate: 2026-10-26
 category: kernel
 order: 1
 tags: [qemu, buildroot, embedded]
-draft: true
 ---
 
 > 这是一篇**草稿**（frontmatter 里 `draft: true`）：只在本地 `npm run dev` 能看到，`npm run build` 不会发布。用来演示草稿机制，也留个位置给实测记录。
