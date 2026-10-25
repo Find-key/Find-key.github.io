@@ -509,8 +509,6 @@ io.sendline(payload)
 io.interactive()
 ```
 
-> 来源：sally
-
 ### heap 2.23
 
 #### babyheap_0ctf_2017
