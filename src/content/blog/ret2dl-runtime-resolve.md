@@ -120,6 +120,10 @@ io.interactive()
 reloc_index = tar_stack - rel_plt + 0x18
 ```
 
+`reloc_index` 是相对 `.rel.plt` 起点的**字节偏移**，不是数组下标。`tar_stack - rel_plt` 先算出"假结构所在地址离段首多远"，再加 `0x18`——这几个字节留给前面调 PLT0 用的参数，假 `ELF32_Rel` 放在它们后面才不会互相踩。
+
+`reloc_index` 是相对 `.rel.plt` 起点的字节偏移，不是数组下标。`tar_stack - rel_plt` 先算出"假结构所在的地址离段首多远"，再加 `0x18`——因为这 `0x18` 字节要留给前面调 PLT0 用的那几项，假 `ELF32_Rel` 放在它们后面才不会互相踩。
+
 ### 伪造 ELF32_Rel 结构体的值
 
 ```C

@@ -270,7 +270,10 @@ sess_get_uid(v4);
 v4 的内容在 sess_get_uid 中被修改。
 
 ### sess_get_uid
-简单修改后，内容大致如下
+
+整条链是这样串起来的：`hedwig.cgi` 是 `cgibin` 的软链接，`main` 按 `argv[0]` 分派到 `hedwigcgi_main`；后者从请求头里取 `HTTP_COOKIE`，交给 `sess_get_uid()` 解析出 `uid=` 后面的值塞进 `v4`；再回到 `sprintf(v27, ..., v20)` 那一行，`v20` 就是这个值，长度不限地拼进 1024 字节的 `v27`。所以 cookie 里的 uid 够长，溢出的就是 `hedwigcgi_main` 的栈。
+
+`sess_get_uid` 改过类型后大致如下
 ```C
 void __fastcall sess_get_uid(sobj *ptr)
 {
@@ -421,6 +424,8 @@ if ( !haystack )
     goto LABEL_34;
 }
 ```
+
+`haystack` 是请求体（XML）读进来的缓冲区，走的是 `cgibin_parse_request` 那条链；它为空函数直接返回，所以请求必须带 body，`Content-Type` 也要能让解析器认出来。
 
 这个变量可以通过 **cgibin_parse_request -> sub_403B10 -> sub_402FFC -> sub_402B40 -> sub_409A6C** 的路径赋值（实际上是 `hedwigcgi_main` 中，`cgibin_parse_request` 将 `sub_409A6C` 函数指针作为参数传递，最后在 `sub_402B40` 触发 `sub_409A6C`）
 

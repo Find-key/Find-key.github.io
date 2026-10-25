@@ -373,6 +373,8 @@ PHP 的内存管理走 Zend 引擎自己的 `emalloc` / `efree`，不是 glibc �
 | size <= 3kb(3072) | small | 小内存会被分配到特定的 Slot（槽位）中。ZMM 预设了 30 多个不同大小的 Bin（例如 8, 16, 24, ... 3072 字节）。 |
 
 攻击一般落在 small 上，这里也只讨论 small：机制和 tcache 类似，都是后进先出的单链表。
+
+一个必须记住的区别：`emalloc` / `efree` 完全绕过了 glibc 的分配器，所以 `__malloc_hook`、`_IO_FILE` 那一套在这里没有落点。PHP 的 UAF 通常往两个方向走：改 Zend 自己的空闲链表去申请到任意地址（下面这个 note 题），或者直接改拓展的 GOT。
 ```C
 ptr1 = emalloc(0x60);
 ptr2 = emalloc(0x60);
