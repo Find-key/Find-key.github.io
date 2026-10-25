@@ -36,7 +36,7 @@ export const SITE = {
 	github: 'https://github.com/USERNAME',
 	email: 'find_key@foxmail.com',
 	/** QQ 号（纯展示，不生成链接）；留空则不显示 */
-	qq: '',
+	qq: '1559703162',
 } as const;
 
 /**
