@@ -10,8 +10,8 @@
 export const SITE = {
 	/** 站点名（浏览器标签、站头字标、RSS 标题都用它） */
 	title: 'Findkey’s Blog',
-	/** 一句话简介，用于 SEO description、刊头下方、RSS 描述 */
-	description: '嵌入式 Linux、QEMU 与工具链的实践记录',
+	/** 一句话简介，用于 SEO description、首页刊首语、RSS 描述 */
+	description: '二进制漏洞分析与利用（pwn）',
 	/** 作者名，显示在页脚和文章页 */
 	author: 'Findkey',
 	/** 正式域名：项目站写 https://<用户名>.github.io（不要带 /blog） */
@@ -62,19 +62,24 @@ export const FRIENDS: Friend[] = [];
  */
 export const CATEGORIES = [
 	{
-		slug: 'embedded',
-		name: '嵌入式 Linux',
-		description: '内核、启动流程、设备树、Buildroot 与 QEMU 实验记录。',
+		slug: 'pwn',
+		name: 'pwn',
+		description: '二进制漏洞与利用：栈/堆题、保护绕过、利用链，以及调试过程中的发现。',
 	},
 	{
-		slug: 'site',
-		name: '建站与工具',
-		description: '这个站本身是怎么搭的，以及日常开发用的工具与工作流。',
+		slug: 'kernel',
+		name: '内核与嵌入式',
+		description: '内核、启动流程、设备树、Buildroot 与 QEMU 里的实验。',
+	},
+	{
+		slug: 'meta',
+		name: '站务与工具',
+		description: '这个站是怎么搭的，以及日常用的工具和工作流。',
 	},
 	{
 		slug: 'notes',
 		name: '随笔',
-		description: '不属于上面两类的零散记录。',
+		description: '不属于上面几类的零散记录。',
 	},
 ] as const;
 
