@@ -73,7 +73,7 @@ export const FRIENDS: Friend[] = [
 	{ name: 'Nick', url: 'https://nickchen.top/', note: '越平静，越汹涌', avatar: 'https://nickchen.top/_astro/avatar.BpNDwfjH_ZzQD7a.webp' },
 	{ name: 'wele', url: 'https://wele.vercel.app/', note: 'wele - wele', avatar: 'https://wele.vercel.app/_astro/wsh.DKhYzOEA_Z2rL8Fc.webp' },
 	{ name: 'yfor', url: 'https://yfor-yfor.github.io/', note: 'yfor, 为什么不是 wifi', avatar: '/friends/yfor-s.webp' },
-	{ name: 'Yolo', url: 'https://yo1o.top/', note: '超厉害的 MISC 选手', avatar: 'https://yo1o.top/img/avatars/Yolo_hu_1b39dbb5d3af7fc2.jpg' },
+	{ name: 'Yolo', url: 'https://docs.yo1o.top/', note: '超厉害的 MISC 选手', avatar: '/friends/yolo-s.webp' },
 	{ name: 'Y&Y', url: 'https://singlehorn.github.io/', note: '保持好奇心', avatar: '/friends/y-y-s.webp' },
 	{ name: 'Lochad', url: 'http://lochad.top/', note: '后辈 pwn 手', avatar: 'http://39.106.187.170/wp-content/uploads/2026/04/cropped-cropped-HackerTianyi.jpg' },
 	{ name: 'sysNow', url: 'https://sysnow.xyz/', note: 'to be a pwn master', avatar: '/friends/sysnow-s.webp' },
