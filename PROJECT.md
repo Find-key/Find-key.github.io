@@ -484,3 +484,4 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | 加 `npm run new -- "标题" --cat pwn [--tags a,b] [--slug x] [--draft]`：读 `consts.ts` 校验分类、按标题生成 slug（中文标题补日期防撞）、生成带 pwn 骨架的 md；不做主题化重构（用户确认只给自己用） |
 | 2026-10-25 | 文档与资源收拾：新增 `docs/how-to.md`（写文章 / 加分类 / 加友链 / 改站点信息 / 常见报错），合并并删除两份重复的文章模板（`npm run new` 已覆盖）；生成 `public/og.png`（1200×630 纸感分享卡，站名 + 题记 + dump），`BaseHead` 默认用它，删掉模板自带的 `src/assets/blog-placeholder-1.jpg`（32K）|
 | 2026-10-25 | 站名改为 `Findkey`（原来 `Findkey’s Blog`）：标签页更短、更易认；文章页 title 统一为「标题 · Findkey」。favicon 从模板的蓝底 F 换成**墨色实底 + 纸色衬线 F**（16px 下最清楚，也和纸感配色一致）；`public/og.png` 同步用新站名重做 |
+| 2026-10-25 | 站名拆成三个字段：`title`（标签页/SEO，`Findkey · pwn`）、`shortTitle`（内页后缀，`Findkey`，避免「友链 · Findkey · pwn」三段）、`wordmark`（站头字标，`Findkey’s Blog`）；`og.png` 用 wordmark 重做 |

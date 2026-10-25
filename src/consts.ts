@@ -8,8 +8,12 @@
  *    详见项目根目录 PROJECT.md 的「上线前检查清单」。
  */
 export const SITE = {
-	/** 站点名（浏览器标签、站头字标、分享卡都用它） */
-	title: 'Findkey',
+	/** 浏览器标签页 / SEO 用（短，标签栏里认得出就行） */
+	title: 'Findkey · pwn',
+	/** 内页标题后缀（归档 · Findkey）；比 title 短，避免「友链 · Findkey · pwn」这种三段 */
+	shortTitle: 'Findkey',
+	/** 站头字标（左上那个），可以比 title 长 */
+	wordmark: 'Findkey’s Blog',
 	/** 一句话简介，用于 SEO description、RSS 描述 */
 	description: '二进制漏洞分析与利用（pwn）',
 	/**
