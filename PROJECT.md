@@ -257,6 +257,7 @@ npm run dev
 
 ### 新增一个分类
 
+0. 新建文章：`npm run new -- "标题" --cat pwn --tags stack,ret2text`（自动填 frontmatter 和「环境 / 保护 / 漏洞点 / 利用 / 坑 / 小结」骨架；`--draft` 表示先不发布）
 1. 打开 `src/consts.ts`，在 `CATEGORIES` 里加一项（`slug` 用英文小写，`name` 是中文显示名，`description` 一句话）
 2. 新建/修改文章，frontmatter 的 `category` 填新 slug
 3. 空分类不会出现在页面上，所以可以先把分类列全
@@ -481,3 +482,4 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | 邮箱改为「展开式联系条」（按用户指定的方案）：默认只显示信封图标，图标是 `mailto:` 链接（点击发信）；hover / focus 时整条横向展开（max-width 过渡 0.3s）露出完整地址，右侧跟复制按钮；点复制在展开条下方淡入「已复制」1.6s；触屏（<760px）无 hover，地址与复制按钮常显 |
 | 2026-10-25 | 文章页左侧从「本分类的文章列表」改为**文章目录**：`render(post)` 取 `headings`，过滤 h2/h3 生成锚点列表，sticky 且用 IntersectionObserver 高亮当前小节（左侧 1px 竖线）；<900px 隐藏；删除 `CategoryNav.astro`（分类入口仍在面包屑与底部上下篇） |
 | 2026-10-25 | 目录收尾：侧栏长标题 `line-clamp: 2` 截断；<900px 时侧栏隐藏、改为正文顶部的 `<details>` 可折叠目录（点击条目后自动收起）；两套目录共用同一份 `headings` 与同一段高亮脚本 |
+| 2026-10-25 | 加 `npm run new -- "标题" --cat pwn [--tags a,b] [--slug x] [--draft]`：读 `consts.ts` 校验分类、按标题生成 slug（中文标题补日期防撞）、生成带 pwn 骨架的 md；不做主题化重构（用户确认只给自己用） |
