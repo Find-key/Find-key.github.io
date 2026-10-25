@@ -9,9 +9,7 @@
  */
 export const SITE = {
 	/** 浏览器标签页 / SEO 用（短，标签栏里认得出就行） */
-	title: 'Findkey · pwn',
-	/** 内页标题后缀（归档 · Findkey）；比 title 短，避免「友链 · Findkey · pwn」这种三段 */
-	shortTitle: 'Findkey',
+	title: '0xFindkey',
 	/** 站头字标（左上那个），可以比 title 长 */
 	wordmark: 'Findkey’s Blog',
 	/** 一句话简介，用于 SEO description、RSS 描述 */
