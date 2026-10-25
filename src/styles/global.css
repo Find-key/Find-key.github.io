@@ -27,10 +27,13 @@
 
 	--radius: 10px;
 
-	/* 拉丁字符优先衬线，中文回落思源/宋体 */
+	/* 拉丁字符优先衬线，中文回落思源宋体。
+	   拉丁字体必须排在中文字体前面：Noto Serif CJK 也有拉丁字形，
+	   但它的 ’ 是全角撇号，会把 "Findkey’s" 拉出一个空格。 */
 	--font-serif:
-		'Iowan Old Style', 'Palatino Linotype', Palatino, 'Songti SC', 'Noto Serif CJK SC',
-		'Source Han Serif SC', Georgia, 'Times New Roman', serif;
+		'Iowan Old Style', 'Palatino Linotype', Palatino, P052, Georgia, 'Times New Roman',
+		'Liberation Serif', 'DejaVu Serif', 'Songti SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
+		serif;
 	/* 正文用系统无衬线：中文小字号比同尺寸衬线清楚 */
 	--font-sans:
 		-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans CJK SC', 'Source Han Sans SC',
