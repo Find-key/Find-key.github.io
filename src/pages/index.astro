@@ -5,7 +5,7 @@ import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 import { CATEGORIES, SITE } from '../consts';
 import { allPosts, groupByCategory } from '../utils/posts';
-import { categoryUrl, postUrl } from '../utils/url';
+import { categoryUrl, postUrl, withBase } from '../utils/url';
 
 const posts = await allPosts();
 const grouped = groupByCategory(posts);
@@ -25,6 +25,14 @@ const rows = CATEGORIES.map((category) => ({
 	<body>
 		<Header variant="home" />
 		<main class="container home">
+			<section class="intro">
+				<img class="avatar" src={withBase('/avatar.svg')} alt="" width="56" height="56" />
+				<div class="lines">
+					<p class="quote" data-hito>过早优化是万恶之源。</p>
+					<p class="src" data-hito-src>Donald Knuth</p>
+				</div>
+			</section>
+
 			<div class="index-head">
 				<span class="label">分类目录</span>
 			</div>
@@ -75,9 +83,67 @@ const rows = CATEGORIES.map((category) => ({
 	</body>
 </html>
 
+<script>
+	// 一言：静态构建时先放一句兜底，页面加载后再去换。
+	// 拿不到就保持兜底，不做任何占位骨架、不阻塞渲染。
+	const quote = document.querySelector('[data-hito]');
+	const source = document.querySelector('[data-hito-src]');
+
+	fetch('https://v1.hitokoto.cn/?encode=json&max_length=44')
+		.then((response) => (response.ok ? response.json() : Promise.reject(response.status)))
+		.then((data: { hitokoto?: string; from_who?: string; from?: string }) => {
+			if (!quote || !data.hitokoto) return;
+			quote.textContent = data.hitokoto;
+			if (source) {
+				const from = data.from_who ? `${data.from_who} · ${data.from ?? ''}` : (data.from ?? '');
+				source.textContent = from.replace(/·\s*$/, '').trim();
+			}
+		})
+		.catch(() => {
+			/* 离线或被墙时静默失败，保留兜底那句 */
+		});
+</script>
+
 <style>
 	.home {
-		padding-top: 3rem;
+		padding-top: 2.75rem;
+	}
+
+	/* ---------- 头像 + 一言 ---------- */
+	.intro {
+		display: flex;
+		align-items: flex-start;
+		gap: 1.15rem;
+		padding-bottom: 2.6rem;
+	}
+	.avatar {
+		flex: none;
+		width: 56px;
+		height: 56px;
+		border-radius: 50%;
+	}
+	.lines {
+		min-width: 0;
+		padding-top: 0.15rem;
+	}
+	.quote {
+		max-width: 34em;
+		margin: 0;
+		color: var(--text);
+		font-family: var(--font-serif);
+		font-size: 1.02rem;
+		line-height: 1.75;
+		text-wrap: pretty;
+	}
+	.src {
+		margin: 0.4rem 0 0;
+		color: var(--muted);
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
+		letter-spacing: 0.04em;
+	}
+	.src:empty {
+		display: none;
 	}
 
 	.index-head {
