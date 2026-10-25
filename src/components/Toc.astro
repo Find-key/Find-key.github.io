@@ -15,7 +15,10 @@ interface Props {
 	variant?: 'sidebar' | 'inline';
 }
 
-const items = Astro.props.headings.filter((h) => h.depth === 2 || h.depth === 3);
+// 小节很多的长文（比如十几道题的合集）只列 h2，否则目录几十条、还全是重复的「分析 / exp」
+const all = Astro.props.headings.filter((h) => h.depth === 2 || h.depth === 3);
+const h2Count = all.filter((h) => h.depth === 2).length;
+const items = h2Count >= 8 ? all.filter((h) => h.depth === 2) : all;
 const variant = Astro.props.variant ?? 'sidebar';
 ---
 

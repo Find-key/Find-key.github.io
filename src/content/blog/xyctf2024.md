@@ -1,6 +1,6 @@
 ---
 title: "XYCTF 2024 复现"
-description: "久违地找了个比赛复现"
+description: "XYCTF 2024 十六道 pwn 的复现记录：从签到 ret2libc 一路到 ptmalloc2 系列堆题。"
 pubDate: 2025-04-10
 category: wp
 tags: [writeup]
@@ -24,8 +24,7 @@ int __fastcall main(int argc, const char **argv, const char **envp)
 }
 ```
 ### 分析
-第一次读入写 0x28 字节，直接通过 %s 泄露出 `libc` 地址
-第二次读入正常溢出打 `ret2libc`
+第一次读入写 0x28 字节，用 `%s` 泄出 libc 地址；第二次读入正常溢出，打 ret2libc。
 
 ### exp
 ```python
@@ -164,7 +163,7 @@ io.interactive()
 ```
 
 ## 3. static_link
-静态编译的程序，会找 gadgets 就好了
+静态编译的程序，重点是找 gadget。
 ```C
 __int64 vuln()
 {
@@ -227,8 +226,7 @@ io.interactive()
 ```
 
 ## 4. fmt
-如标题所说，就是 fmt 漏洞
-但是，不是 printf
+题目是格式化字符串，但入口不是 `printf`。
 ```C
 int __fastcall main(int argc, const char **argv, const char **envp)
 {
@@ -445,7 +443,7 @@ io.interactive()
 ```
 
 ## 6. baby_gift
-考察了点汇编
+这题考汇编。
 ```C
 int __fastcall main(int argc, const char **argv, const char **envp)
 {
@@ -488,9 +486,7 @@ void GetInfo()
 ```
 
 ### 分析
-简而言之，关键就是通过栈溢出来给 rdi 赋值
-然后跳到 printf 来泄露 libc 地址
-为之后的 ret2libc 做铺垫
+关键在于用栈溢出给 `rdi` 赋值，再跳到 `printf` 泄 libc，为后面的 ret2libc 铺路。
 
 ### exp
 ```python
@@ -537,7 +533,7 @@ io.interactive()
 ```
 
 ## 7. Intermittent
-有点意思，考察了对 shellcode 的熟练程度
+考的是 shellcode 的熟练度。
 ```C
 int __fastcall main(int argc, const char **argv, const char **envp)
 {
@@ -567,9 +563,7 @@ int __fastcall main(int argc, const char **argv, const char **envp)
 ```
 
 ### 分析
-四个字节的 shellcode 断断续续的
-pop 和 push 各占一字节，然后 jmp 到下一段 shellcode
-构造二次读入写 shellcode
+每段 shellcode 只有四个字节：`pop` 和 `push` 各占一字节，末尾 `jmp` 接到下一段；再配合二次读入把完整 shellcode 铺开。
 
 ### exp
 ```python
@@ -609,7 +603,7 @@ io.interactive()
 ```
 
 ## 8. guestbook1
-哎，数组越位，真不熟
+这题考数组越界，当时还不太熟。
 ```C
 int __fastcall main(int argc, const char **argv, const char **envp)
 {
@@ -648,8 +642,7 @@ void __cdecl GuestBook()
 ```
 
 ### 分析
-通过数组越位，写 rbp
-然后迁移栈，爆破跳到后门函数
+越界写覆盖 `rbp`，栈迁移后爆破低位跳到后门。
 
 ### exp
 ```python
@@ -695,7 +688,7 @@ io.interactive()
 ```
 
 ## 9. fastfastfast
-平平常常的 UAF
+常规 UAF。
 ```C
 int __fastcall __noreturn main(int argc, const char **argv, const char **envp)
 {
@@ -791,8 +784,7 @@ void __cdecl show()
 }
 ```
 ### 分析
-uaf 正常打 `fastbin atk`
-劫持 **malloc_hook** 就好了
+标准 UAF：打 fastbin attack，劫持 `__malloc_hook`。
 
 ### exp
 ```python
@@ -872,7 +864,7 @@ io.interactive()
 ```
 
 ## 10. simple_srop
-十分简洁的题目
+程序很短。
 ```C
 int __fastcall main(int argc, const char **argv, const char **envp)
 {
@@ -902,8 +894,7 @@ __int64 sandbox()
 }
 ```
 ### 分析
-_srop_ 先打栈迁移
-然后 _srop_ 打 _orw_
+先用 SROP 做栈迁移，再用 SROP 打 ORW。
 
 ### exp
 ```python
@@ -964,7 +955,7 @@ io.interactive()
 ```
 
 ## 11. one_byte
-off by one 和 uaf
+off-by-one 加 UAF。
 ```C
 int __fastcall __noreturn main(int argc, const char **argv, const char **envp)
 {
@@ -1147,9 +1138,7 @@ ssize_t __fastcall read_data(void *a1, int a2)
 ```
 
 ### 分析
-_off by one_ + _uaf_
-填满 `tcache bin` 然后 _fastbin atk_
-修改 `malloc hook`
+off-by-one + UAF：先填满 `tcache`，再打 fastbin attack 改 `__malloc_hook`。
 
 ### exp
 ```python
@@ -1238,7 +1227,7 @@ io.interactive()
 ```
 
 ## 12. EZ1.0
-异架构 mips，第一次见
+第一次做 MIPS。
 ```C
 int __fastcall main(int argc, const char **argv, const char **envp)
 {
@@ -1257,11 +1246,7 @@ int vuln()
 }
 ```
 ### 分析
-静态编译的 mips 架构的文件
-十分简洁，就是普通的栈溢出
-但是在 `mips` 里找不到 `pop rdi;ret` 类似的 gadgets
-不过，`mips` 的所有段都可执行
-可以直接写 `shellcode`
+静态编译的 MIPS 程序，很小，就是普通栈溢出。但 MIPS 上找不到 `pop rdi; ret` 这类 gadget——好在它的段都可执行，可以直接写 shellcode。
 
 ### exp
 ```python
@@ -1309,7 +1294,7 @@ io.interactive()
 ```
 
 ## 13. EZ2.0
-arm 架构
+这次是 ARM。
 ```C
 int __fastcall main(int argc, const char **argv, const char **envp)
 {
@@ -1328,9 +1313,7 @@ int vuln()
 }
 ```
 ### 分析
-同样是静态编译
-同样简洁
-但是这个可以找到 `gadgets` 打 _ROP_
+同样静态编译、程序很小，不过这题能找到 gadget，可以打 ROP。
 
 ### exp
 ```python
@@ -1525,8 +1508,7 @@ int _()
 }
 ```
 ### 分析
-_UAF_ ，还能直接泄露 `libc`
-覆盖 hello_world 和 gift
+UAF，而且能直接泄 libc；覆盖 `hello_world` 和 `gift`。
 
 ### exp
 ```python
@@ -1774,11 +1756,7 @@ unsigned __int64 view_chunk()
 }
 ```
 ### 分析
-事实上，_UAF_ 还是存在
-通过 _House of rabbit_ 绕过 flag 检测
-可以泄露 `libc`，进而泄露 `stack`
-题目本意貌似是让打 exit_hook
-笔者逃课打 _ROP_
+UAF 依然在，用 House of rabbit 绕过 flag 检测；泄出 libc 后还能再泄栈。题目本意大概是打 `exit_hook`，我偷懒改打了 ROP。
 ### exp
 ```python
 from pwn import *
@@ -2063,8 +2041,7 @@ unsigned __int64 view_chunk()
 }
 ```
 ### 分析
-同上一题，由于开了沙箱不能 get shell
-直接打 _ROP_ 把栈迁移到堆上，然后 _ROP_ 来 _orw_
+和上一题类似，但开了沙箱不能直接 getshell：把栈迁到堆上，ROP 走 ORW。
 
 ### exp
 ```python
