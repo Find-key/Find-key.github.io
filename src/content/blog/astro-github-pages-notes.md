@@ -1,5 +1,5 @@
 ---
-title: Astro 部署到 GitHub Pages 项目站的三个坑
+title: "Astro 部署到 GitHub Pages 项目站的三个坑"
 description: "base 路径、Actions 权限、404 页面——项目站（user.github.io/blog）比用户主页站多踩的三脚。"
 pubDate: 2026-10-24
 category: meta

@@ -1,5 +1,5 @@
 ---
-title: 格式化字符串：改写 GOT 表
+title: "格式化字符串能写到哪"
 description: "%n 能写内存，前提是参数落在栈上你需要的位置；先泄漏 libc，再改 exit 的 GOT。"
 pubDate: 2026-10-19
 category: pwn

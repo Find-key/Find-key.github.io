@@ -1,5 +1,5 @@
 ---
-title: 保护绕过：Partial RELRO 下的 GOT 劫持
+title: "partial RELRO 下的 GOT 劫持"
 description: "没开 full RELRO 就有可写的 GOT；配上任意写，控制流劫持很稳定。"
 pubDate: 2026-10-08
 category: pwn

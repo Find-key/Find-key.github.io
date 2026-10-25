@@ -1,5 +1,5 @@
 ---
-title: 用 QEMU 跑 Buildroot 的 vexpress-a9 最小系统
+title: "用 QEMU 跑 Buildroot 的 vexpress-a9 最小系统"
 description: "一条 make、一条 qemu-system-arm，把 Buildroot 的镜像塞进 SD 卡控制器启动。附我踩过的几个参数坑。"
 pubDate: 2026-10-26
 category: kernel

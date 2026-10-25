@@ -1,8 +1,8 @@
 ---
-title: 反病毒：静态特征和行为检测
+title: "特征码、启发式与行为检测"
 description: "特征码挡已知，行为挡住变种；两边都在跟对抗赛跑。"
 pubDate: 2026-10-05
-category: notes
+category: av
 tags: [antivirus]
 ---
 

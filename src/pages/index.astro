@@ -217,6 +217,10 @@ const rows = CATEGORIES.map((category) => ({
 		padding-top: 1.75rem;
 	}
 	/* 分组标签小而轻：这一页的主角是文章标题，不是分类名 */
+	/* 分组数是奇数时，最后一格横跨两栏，避免右半边空一大块 */
+	.block:last-child:nth-child(odd) {
+		grid-column: 1 / -1;
+	}
 	.block-head {
 		display: flex;
 		align-items: baseline;
