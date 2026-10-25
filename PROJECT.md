@@ -513,3 +513,4 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | 友链头像补齐：Nick（`/_astro/avatar.CHzblvB9_Zr23Yv.webp`）与 Lochad（`/api/media?hash=622a…`）下载为本地 96px webp；wele 改名 wsh，头像指向其站 `/avatar.jpg`（该站拒绝非浏览器请求，只能远程引用，失败时退回首字母）；Lochad 链接改 https |
 | 2026-10-25 | 友链 desc 更新：Eleven. → `Make that move you're afraid of making.`，Sally → `一个pwn手的blog`，Kamiya → `近在咫尺，却邈以山河`；`.note` 从单行省略改为最多两行（`line-clamp: 2`），英文长句不再被截断 |
 | 2026-10-25 | 友链：删除 wsh（12 条），Yolo → `to be continued`，Lochad → `more what, more why.` |
+| 2026-10-25 | 友链：wsh 加回（desc 改 `wsh 的 web 笔记`，位置在 Nick 之后），新增 Fa1lSnow（`blog.fa1lsnow.com`，desc `林雪落的小玩意`，头像取自其站 `/uploads/avatar.jpg` 存为 96px webp）；共 14 条 |
