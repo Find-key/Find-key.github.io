@@ -1,6 +1,6 @@
 ---
-title: "调用链"
-description: "一些常见的函数/机制调用的过程"
+title: "glibc 里的 hook 与调用链"
+description: "glibc 2.34 之前几处可以被改写的函数指针：malloc / realloc / free 的 hook，以及 exit() 调用链里的 _rtld_global。"
 pubDate: 2025-03-13
 category: pwn
 tags: [glibc]
@@ -8,14 +8,12 @@ tags: [glibc]
 
 ## 前言
 
-对于 glibc 的堆题。
-*get shell* 的方法总是用任意地址写达成的。
-本文讨论一些常见的调用链，用于任意地址写。
+堆题拿 shell 基本都靠任意地址写，而任意地址写先得有个「写哪儿」的落点。这篇整理几处常见的落点：glibc 2.34 之前的 `__malloc_hook`、`__realloc_hook`、`__free_hook`，以及 `exit()` 调用链里 `_rtld_global` 中的函数指针。
 
-## some of hook
+## 函数指针形式的 hook
 
-> 适用版本：glibc<2.34
-> 本质：函数指针
+- 适用版本：glibc < 2.34
+- 本质：函数指针
 
 ### __malloc_hook
 
@@ -34,28 +32,10 @@ __libc_malloc (size_t bytes)
   if (__builtin_expect (hook != NULL, 0))
     return (*hook)(bytes, RETURN_ADDRESS (0));
 
-  arena_get (ar_ptr, bytes);
-
-  victim = _int_malloc (ar_ptr, bytes);
-  /* Retry with another arena only if we were able to find a usable arena
-     before.  */
-  if (!victim && ar_ptr != NULL)
-    {
-      LIBC_PROBE (memory_malloc_retry, 1, bytes);
-      ar_ptr = arena_get_retry (ar_ptr, bytes);
-      victim = _int_malloc (ar_ptr, bytes);
-    }
-
-  if (ar_ptr != NULL)
-    (void) mutex_unlock (&ar_ptr->mutex);
-
-  assert (!victim || chunk_is_mmapped (mem2chunk (victim)) ||
-          ar_ptr == arena_for_chunk (mem2chunk (victim)));
-  return victim;
+  /* …（后面的分配 / 释放逻辑与本篇无关，略） */
 }
 ```
-显然注意到在函数调用初期，
-若 `__malloc_hook` 不为**NULL**，调用(*__malloc_hook)()，返回值作为 malloc()的返回值。
+注意函数开头的几行：`__malloc_hook` 非空时直接调用它，它的返回值就是这个 `malloc()` 的返回值。
 
 ### __realloc_hook
 
@@ -75,90 +55,11 @@ __libc_realloc (void *oldmem, size_t bytes)
   if (__builtin_expect (hook != NULL, 0))
     return (*hook)(oldmem, bytes, RETURN_ADDRESS (0));
 
-#if REALLOC_ZERO_BYTES_FREES
-  if (bytes == 0 && oldmem != NULL)
-    {
-      __libc_free (oldmem); return 0;
-    }
-#endif
-
-  /* realloc of null is supposed to be same as malloc */
-  if (oldmem == 0)
-    return __libc_malloc (bytes);
-
-  /* chunk corresponding to oldmem */
-  const mchunkptr oldp = mem2chunk (oldmem);
-  /* its size */
-  const INTERNAL_SIZE_T oldsize = chunksize (oldp);
-
-  if (chunk_is_mmapped (oldp))
-    ar_ptr = NULL;
-  else
-    ar_ptr = arena_for_chunk (oldp);
-
-  /* Little security check which won't hurt performance: the
-     allocator never wrapps around at the end of the address space.
-     Therefore we can exclude some size values which might appear
-     here by accident or by "design" from some intruder.  */
-  if (__builtin_expect ((uintptr_t) oldp > (uintptr_t) -oldsize, 0)
-      || __builtin_expect (misaligned_chunk (oldp), 0))
-    {
-      malloc_printerr (check_action, "realloc(): invalid pointer", oldmem,
-		       ar_ptr);
-      return NULL;
-    }
-
-  checked_request2size (bytes, nb);
-
-  if (chunk_is_mmapped (oldp))
-    {
-      void *newmem;
-
-#if HAVE_MREMAP
-      newp = mremap_chunk (oldp, nb);
-      if (newp)
-        return chunk2mem (newp);
-#endif
-      /* Note the extra SIZE_SZ overhead. */
-      if (oldsize - SIZE_SZ >= nb)
-        return oldmem;                         /* do nothing */
-
-      /* Must alloc, copy, free. */
-      newmem = __libc_malloc (bytes);
-      if (newmem == 0)
-        return 0;              /* propagate failure */
-
-      memcpy (newmem, oldmem, oldsize - 2 * SIZE_SZ);
-      munmap_chunk (oldp);
-      return newmem;
-    }
-
-  (void) mutex_lock (&ar_ptr->mutex);
-
-  newp = _int_realloc (ar_ptr, oldp, oldsize, nb);
-
-  (void) mutex_unlock (&ar_ptr->mutex);
-  assert (!newp || chunk_is_mmapped (mem2chunk (newp)) ||
-          ar_ptr == arena_for_chunk (mem2chunk (newp)));
-
-  if (newp == NULL)
-    {
-      /* Try harder to allocate memory in other arenas.  */
-      LIBC_PROBE (memory_realloc_retry, 2, bytes, oldmem);
-      newp = __libc_malloc (bytes);
-      if (newp != NULL)
-        {
-          memcpy (newp, oldmem, oldsize - SIZE_SZ);
-          _int_free (ar_ptr, oldp, 0);
-        }
-    }
-
-  return newp;
+  /* …（后面的分配 / 释放逻辑与本篇无关，略） */
 }
 ```
 
-显然注意到在函数调用初期，
-若 `__realloc_hook` 不为**NULL**，调用(*__realloc_hook)()，返回值作为 realloc()的返回值。
+同样地，`__realloc_hook` 非空时直接调用它，返回值作为 `realloc()` 的返回值。
 
 ### __free_hook
 
@@ -179,38 +80,15 @@ __libc_free (void *mem)
       return;
     }
 
-  if (mem == 0)                              /* free(0) has no effect */
-    return;
-
-  p = mem2chunk (mem);
-
-  if (chunk_is_mmapped (p))                       /* release mmapped memory. */
-    {
-      /* see if the dynamic brk/mmap threshold needs adjusting */
-      if (!mp_.no_dyn_threshold
-          && p->size > mp_.mmap_threshold
-          && p->size <= DEFAULT_MMAP_THRESHOLD_MAX)
-        {
-          mp_.mmap_threshold = chunksize (p);
-          mp_.trim_threshold = 2 * mp_.mmap_threshold;
-          LIBC_PROBE (memory_mallopt_free_dyn_thresholds, 2,
-                      mp_.mmap_threshold, mp_.trim_threshold);
-        }
-      munmap_chunk (p);
-      return;
-    }
-
-  ar_ptr = arena_for_chunk (p);
-  _int_free (ar_ptr, p, 0);
+  /* …（后面的分配 / 释放逻辑与本篇无关，略） */
 }
 ```
 
-同样的，注意到在函数调用初期，
-若 `__free_hook` 不为**NULL**，调用(*__free_hook)()，返回值作为 free()的返回值。
+`__free_hook` 非空时先调用它再 `return`。注意 `free()` 本身返回 `void`，所以这里的 hook 只是"被调用"，没有返回值参与。
 
 ### exit_hook
 
-`exit_hook` 并不是官方所提供的，而是 `exit()` 调用链中所会用到的**函数指针**,
+`exit_hook` 不是官方符号，而是 `exit()` 调用链里用到的一对**函数指针**：
 
 glibc 2.23 的 exit.c 源码
 ```C
@@ -305,9 +183,9 @@ libc_hidden_def(exit)
 注意到，`exit()` 实际上是调用 `__run_exit_handlers()`
 而 `__run_exit_handlers()` 中不断调用 `exit_function_list` 中的函数。
 
-> 其中一种思路是伪造 `exit_func_list` 或者往其中放入 *one_gadget*.
+> 思路之一是伪造 `exit_function_list`，或者直接往表里塞一个 one_gadget。
 
-正常执行时，在 `exit_func_list` 会调用 `_dl_fini()` 函数。
+正常退出时会走到 `_dl_fini()`：
 ```C
 void
 internal_function
@@ -465,12 +343,8 @@ _dl_fini (void)
 #endif
 }
 ```
-在这个函数中调用了 `__rtld_lock_lock_recursive` 和 `__rtld_lock_unlock_recursive`.
+`_dl_fini()` 里会调用 `__rtld_lock_lock_recursive` 和 `__rtld_lock_unlock_recursive`。这两个都是函数指针，来自 `_rtld_global` 结构体的 `__dl_rtld_lock_recursive` / `__dl_rtld_unlock_recursive` 字段——这就是要找的那对"hook"。
 
-二者均位于 `_rtld_global` 结构体中，均为函数指针，名为 `__dl_rtld_lock_recursive` 和 `__dl_rtld_unlock_recursive`.
+## 小结
 
-这就是我们所寻找的"hook"函数指针。
-
-### 综述
-
-显然的，对于上述的几类 `hook` 指针，只要修改具体的值为 `one_gadget` 就可以到达 *get shell* 的效果。
+这几处落点本质一样：把函数指针换成 one_gadget，就能在对应时机拿到 shell。差别只在触发条件和版本限制——三个 `hook` 在 glibc 2.34 被移除，`_rtld_global` 那条则一直留着，只是调用时机绑定在退出流程上。
