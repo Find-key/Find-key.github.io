@@ -1,12 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+	<!-- 「0x」：几何绘制，不依赖系统字体，16px 下依然是两个清楚的形状 -->
 	<rect width="32" height="32" rx="6" fill="#262220" />
-	<text
-		x="16.5"
-		y="23.4"
-		text-anchor="middle"
-		font-family="Iowan Old Style, Palatino, 'Liberation Serif', Georgia, serif"
-		font-size="21"
-		font-weight="600"
-		fill="#fbf9f5">F</text
-	>
+	<ellipse cx="10.1" cy="16" rx="4.7" ry="6.3" fill="none" stroke="#fbf9f5" stroke-width="3.2" />
+	<path d="M18.3 10.5 26.7 21.5M26.7 10.5 18.3 21.5" fill="none" stroke="#fbf9f5" stroke-width="3" stroke-linecap="round" />
 </svg>
