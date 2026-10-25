@@ -1,8 +1,8 @@
 ---
-title: 终端安全：从一个可疑进程说起
+title: "从一个可疑进程开始查"
 description: "看父进程、看网络连接、看落地文件——排查顺序比工具重要。"
 pubDate: 2026-10-11
-category: notes
+category: endpoint
 tags: [endpoint, dfir]
 ---
 

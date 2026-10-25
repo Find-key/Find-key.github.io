@@ -1,5 +1,5 @@
 ---
-title: 堆利用：fastbin dup 与 tcache 的差别
+title: "fastbin dup 和 tcache 差在哪"
 description: "glibc 2.31 之后 tcache 的检查变严，同一份 dup 思路要跟着改。"
 pubDate: 2026-10-15
 category: pwn

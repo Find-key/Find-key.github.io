@@ -76,22 +76,27 @@ export const CATEGORIES = [
 	{
 		slug: 'pwn',
 		name: 'pwn',
-		description: '二进制漏洞与利用：栈/堆题、保护绕过、利用链，以及调试过程中的发现。',
+		description: '二进制漏洞与利用：栈、堆、保护绕过、利用链。',
+	},
+	{
+		slug: 'endpoint',
+		name: '终端安全',
+		description: '终端上的攻与防：进程、持久化、取证式排查。',
+	},
+	{
+		slug: 'av',
+		name: '反病毒',
+		description: '特征码、启发式、行为检测，以及绕过它们的思路。',
 	},
 	{
 		slug: 'kernel',
 		name: '内核与嵌入式',
-		description: '内核、启动流程、设备树、Buildroot 与 QEMU 里的实验。',
+		description: '内核、启动流程、设备树、Buildroot 与 QEMU。',
 	},
 	{
 		slug: 'meta',
-		name: '站务与工具',
-		description: '这个站是怎么搭的，以及日常用的工具和工作流。',
-	},
-	{
-		slug: 'notes',
-		name: '随笔',
-		description: '不属于上面几类的零散记录。',
+		name: '站务',
+		description: '这个站怎么搭的，以及一些零散的记录。',
 	},
 ] as const;
 
