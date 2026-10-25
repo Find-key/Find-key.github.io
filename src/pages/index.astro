@@ -83,6 +83,12 @@ const rows = CATEGORIES.map((category) => ({
 			</div>
 
 			<div class="spread">
+				{rows.length === 0 && (
+					<p class="empty">
+						还没有文章。先在 <code>src/consts.ts</code> 的 <code>CATEGORIES</code> 里定一个分类，<br
+						/>再运行 <code>npm run new</code> 写第一篇。
+					</p>
+				)}
 				{
 					rows.map(({ category, items }, i) => (
 						<section class="block" id={category.slug}>
@@ -323,6 +329,21 @@ const rows = CATEGORIES.map((category) => ({
 		transform: none;
 	}
 
+	.spread > .empty {
+		grid-column: 1 / -1;
+		max-width: 40em;
+		margin: 0.4rem 0 0;
+		color: var(--muted);
+		font-size: 0.92rem;
+		line-height: 2;
+		text-wrap: pretty;
+	}
+	.spread > .empty code {
+		padding: 0 0.2em;
+		color: var(--text);
+		font-family: var(--font-mono);
+		font-size: 0.86em;
+	}
 	.index-head {
 		padding-bottom: 0.9rem;
 		border-bottom: 1px solid var(--line-strong);

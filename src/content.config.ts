@@ -5,6 +5,16 @@ import { CATEGORIES } from './consts';
 
 const categorySlugs = CATEGORIES.map((category) => category.slug);
 
+// CATEGORIES 为空时（清场阶段）不限制 category，等你定义了分类再收紧
+const categorySchema =
+	categorySlugs.length > 0
+		? z
+				.string()
+				.refine((value) => categorySlugs.includes(value), {
+					message: `category 必须是以下之一：${categorySlugs.join(' / ')}（在 src/consts.ts 的 CATEGORIES 里定义）`,
+				})
+		: z.string();
+
 const blog = defineCollection({
 	// 文章放在 src/content/blog/，支持 .md 和 .mdx
 	loader: glob({ base: './src/content/blog', pattern: '**/*.{md,mdx}' }),
@@ -17,11 +27,7 @@ const blog = defineCollection({
 			pubDate: z.coerce.date(),
 			updatedDate: z.coerce.date().optional(),
 			// 文章所属分类：必须是 consts.ts 里 CATEGORIES 的 slug
-			category: z
-				.string()
-				.refine((value) => categorySlugs.includes(value as never), {
-					message: `category 必须是以下之一：${categorySlugs.join(' / ')}（在 src/consts.ts 的 CATEGORIES 里定义）`,
-				}),
+			category: categorySchema,
 			// 同一分类内想固定阅读顺序时填 order（1、2、3…），不填按时间倒序
 			order: z.number().optional(),
 			heroImage: image().optional(),

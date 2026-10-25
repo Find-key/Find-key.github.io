@@ -71,33 +71,16 @@ export const FRIENDS: Friend[] = [];
  * - 新增分类：在这里加一项，然后文章 frontmatter 的 category 填 slug
  * - 没有任何文章的分类不会显示在页面上，可以先把分类列全
  */
-export const CATEGORIES = [
-	{
-		slug: 'pwn',
-		name: 'pwn',
-		description: '二进制漏洞与利用：栈、堆、保护绕过、利用链。',
-	},
-	{
-		slug: 'endpoint',
-		name: '终端安全',
-		description: '终端上的攻与防：进程、持久化、取证式排查。',
-	},
-	{
-		slug: 'av',
-		name: '反病毒',
-		description: '特征码、启发式、行为检测，以及绕过它们的思路。',
-	},
-	{
-		slug: 'kernel',
-		name: '内核与嵌入式',
-		description: '内核、启动流程、设备树、Buildroot 与 QEMU。',
-	},
-	{
-		slug: 'meta',
-		name: '站务',
-		description: '这个站怎么搭的，以及一些零散的记录。',
-	},
-] as const;
+/**
+ * 分类。现在是空的——想加就在数组里加一项，slug 会进 URL（/categories/<slug>/），
+ * 顺序就是首页分组的顺序：
+ *
+ *   { slug: 'pwn', name: 'pwn', description: '一句话说明这个分类收什么' },
+ *
+ * 注意：空分类在首页显示「还没有文章」且不生成分类页；
+ * 文章的 frontmatter 里 category 必须与这里的某个 slug 一致（有分类时才会校验）。
+ */
+export const CATEGORIES: { slug: string; name: string; description: string }[] = [] as const;
 
 export type Category = (typeof CATEGORIES)[number];
 export type CategorySlug = Category['slug'];
