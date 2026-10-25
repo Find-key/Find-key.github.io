@@ -78,9 +78,9 @@ body {
 	overflow-wrap: break-word;
 }
 
-/* 不再把页脚推到底：内容短时页脚紧跟正文，避免中间空一大段 */
+/* 内容不足一屏时，页脚贴住视口底部（内容短的时候页面不能看起来像被截断） */
 main {
-	flex: 0 0 auto;
+	flex: 1 0 auto;
 }
 
 ::selection {
