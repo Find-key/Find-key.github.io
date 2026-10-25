@@ -1,4 +1,4 @@
-# Findkey’s Blog
+# Findkey
 
 个人技术博客，Astro + GitHub Pages，纯静态。文章按**分类**组织，简约排版优先。
 

@@ -8,8 +8,8 @@
  *    详见项目根目录 PROJECT.md 的「上线前检查清单」。
  */
 export const SITE = {
-	/** 站点名（浏览器标签、站头字标、RSS 标题都用它） */
-	title: 'Findkey’s Blog',
+	/** 站点名（浏览器标签、站头字标、分享卡都用它） */
+	title: 'Findkey',
 	/** 一句话简介，用于 SEO description、RSS 描述 */
 	description: '二进制漏洞分析与利用（pwn）',
 	/**
