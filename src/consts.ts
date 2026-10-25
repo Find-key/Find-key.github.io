@@ -28,10 +28,10 @@ export const SITE = {
 } as const;
 
 /**
- * 站头右侧的固定链接（顺序即显示顺序）。分类页本身也在里面。
+ * 站头右侧的固定链接（顺序即显示顺序）。
+ * 首页已经是分类目录，所以「分类」不再放站头，改放版权页。
  */
 export const NAV = [
-	{ href: '/categories', label: '分类' },
 	{ href: '/links', label: '友链' },
 	{ href: '/about', label: '关于' },
 ] as const;
@@ -46,8 +46,8 @@ export interface Friend {
 }
 
 /**
- * 友链。加一条就是把下面这个数组补一项，
- * 然后 /links 页面会自动按顺序列出来。
+ * 友链。/links 页面按这个数组的顺序渲染。
+ * 加一条就是补一项：{ name: '站点名', url: 'https://…', note: '一句话' }
  */
 export const FRIENDS: Friend[] = [];
 
