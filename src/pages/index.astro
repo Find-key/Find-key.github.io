@@ -36,7 +36,12 @@ const rows = CATEGORIES.map((category) => ({
 							<header class="block-head">
 								<span class="num">{String(i + 1).padStart(2, '0')}</span>
 								<h2 class="name">
-									<a href={categoryUrl(category.slug)}>{category.name}</a>
+									{items.length > 0 ? (
+										/* 空分类没有详情页，就不能给链接 */
+										<a href={categoryUrl(category.slug)}>{category.name}</a>
+									) : (
+										<span class="name-plain">{category.name}</span>
+									)}
 								</h2>
 								<span class="count">{items.length > 0 ? `${items.length} 篇` : '还没有文章'}</span>
 							</header>
@@ -120,6 +125,9 @@ const rows = CATEGORIES.map((category) => ({
 	.name a:hover {
 		color: var(--accent);
 		text-decoration: none;
+	}
+	.name-plain {
+		color: var(--muted);
 	}
 	.count {
 		flex: none;
