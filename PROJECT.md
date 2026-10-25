@@ -488,3 +488,4 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | 标签页名定为 `0xFindkey`（短、十六进制味、不锁死写作方向）；因为已经够短，去掉 `shortTitle`，内页统一「归档 · 0xFindkey」；站头字标仍是 `Findkey’s Blog`，分享卡与之保持一致 |
 | 2026-10-25 | 标签页名改回 `Findkey’s Blog`（试过 `0xFindkey` 后否掉）：标签页、站头字标、分享卡三处统一成同一个名字，不再分叉 |
 | 2026-10-25 | favicon 换成 Grapple（`public/Grapple.svg`，Lorc / game-icons.net，CC BY 3.0）：原图 512 渐变 + 细笔画，16px 下是红色涂鸦；改为**单色纸色 + 墨色圆角底 + 描边加粗 16**，并补齐 `favicon-32.png`、`apple-touch-icon.png` 与 `<link>`（svg / 32 / apple-touch 三档）。署名写在 SVG 注释与本文档，若要在页面上可见再加一行 |
+| 2026-10-25 | favicon 回退到 F 字标（Grapple 试过一版后放弃）：`public/favicon.svg` = 墨色圆角底 + 纸色衬线 F（x 微调到 16.5 做视觉居中），`favicon-32.png` / `apple-touch-icon.png` 由它重新导出；删除 `public/Grapple.svg`（需要时 `git show 1afd715:public/Grapple.svg` 可取回） |
