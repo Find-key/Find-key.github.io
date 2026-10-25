@@ -34,15 +34,18 @@ const { category, posts } = Astro.props;
 		<Header />
 		<main class="container page">
 			<nav class="crumb" aria-label="位置">
-				<a href={withBase('/categories')}>分类</a>
+				<a href={`${withBase('/')}#${category.slug}`}>首页</a>
 				<span class="sep">/</span>
+				<span>{category.name}</span>
 			</nav>
 			<h1>{category.name}</h1>
 			<p class="sub">{category.description}</p>
 
 			{posts.length > 0 ? <PostList posts={posts} /> : <p class="empty">这个分类还没有文章。</p>}
 
-			<p class="back"><a href={withBase('/categories')}>← 返回分类</a></p>
+			<p class="back">
+				<a href={`${withBase('/')}#${category.slug}`}>← 返回首页</a>
+			</p>
 		</main>
 		<Footer />
 	</body>
