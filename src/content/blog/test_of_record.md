@@ -7,8 +7,7 @@ tags: [exercise]
 ---
 
 ## 前言
-> 由于笔者想记录一下做过的题，但又不想每次都单独写一篇文章，故汇为一篇。
-> 目前文章状态： **长期更新中**
+> 做过的题想记下来，又不想每题单开一篇，就汇总在这里。**长期更新中。**
 
 ## glibc
 
@@ -126,10 +125,7 @@ void *__fastcall to_sale(void *a1)
   return result;
 }
 ```
-创建的子进程会 usleep(50000) ，也就是 sleep(5) .
-子进程运行时，父进程包含停止。
-说明可以同时开几个子进程，在 **bags[a1]** 未置零时继续卖物品。
-一物多卖就是漏洞
+子进程会 `usleep(50000)`（5 秒），这期间父进程被挂起，所以可以同时开几个子进程，在 `bags[a1]` 还没置零时重复卖同一件物品——一物多卖就是漏洞。
 
 ##### exp
 ```python
@@ -944,10 +940,7 @@ unsigned __int64 __fastcall bug(void *a1, int a2)
   return __readfsqword(0x28u) ^ v4;
 }
 ```
-一个很典型的 off-by-null .
-由于 init() 函数中有 mallopt(1, 0);
-故本题无法使用 fast bin .
-进而想到使用 *unsorted bins attack* 进行 *FSOP*.
+典型的 off-by-null。`init()` 里调了 `mallopt(1, 0)`，本题用不了 fastbin，于是走 unsorted bin attack 接 FSOP。
 
 ##### exp
 ```python
@@ -1176,10 +1169,7 @@ int show()
 }
 ```
 
-rename() 中存在 off by null.
-而 name 与 arr 数组相邻，刚好能溢出。
-将第一个 chunk_ptr 的最低字节覆盖为 \x00 。
-show() 中也可通过字符串未截断而泄露 heap 地址
+`rename()` 里有 off-by-null，而 `name` 和 `arr` 数组相邻，刚好能溢出：把第一个 `chunk_ptr` 的最低字节盖成 `\x00`。`show()` 里字符串没有截断，也能顺带泄 heap 地址。
 
 ##### exp
 ```python
@@ -1383,9 +1373,7 @@ unsigned __int64 change_item()
   return __readfsqword(0x28u) ^ v5;
 }
 ```
-**change_item()** 函数中有对 size 的输入，而未做相应的检测。
-即，存在堆溢出漏洞。
-这里思路是通过 unsafe unlink 修改存放 chunk 地址的数组内容。
+`change_item()` 读入 `size` 时不做校验，存在堆溢出；思路是用 unsafe unlink 改掉存放 chunk 地址的数组。
 
 ##### exp
 ```python
@@ -1551,9 +1539,7 @@ unsigned __int64 del()
   return __readfsqword(0x28u) ^ v3;
 }
 ```
-对指针进行 free 操作，
-但是为对指针进行置空。
-即，*UAF*
+`free` 之后没有把指针置空，就是 UAF。
 
 而程序未开启 PIE, 还有 '/bin/sh' 字样
 直接通过劫持 print 为 system
@@ -1672,7 +1658,7 @@ void __cdecl __noreturn vuln()
     if ( index <= 3 )
     {
       puts("Then you can input your feedback.");
-      read_str(feedback_list[index]);           // 数组越位
+      read_str(feedback_list[index]);           // 数组越界
       print_feedback();
     }
     else
@@ -1684,10 +1670,7 @@ void __cdecl __noreturn vuln()
 }
 ```
 
-index 若为负数，则存在数组越位。
-bss 段上 feedbacl_list 在 `stdout`,`stdin`,`stderr` 之后。
-
-可通过数组越位修改这些结构体的值。
+`index` 可以是负数，数组越界；`.bss` 上 `feedback_list` 紧跟在 `stdout`/`stdin`/`stderr` 之后，改这些结构体就能利用。
 
 ##### exp
 ```python
@@ -1801,11 +1784,7 @@ void del()
     log("Invalid idx\n");
 }
 ``` 
-明显的 *UAF* 漏洞
-
-思路：把 chunk 申请到 arr 地址，然后劫持 got 表
-
-由于开了 sandbox 禁止了 execv 和 execvat，故打 orw
+明显的 UAF：把 chunk 申请到数组地址上，再劫持 GOT。沙箱禁了 `execve` 和 `execveat`，所以改打 ORW。
 
 ##### exp
 ```Python
