@@ -9,7 +9,7 @@
  */
 export const SITE = {
 	/** 浏览器标签页 / SEO 用（短，标签栏里认得出就行） */
-	title: '0xFindkey',
+	title: 'Findkey’s Blog',
 	/** 站头字标（左上那个），可以比 title 长 */
 	wordmark: 'Findkey’s Blog',
 	/** 一句话简介，用于 SEO description、RSS 描述 */

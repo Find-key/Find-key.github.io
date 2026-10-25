@@ -486,3 +486,4 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | 站名改为 `Findkey`（原来 `Findkey’s Blog`）：标签页更短、更易认；文章页 title 统一为「标题 · Findkey」。favicon 从模板的蓝底 F 换成**墨色实底 + 纸色衬线 F**（16px 下最清楚，也和纸感配色一致）；`public/og.png` 同步用新站名重做 |
 | 2026-10-25 | 站名拆成三个字段：`title`（标签页/SEO，`Findkey · pwn`）、`shortTitle`（内页后缀，`Findkey`，避免「友链 · Findkey · pwn」三段）、`wordmark`（站头字标，`Findkey’s Blog`）；`og.png` 用 wordmark 重做 |
 | 2026-10-25 | 标签页名定为 `0xFindkey`（短、十六进制味、不锁死写作方向）；因为已经够短，去掉 `shortTitle`，内页统一「归档 · 0xFindkey」；站头字标仍是 `Findkey’s Blog`，分享卡与之保持一致 |
+| 2026-10-25 | 标签页名改回 `Findkey’s Blog`（试过 `0xFindkey` 后否掉）：标签页、站头字标、分享卡三处统一成同一个名字，不再分叉 |
