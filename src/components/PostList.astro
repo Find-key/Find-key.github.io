@@ -6,12 +6,14 @@ import FormattedDate from './FormattedDate.astro';
 interface Props {
 	posts: Post[];
 	showDate?: boolean;
+	/** 归档页用：隐藏摘要、行距更紧 */
+	compact?: boolean;
 }
 
-const { posts, showDate = true } = Astro.props;
+const { posts, showDate = true, compact = false } = Astro.props;
 ---
 
-<ul class="posts">
+<ul class:list={['posts', { compact }]}>
 	{
 		posts.map((post) => (
 			<li>
@@ -94,5 +96,16 @@ const { posts, showDate = true } = Astro.props;
 	.empty {
 		color: var(--muted);
 		padding: 1rem 0;
+	}
+
+	/* 归档模式：只要标题和日期，密一点 */
+	.compact .row {
+		padding: 0.55rem 0;
+	}
+	.compact .title {
+		font-size: 0.98rem;
+	}
+	.compact .desc {
+		display: none;
 	}
 </style>

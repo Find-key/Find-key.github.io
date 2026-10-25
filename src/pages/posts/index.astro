@@ -1,40 +1,52 @@
 ---
+import { getCollection } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
 import Header from '../../components/Header.astro';
 import PostList from '../../components/PostList.astro';
 import { SITE } from '../../consts';
-import { allPosts, groupByCategory } from '../../utils/posts';
-import { categoryUrl } from '../../utils/url';
+import { isVisible, type Post } from '../../utils/posts';
 
-const posts = await allPosts();
-const groups = groupByCategory(posts);
+// 归档按时间倒序（首页是按分类，两者是互补的两个入口）
+const posts = (await getCollection('blog', isVisible)).sort(
+	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+
+// 年份要按站点时区算，否则年初的文章在 UTC 构建机上会被归到上一年
+const yearOf = (date: Date) =>
+	new Intl.DateTimeFormat('en-CA', { year: 'numeric', timeZone: SITE.timeZone }).format(date);
+
+const byYear = new Map<string, Post[]>();
+for (const post of posts) {
+	const year = yearOf(post.data.pubDate);
+	byYear.set(year, [...(byYear.get(year) ?? []), post]);
+}
+const years = [...byYear.entries()];
 ---
 
 <!doctype html>
 <html lang={SITE.lang}>
 	<head>
-		<BaseHead title={`全部文章 · ${SITE.title}`} description={`${SITE.title} 的全部文章，按分类分组`} />
+		<BaseHead title={`归档 · ${SITE.title}`} description={`${SITE.title} 的文章归档`} />
 	</head>
 	<body>
 		<Header />
 		<main class="container page">
-			<h1>全部文章</h1>
-			<p class="sub">{posts.length} 篇，按分类分组</p>
+			<h1>归档</h1>
+			<p class="sub">共 {posts.length} 篇，按年份倒序</p>
 
 			{
-				groups.map(({ category, posts: items }) => (
-					<section class="group">
-						<header class="group-head">
-							<h2>
-								<a href={categoryUrl(category.slug)}>{category.name}</a>
-							</h2>
+				years.map(([year, items]) => (
+					<section class="year">
+						<header class="year-head">
+							<h2>{year}</h2>
 							<span class="count">{items.length} 篇</span>
 						</header>
-						<PostList posts={items} />
+						<PostList posts={items} compact />
 					</section>
 				))
 			}
+
 			{posts.length === 0 && <p class="empty">还没有文章。</p>}
 		</main>
 		<Footer />
@@ -49,42 +61,34 @@ const groups = groupByCategory(posts);
 		margin: 0 0 0.2em;
 		font-size: 1.9rem;
 		font-weight: 600;
-		letter-spacing: -0.01em;
+		letter-spacing: -0.005em;
 	}
 	.sub {
 		margin: 0 0 2.5rem;
 		color: var(--muted);
 		font-size: 0.84rem;
 	}
-	.group {
-		padding-top: 1.5rem;
-		border-top: 1px solid var(--line);
+	.year + .year {
+		margin-top: 2.75rem;
 	}
-	.group + .group {
-		margin-top: 2.5rem;
-	}
-	.group-head {
+	.year-head {
 		display: flex;
 		align-items: baseline;
 		justify-content: space-between;
 		gap: 1rem;
+		padding-bottom: 0.5rem;
+		border-bottom: 1px solid var(--line-strong);
 	}
-	h2 {
-		margin: 0 0 0.3rem;
-		font-size: 1.02rem;
+	.year-head h2 {
+		margin: 0;
+		font-size: 1.15rem;
 		font-weight: 600;
-	}
-	h2 a {
-		color: var(--text);
-	}
-	h2 a:hover {
-		color: var(--accent);
-		text-decoration: none;
+		font-variant-numeric: tabular-nums;
 	}
 	.count {
 		color: var(--muted);
-		font-size: 0.76rem;
-		font-variant-numeric: tabular-nums;
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
 	}
 	.empty {
 		color: var(--muted);
