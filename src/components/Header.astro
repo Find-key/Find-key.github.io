@@ -23,11 +23,11 @@ const isActive = (href: string) => current === href || current.startsWith(`${hre
 		{
 			variant === 'home' ? (
 				<h1 class="brand">
-					<a href={withBase('/')}>{SITE.title}</a>
+					<a href={withBase('/')}>{SITE.wordmark ?? SITE.title}</a>
 				</h1>
 			) : (
 				<a class="brand" href={withBase('/')}>
-					{SITE.title}
+					{SITE.wordmark ?? SITE.title}
 				</a>
 			)
 		}
