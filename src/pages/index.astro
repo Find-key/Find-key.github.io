@@ -241,17 +241,13 @@ const rows = CATEGORIES.map((category) => ({
 	}
 	.copy-toast {
 		position: absolute;
-		/* 放在图标右侧，避免盖住上面那行 dump */
-		left: 1.55rem;
-		bottom: 0.05rem;
-		padding: 0.15rem 0.45rem;
-		border: 1px solid var(--line);
-		border-radius: 3px;
-		background: var(--bg);
+		/* 放在图标右侧，避免盖住上面那行 dump；不加边框底色，只当一行小字 */
+		left: 1.6rem;
+		bottom: 0.15rem;
 		color: var(--muted);
 		font-family: var(--font-mono);
-		font-size: 0.66rem;
-		letter-spacing: 0.04em;
+		font-size: 0.68rem;
+		letter-spacing: 0.08em;
 		white-space: nowrap;
 		opacity: 0;
 		transform: translateX(-0.15rem);
