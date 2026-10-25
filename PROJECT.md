@@ -508,3 +508,4 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | 新增本机写作后台 `scripts/admin.mjs`（`npm run admin` → 127.0.0.1:4322）：零依赖 Node 服务 + 单页界面，可增删改文章（frontmatter 自动生成、改名自动删旧文件）、增删分类（重写 `consts.ts` 的 `#region categories` 并自动重启 dev）；`consts.ts` 的分类块改用 `#region` 标记 + `CategoryItem` 接口以便程序改写；补端口占用提示 |
 | 2026-10-25 | 从旧 Hexo 站 `../Saved-blog-doc` 迁入内容（只要内容，不要主题/构建配置）：16 篇文章 → `src/content/blog/`（保留原 slug；`date`→`pubDate`、`excerpt`→`description`、`tags` 转小写连字符数组；v8 三篇加 `order: 1/2/3`；`orange` 以 `###` 开头，整体提一级）；分类定为 pwn / V8 / 嵌入式与 IoT / 工具与笔记；16 条友链从 `source/_data/links.yml` 写入 `FRIENDS`；顺手把新 stub 的 `tags: [V8]` 改成小写避免重复标签页 |
 | 2026-10-25 | 分类再分：`WP` 独立（4 篇比赛题解从 pwn 拆出），pwn 只留二进制本身；删除重复的 V8 stub（`v8-pwn-0x00-20261025.md`，内容与 `v8-learn-0` 重复）；友链加回头像（`Friend.avatar`，96px 本地 webp，防盗链/失效时用首字母兜底，`onerror` 移除 img 避免破图），列表改双栏；`public/friends/` 约 50K |
+| 2026-10-25 | 友链删掉 wuye、yuoooka、s0lowalker 三条（16 → 13），同步删除 `public/friends/wuye-s.webp` |
