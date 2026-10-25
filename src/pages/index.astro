@@ -80,37 +80,10 @@ const rows = CATEGORIES.map((category) => ({
 				}
 			</div>
 
-			<!-- 页尾一句：位置和 paco.me 的 Now 一样，但当收尾而不是开头 -->
-			<section class="closing">
-				<p class="quote" data-hito>过早优化是万恶之源。</p>
-				<p class="src" data-hito-src>— Donald Knuth</p>
-			</section>
 		</main>
 		<Footer />
 	</body>
 </html>
-
-<script>
-	// 一言：构建时先把兜底那句渲染进 HTML，加载后再换成随机的；失败保持兜底。
-	const quote = document.querySelector('[data-hito]');
-	const source = document.querySelector('[data-hito-src]');
-
-	fetch('https://v1.hitokoto.cn/?encode=json&max_length=44')
-		.then((response) => (response.ok ? response.json() : Promise.reject(response.status)))
-		.then((data: { hitokoto?: string; from_who?: string; from?: string }) => {
-			if (!quote || !data.hitokoto) return;
-			quote.textContent = data.hitokoto;
-			if (source) {
-				const who = (data.from_who ?? '').trim();
-				const what = (data.from ?? '').trim();
-				const clean = who && what && who !== what ? `${who} · ${what}` : who || what;
-				source.textContent = clean ? `— ${clean}` : '';
-			}
-		})
-		.catch(() => {
-			/* 离线或被墙时保留兜底 */
-		});
-</script>
 
 <style>
 	.home {
@@ -132,14 +105,18 @@ const rows = CATEGORIES.map((category) => ({
 	.bio p {
 		margin: 0;
 		font-family: var(--font-serif);
-		font-size: 1.2rem;
-		line-height: 1.82;
+		font-size: 1.26rem;
+		line-height: 1.7;
 		letter-spacing: 0;
 		text-wrap: pretty;
 	}
 	.bio p + p {
 		color: var(--muted);
-		font-size: 1rem;
+		font-size: 0.98rem;
+		line-height: 1.85;
+	}
+	.bio p + p:last-child {
+		margin-top: 0.15rem;
 	}
 	/* 小照片：方角、一圈发丝边，像贴在纸上的证件照 */
 	.photo {
@@ -156,12 +133,13 @@ const rows = CATEGORIES.map((category) => ({
 	}
 
 	/* ---------- 分类分组（2×2） ---------- */
-	/* 单栏：文章量还少，双栏会出现半空格子；一栏一条往下读更稳。
-	   文章多起来也不受影响（每组只露最近 3 篇 + 「全部 N 篇」）。 */
+	/* 双栏跨页：左栏两格、右栏两格，组内只露最近 3 篇 */
 	.spread {
 		display: grid;
-		grid-template-columns: 1fr;
-		row-gap: 2.2rem;
+		grid-template-columns: 1fr 1fr;
+		column-gap: 4rem;
+		row-gap: 2.6rem;
+		align-items: start;
 		padding-top: 1.75rem;
 	}
 	/* 分组标签小而轻：这一页的主角是文章标题，不是分类名 */
@@ -258,31 +236,6 @@ const rows = CATEGORIES.map((category) => ({
 		font-size: 0.8rem;
 	}
 
-	/* ---------- 页尾一句 ---------- */
-	.closing {
-		margin-top: 3rem;
-		padding-top: 1.4rem;
-		border-top: 1px solid var(--line);
-	}
-	.quote {
-		max-width: 34em;
-		margin: 0;
-		color: var(--text);
-		font-family: var(--font-serif);
-		font-size: 1rem;
-		line-height: 1.75;
-		text-wrap: pretty;
-	}
-	.src {
-		margin: 0.35rem 0 0;
-		color: var(--muted);
-		font-family: var(--font-mono);
-		font-size: 0.66rem;
-		letter-spacing: 0.05em;
-	}
-	.src:empty {
-		display: none;
-	}
 
 	@media (max-width: 760px) {
 		.spread {
