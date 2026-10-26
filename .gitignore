@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# 写作后台的回收站（软删除的文章，不提交）
+.trash/

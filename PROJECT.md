@@ -523,3 +523,4 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | hero 联系方式拆成两个独立 `.item`：hover 只展开自己那项（之前悬停 QQ 会把邮箱地址也撑开）。favicon 换成几何绘制的「0x」（描边 0 + 交叉 x，不依赖字体），并重新导出 favicon-32.png / apple-touch-icon.png |
 | 2026-10-25 | hero 的 QQ 图标由气泡换成字母 Q（圆 + 斜穿出圈的短尾）；对齐用"墨迹包围盒中心"量化校准：信封与 Q 的 bbox 中心都落在 (9.95, 9.95)，尺寸 16.1×12.1 vs 12.5×12.5 |
 | 2026-10-25 | 写作后台改版：纸感配色与站点一致（衬线字标 `0xFindkey` + WRITING DESK 标签、发丝线、等宽小标签）；侧栏文章列表可独立滚动、分类固定在底部；列表项显示「分类 · 日期」或「草稿」；顶部常驻状态（未保存 / 已保存）、正文字数、⌘/Ctrl+S 保存 |
+| 2026-10-25 | 写作后台重构成模块：`scripts/admin/{lib/frontmatter,lib/posts,lib/categories,server}.mjs` + `ui/{index.html,app.css,app.js}`，`scripts/admin.mjs` 只剩入口。新增：删除文章改为软删除（挪到仓库根 `.trash/`，界面一键撤销）、分类带文章计数且"有文章不删"（force 才允许）、改名旧文件进回收站、写文件先写 tmp 再 rename。修复：误点分类 × 把 `pwn` 删掉导致 6 篇文章失去分类（已从 git 恢复） |
