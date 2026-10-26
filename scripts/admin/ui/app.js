@@ -1,8 +1,8 @@
 /**
- * 写作台：hash 路由 + 四个视图（列表 / 编辑 / 分类 / 回收站）。
+ * 写作台：hash 路由 + 四视图
  *   #/              文章列表
  *   #/edit/<slug>   编辑（#/edit/new 新建）
- *   #/categories    分类管理
+ *   #/categories    分类（行内可编辑 name / desc）
  *   #/trash         回收站
  */
 const $ = (id) => document.getElementById(id);
@@ -16,6 +16,7 @@ const state = {
 	filter: 'all',
 	query: '',
 	site: '',
+	trash: [],
 };
 
 const stamp = () => new Date().toISOString().slice(0, 10);
@@ -84,15 +85,16 @@ async function api(path, options = {}) {
 	return data;
 }
 
-/* ---------- 视图切换 ---------- */
+/* ---------- 路由 ---------- */
 
 const VIEWS = ['list', 'edit', 'categories', 'trash'];
 
 function showView(name) {
 	for (const view of VIEWS) $(`view-${view}`).hidden = view !== name;
 	document.body.dataset.view = name;
-	document.querySelectorAll('.topnav a').forEach((a) => {
-		a.classList.toggle('active', a.dataset.nav === name || (name === 'edit' && a.dataset.nav === 'list'));
+	document.querySelectorAll('.rail-nav a').forEach((a) => {
+		const nav = a.dataset.nav;
+		a.classList.toggle('active', nav === name || (name === 'edit' && nav === 'list'));
 	});
 }
 
@@ -107,7 +109,6 @@ function parseRoute() {
 async function route() {
 	const { view, slug } = parseRoute();
 	showView(view);
-
 	if (view === 'list') {
 		renderChips();
 		renderRows();
@@ -118,8 +119,19 @@ async function route() {
 		else await openPost(slug);
 		return;
 	}
-	if (view === 'categories') return renderCategories();
+	if (view === 'categories') {
+		renderCategories();
+		return;
+	}
 	if (view === 'trash') return renderTrash();
+}
+
+/* ---------- 导航计数 ---------- */
+
+function renderNav() {
+	$('navPosts').textContent = state.posts.length || '';
+	$('navCats').textContent = state.categories.length || '';
+	$('navTrash').textContent = state.trash.length || '';
 }
 
 /* ---------- 列表 ---------- */
@@ -160,7 +172,6 @@ function renderRows() {
 	const tbody = $('rows');
 	const posts = visiblePosts();
 	tbody.innerHTML = '';
-	$('totalCount').textContent = String(state.posts.length);
 	$('listEmpty').hidden = posts.length > 0;
 
 	for (const post of posts) {
@@ -231,10 +242,6 @@ function updatePreview() {
 }
 
 async function startNewPost() {
-	if (state.dirty && !(await confirmDialog('当前改动还没保存，确定新建？', { ok: '放弃改动' }))) {
-		location.hash = state.current ? `#/edit/${state.current}` : '#/';
-		return;
-	}
 	state.current = null;
 	state.originalSlug = null;
 	fillCategoriesSelect();
@@ -314,22 +321,58 @@ async function removePost() {
 	});
 }
 
-/* ---------- 分类 ---------- */
+/* ---------- 分类：行内可编辑 ---------- */
+
+async function saveCategories(next, { silent = false } = {}) {
+	const saved = await api('/api/categories', {
+		method: 'POST',
+		body: JSON.stringify({ categories: next }),
+	});
+	state.categories = saved.categories.map((c) => ({
+		...c,
+		count: state.categories.find((old) => old.slug === c.slug)?.count ?? 0,
+	}));
+	renderNav();
+	renderChips();
+	fillCategoriesSelect();
+	if (!silent) setState('分类已保存，dev 已重启');
+	return saved;
+}
 
 function renderCategories() {
-	const tbody = $('catRows');
-	tbody.innerHTML = '';
-	$('catTotal').textContent = String(state.categories.length);
+	const box = $('catRows');
+	box.innerHTML = '';
+
+	const head = document.createElement('div');
+	head.className = 'cat-head';
+	head.innerHTML = '<span>名称</span><span>slug</span><span>描述（显示在首页）</span><span>文章</span><span></span>';
+	box.appendChild(head);
 
 	for (const cat of state.categories) {
-		const tr = document.createElement('tr');
-		tr.innerHTML = `
-			<td><span class="row-title"></span></td>
-			<td class="c-cat">${cat.slug}</td>
-			<td class="c-date">${cat.count || 0}</td>
-			<td class="c-state"></td>`;
-		tr.querySelector('.row-title').textContent = cat.name;
+		const row = document.createElement('div');
+		row.className = 'cat-row';
 
+		const name = document.createElement('input');
+		name.value = cat.name;
+		name.setAttribute('aria-label', '显示名');
+
+		const slug = document.createElement('span');
+		slug.className = 'slug';
+		slug.textContent = cat.slug;
+		slug.title = cat.slug;
+
+		const desc = document.createElement('input');
+		desc.className = 'desc';
+		desc.value = cat.description ?? '';
+		desc.placeholder = '没有描述';
+		desc.setAttribute('aria-label', '分类描述');
+
+		const count = document.createElement('span');
+		count.className = 'count';
+		count.textContent = cat.count ? `${cat.count} 篇` : '—';
+
+		const acts = document.createElement('span');
+		acts.className = 'acts';
 		const del = document.createElement('button');
 		del.className = 'ghost danger';
 		del.textContent = '删除';
@@ -338,16 +381,33 @@ function renderCategories() {
 		del.onclick = async () => {
 			const ok = await confirmDialog(`删除分类 <b>${cat.name}</b>（${cat.slug}）？`, { ok: '删除', danger: true });
 			if (!ok) return;
-			await api('/api/categories', {
-				method: 'POST',
-				body: JSON.stringify({ categories: state.categories.filter((c) => c.slug !== cat.slug) }),
-			});
-			await refreshState();
+			await saveCategories(state.categories.filter((c) => c.slug !== cat.slug));
 			renderCategories();
-			setState('分类已删除，dev 已重启');
 		};
-		tr.querySelector('.c-state').appendChild(del);
-		tbody.appendChild(tr);
+		acts.appendChild(del);
+
+		const commit = async () => {
+			const next = state.categories.map((c) =>
+				c.slug === cat.slug ? { ...c, name: name.value.trim() || c.name, description: desc.value } : c,
+			);
+			try {
+				await saveCategories(next, { silent: true });
+				setState('已保存');
+				setTimeout(() => setState(''), 2000);
+			} catch (error) {
+				setState(error.message, 'error');
+				toast(error.message);
+			}
+		};
+		for (const el of [name, desc]) {
+			el.addEventListener('blur', commit);
+			el.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter') el.blur();
+			});
+		}
+
+		row.append(name, slug, desc, count, acts);
+		box.appendChild(row);
 	}
 }
 
@@ -358,16 +418,11 @@ async function addCategory(event) {
 	const description = $('cDesc').value.trim();
 	if (!slug) return toast('先填 slug');
 	try {
-		await api('/api/categories', {
-			method: 'POST',
-			body: JSON.stringify({ categories: [...state.categories, { slug, name, description }] }),
-		});
+		await saveCategories([...state.categories, { slug, name, description }]);
 		$('cSlug').value = '';
 		$('cName').value = '';
 		$('cDesc').value = '';
-		await refreshState();
 		renderCategories();
-		setState(`分类 ${name} 已添加，dev 已重启`);
 	} catch (error) {
 		setState(error.message, 'error');
 		toast(error.message);
@@ -378,7 +433,8 @@ async function addCategory(event) {
 
 async function renderTrash() {
 	const { items } = await api('/api/trash');
-	$('trashTotal').textContent = String(items.length);
+	state.trash = items;
+	renderNav();
 	const list = $('trashList');
 	list.innerHTML = '';
 
@@ -422,10 +478,12 @@ async function renderTrash() {
 /* ---------- 全局 ---------- */
 
 async function refreshState() {
-	const data = await api('/api/state');
+	const [data, trash] = await Promise.all([api('/api/state'), api('/api/trash')]);
 	state.posts = data.posts;
 	state.categories = data.categories;
 	state.site = data.siteDev;
+	state.trash = trash.items;
+	renderNav();
 }
 
 $('new').onclick = () => {

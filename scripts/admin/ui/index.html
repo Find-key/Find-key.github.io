@@ -7,146 +7,142 @@
 		<link rel="stylesheet" href="/app.css" />
 	</head>
 	<body data-view="list">
-		<header class="topbar">
-			<a class="brand" href="#/">
-				<span class="wordmark">0x<i>Findkey</i></span>
-				<span class="stamp">writing desk</span>
-			</a>
-			<span class="state" id="status" role="status" aria-live="polite"></span>
-			<nav class="topnav">
-				<a href="#/" data-nav="list">文章</a>
-				<a href="#/categories" data-nav="categories">分类</a>
-				<a href="#/trash" data-nav="trash">回收站</a>
-			</nav>
-		</header>
+		<div class="app">
+			<aside class="rail">
+				<div class="rail-top">
+					<span class="wordmark">0x<i>Findkey</i></span>
+					<span class="stamp">writing desk</span>
+				</div>
 
-		<!-- ① 列表 -->
-		<section class="view" id="view-list">
-			<div class="wrap">
-				<div class="list-head">
-					<h1>文章 <span class="num" id="totalCount"></span></h1>
-					<div class="list-tools">
+				<button class="new" id="new"><span>＋</span> 新建文章</button>
+
+				<nav class="rail-nav">
+					<a href="#/" data-nav="list"><span>文章</span><em id="navPosts"></em></a>
+					<a href="#/categories" data-nav="categories"><span>分类</span><em id="navCats"></em></a>
+					<a href="#/trash" data-nav="trash"><span>回收站</span><em id="navTrash"></em></a>
+				</nav>
+
+				<div class="rail-foot">
+					<span class="state" id="status" role="status" aria-live="polite"></span>
+					<p class="tips">⌘K 搜索<br />⌘S 保存</p>
+				</div>
+			</aside>
+
+			<main class="main">
+				<!-- ① 列表 -->
+				<section class="view" id="view-list">
+					<header class="page-head">
+						<h1>文章</h1>
+						<p class="lede">按分类或关键词筛，点一行进编辑器。</p>
 						<div class="search">
 							<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.3">
 								<circle cx="7" cy="7" r="4.4" /><path d="M10.4 10.4 14 14" stroke-linecap="round" />
 							</svg>
 							<input id="search" type="search" placeholder="搜索标题 / 标签 / 文件名" autocomplete="off" />
-							<kbd>⌘K</kbd>
 						</div>
-						<button class="primary" id="new">＋ 新建</button>
+					</header>
+
+					<div class="chips" id="chips"></div>
+
+					<table class="table" id="table">
+						<thead>
+							<tr>
+								<th class="c-title">标题</th>
+								<th class="c-cat">分类</th>
+								<th class="c-date">日期</th>
+								<th class="c-state"></th>
+							</tr>
+						</thead>
+						<tbody id="rows"></tbody>
+					</table>
+					<p class="empty" id="listEmpty" hidden>没有匹配的文章。</p>
+				</section>
+
+				<!-- ② 编辑 -->
+				<section class="view" id="view-edit" hidden>
+					<div class="editbar">
+						<a class="back" href="#/">← 文章</a>
+						<span class="edit-file" id="editFile"></span>
+						<div class="editbar-right">
+							<button class="ghost" id="metaToggle" aria-expanded="false">信息</button>
+							<button class="ghost" id="del">删除</button>
+							<button class="primary" id="save">保存</button>
+						</div>
 					</div>
-				</div>
 
-				<div class="chips" id="chips"></div>
+					<div class="paper">
+						<div class="meta" id="meta" hidden>
+							<label class="field">
+								<span>分类</span>
+								<select id="category"></select>
+							</label>
+							<label class="field">
+								<span>日期</span>
+								<input id="pubDate" type="date" />
+							</label>
+							<label class="field">
+								<span>文件</span>
+								<input id="slug" placeholder="按标题生成" />
+							</label>
+							<label class="field">
+								<span>标签</span>
+								<input id="tags" placeholder="stack, ret2text" />
+							</label>
+							<label class="check">
+								<input id="draft" type="checkbox" />
+								<span>草稿</span>
+							</label>
+							<label class="field wide">
+								<span>摘要</span>
+								<input id="description" placeholder="一句话摘要（列表与 SEO 会用）" />
+							</label>
+						</div>
 
-				<table class="table" id="table">
-					<thead>
-						<tr>
-							<th class="c-title">标题</th>
-							<th class="c-cat">分类</th>
-							<th class="c-date">日期</th>
-							<th class="c-state"></th>
-						</tr>
-					</thead>
-					<tbody id="rows"></tbody>
-				</table>
-				<p class="empty" id="listEmpty" hidden>没有匹配的文章。</p>
-			</div>
-		</section>
+						<input id="title" class="doc-title" placeholder="无标题" aria-label="标题" />
+						<textarea
+							id="body"
+							class="doc-body"
+							spellcheck="false"
+							aria-label="正文"
+							placeholder="## 环境&#10;&#10;从二级标题开始写，正文用 Markdown。"></textarea>
+						<div class="paper-foot">
+							<span class="count" id="wc"></span>
+							<a class="preview" id="preview" href="#" target="_blank" rel="noopener">在站点里打开 ↗</a>
+						</div>
+					</div>
+				</section>
 
-		<!-- ② 编辑 -->
-		<section class="view" id="view-edit" hidden>
-			<div class="editbar">
-				<a class="back" href="#/">← 文章</a>
-				<span class="edit-file" id="editFile"></span>
-				<div class="editbar-right">
-					<button class="ghost" id="metaToggle" aria-expanded="false">信息</button>
-					<button class="ghost" id="del">删除</button>
-					<button class="primary" id="save">保存</button>
-				</div>
-			</div>
+				<!-- ③ 分类 -->
+				<section class="view" id="view-categories" hidden>
+					<header class="page-head">
+						<h1>分类</h1>
+						<p class="lede">
+							desc 会显示在首页的分类组标题下面；有文章的分类不能删，先把那些文章换个分类。
+						</p>
+					</header>
 
-			<div class="paper">
-				<div class="meta" id="meta" hidden>
-					<label class="field">
-						<span>分类</span>
-						<select id="category"></select>
-					</label>
-					<label class="field">
-						<span>日期</span>
-						<input id="pubDate" type="date" />
-					</label>
-					<label class="field">
-						<span>文件</span>
-						<input id="slug" placeholder="按标题生成" />
-					</label>
-					<label class="field grow">
-						<span>标签</span>
-						<input id="tags" placeholder="stack, ret2text" />
-					</label>
-					<label class="check">
-						<input id="draft" type="checkbox" />
-						<span>草稿</span>
-					</label>
-					<label class="field wide">
-						<span>摘要</span>
-						<input id="description" placeholder="一句话摘要（列表与 SEO 会用）" />
-					</label>
-				</div>
+					<div class="cat-list" id="catRows"></div>
 
-				<input id="title" class="doc-title" placeholder="无标题" aria-label="标题" />
-				<textarea
-					id="body"
-					class="doc-body"
-					spellcheck="false"
-					aria-label="正文"
-					placeholder="## 环境&#10;&#10;从二级标题开始写，正文用 Markdown。"></textarea>
-				<div class="paper-foot">
-					<span class="count" id="wc"></span>
-					<a class="preview" id="preview" href="#" target="_blank" rel="noopener">在站点里打开 ↗</a>
-				</div>
-			</div>
-		</section>
+					<form class="add-cat" id="catForm">
+						<div class="add-cat-grid">
+							<label class="mini"><span>slug</span><input id="cSlug" placeholder="pwn" /></label>
+							<label class="mini"><span>显示名</span><input id="cName" placeholder="pwn" /></label>
+							<label class="mini wide"><span>描述</span><input id="cDesc" placeholder="一句话说明这个分类收什么" /></label>
+						</div>
+						<button type="submit" class="primary">添加分类</button>
+					</form>
+				</section>
 
-		<!-- ③ 分类 -->
-		<section class="view" id="view-categories" hidden>
-			<div class="wrap narrow">
-				<div class="list-head">
-					<h1>分类 <span class="num" id="catTotal"></span></h1>
-					<p class="lede">分类会出现在首页与 URL 里；下面还有文章的分类不能直接删。</p>
-				</div>
-
-				<table class="table">
-					<thead>
-						<tr>
-							<th class="c-title">名称</th>
-							<th class="c-cat">slug</th>
-							<th class="c-date">文章</th>
-							<th class="c-state"></th>
-						</tr>
-					</thead>
-					<tbody id="catRows"></tbody>
-				</table>
-
-				<form class="add-cat" id="catForm">
-					<input id="cSlug" placeholder="slug（小写英文）" />
-					<input id="cName" placeholder="显示名" />
-					<input id="cDesc" placeholder="一句话描述（可留空）" />
-					<button type="submit" class="primary">添加</button>
-				</form>
-			</div>
-		</section>
-
-		<!-- ④ 回收站 -->
-		<section class="view" id="view-trash" hidden>
-			<div class="wrap narrow">
-				<div class="list-head">
-					<h1>回收站 <span class="num" id="trashTotal"></span></h1>
-					<p class="lede">删除的文章会先放在这里，恢复后回到原来的文件名；重名时自动加 -restored。</p>
-				</div>
-				<ul class="trash-list" id="trashList"></ul>
-			</div>
-		</section>
+				<!-- ④ 回收站 -->
+				<section class="view" id="view-trash" hidden>
+					<header class="page-head">
+						<h1>回收站</h1>
+						<p class="lede">删除的文章先放这里；恢复时若重名会自动加 -restored。</p>
+					</header>
+					<ul class="trash-list" id="trashList"></ul>
+				</section>
+			</main>
+		</div>
 
 		<div class="toast" id="toast" role="status" aria-live="polite">
 			<span id="toastText"></span>
