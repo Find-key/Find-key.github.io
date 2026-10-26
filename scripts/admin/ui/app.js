@@ -1,5 +1,9 @@
 /**
- * 写作台前端：渲染 + 调用 /api/*。校验都在服务端，这里只管交互。
+ * 写作台：hash 路由 + 四个视图（列表 / 编辑 / 分类 / 回收站）。
+ *   #/              文章列表
+ *   #/edit/<slug>   编辑（#/edit/new 新建）
+ *   #/categories    分类管理
+ *   #/trash         回收站
  */
 const $ = (id) => document.getElementById(id);
 
@@ -9,17 +13,18 @@ const state = {
 	current: null,
 	originalSlug: null,
 	dirty: false,
-	filter: 'all', // 分类 chip 选中项
+	filter: 'all',
 	query: '',
+	site: '',
 };
 
 const stamp = () => new Date().toISOString().slice(0, 10);
 
-/* ---------- 状态与提示 ---------- */
+/* ---------- 状态 / 提示 / 确认 ---------- */
 
 function setState(text, kind = '') {
 	const el = $('status');
-	el.textContent = text;
+	el.textContent = text ?? '';
 	el.className = 'state' + (kind ? ' ' + kind : '');
 }
 
@@ -40,7 +45,7 @@ function toast(text, action) {
 	}
 	$('toast').classList.add('show');
 	clearTimeout(toastTimer);
-	toastTimer = setTimeout(hideToast, action ? 9000 : 2600);
+	toastTimer = setTimeout(hideToast, action ? 9000 : 2400);
 }
 const hideToast = () => $('toast').classList.remove('show');
 
@@ -50,7 +55,6 @@ function confirmDialog(message, { ok = '确定', danger = false } = {}) {
 	$('modalOk').textContent = ok;
 	$('modalOk').classList.toggle('danger', danger);
 	modal.hidden = false;
-	$('modalCancel').focus?.();
 
 	return new Promise((resolve) => {
 		const finish = (value) => {
@@ -80,122 +84,102 @@ async function api(path, options = {}) {
 	return data;
 }
 
-/* ---------- 渲染 ---------- */
+/* ---------- 视图切换 ---------- */
+
+const VIEWS = ['list', 'edit', 'categories', 'trash'];
+
+function showView(name) {
+	for (const view of VIEWS) $(`view-${view}`).hidden = view !== name;
+	document.body.dataset.view = name;
+	document.querySelectorAll('.topnav a').forEach((a) => {
+		a.classList.toggle('active', a.dataset.nav === name || (name === 'edit' && a.dataset.nav === 'list'));
+	});
+}
+
+function parseRoute() {
+	const hash = location.hash.replace(/^#\/?/, '');
+	if (hash.startsWith('edit/')) return { view: 'edit', slug: decodeURIComponent(hash.slice(5)) };
+	if (hash === 'categories') return { view: 'categories' };
+	if (hash === 'trash') return { view: 'trash' };
+	return { view: 'list' };
+}
+
+async function route() {
+	const { view, slug } = parseRoute();
+	showView(view);
+
+	if (view === 'list') {
+		renderChips();
+		renderRows();
+		return;
+	}
+	if (view === 'edit') {
+		if (slug === 'new') await startNewPost();
+		else await openPost(slug);
+		return;
+	}
+	if (view === 'categories') return renderCategories();
+	if (view === 'trash') return renderTrash();
+}
+
+/* ---------- 列表 ---------- */
 
 function visiblePosts() {
 	const q = state.query.trim().toLowerCase();
-	return state.posts.filter((p) => {
-		if (state.filter !== 'all' && (p.category || '') !== state.filter) return false;
+	return state.posts.filter((post) => {
+		if (state.filter !== 'all' && (post.category || '') !== state.filter) return false;
 		if (!q) return true;
 		return (
-			(p.title || '').toLowerCase().includes(q) ||
-			(p.slug || '').toLowerCase().includes(q) ||
-			(p.tags || []).join(' ').toLowerCase().includes(q)
+			(post.title || '').toLowerCase().includes(q) ||
+			(post.slug || '').toLowerCase().includes(q) ||
+			(post.tags || []).join(' ').toLowerCase().includes(q)
 		);
 	});
 }
 
 function renderChips() {
 	const box = $('chips');
-	const total = state.posts.length;
-	const chips = [{ slug: 'all', name: '全部', count: total }, ...state.categories];
-
 	box.innerHTML = '';
+	const chips = [{ slug: 'all', name: '全部', count: state.posts.length }, ...state.categories];
+
 	for (const chip of chips) {
 		const b = document.createElement('button');
 		b.className = 'chip';
-		b.textContent = chip.slug === 'all' ? `全部 ${total}` : `${chip.name} ${chip.count ?? ''}`.trim();
+		b.textContent = `${chip.name} ${chip.count ?? 0}`;
 		b.setAttribute('aria-pressed', String(state.filter === chip.slug));
 		b.onclick = () => {
 			state.filter = chip.slug;
 			renderChips();
-			renderList();
+			renderRows();
 		};
 		box.appendChild(b);
 	}
 }
 
-function renderList() {
-	const ul = $('list');
-	ul.innerHTML = '';
+function renderRows() {
+	const tbody = $('rows');
 	const posts = visiblePosts();
-
-	if (!posts.length) {
-		const li = document.createElement('li');
-		li.className = 'item';
-		li.innerHTML = '<span class="item-title" style="color:var(--faint)">没有匹配的文章</span>';
-		ul.appendChild(li);
-		return;
-	}
+	tbody.innerHTML = '';
+	$('totalCount').textContent = String(state.posts.length);
+	$('listEmpty').hidden = posts.length > 0;
 
 	for (const post of posts) {
-		const li = document.createElement('li');
-		li.className = 'item';
-		if (state.current === post.slug) li.setAttribute('aria-current', 'true');
-
-		const meta = [post.category || '未分类', post.draft ? '<span class="draft">草稿</span>' : post.pubDate];
-		li.innerHTML = `<span class="item-title"></span><span class="item-meta">${meta.filter(Boolean).join(' · ')}</span>`;
-		li.querySelector('.item-title').textContent = post.title || post.slug;
-		li.onclick = () => openPost(post.slug);
-		ul.appendChild(li);
-	}
-}
-
-function renderCategories() {
-	const box = $('cats');
-	box.innerHTML = '';
-
-	for (const cat of state.categories) {
-		const row = document.createElement('div');
-		row.className = 'cat';
-		row.innerHTML = `<span class="name"></span>${cat.slug === cat.name ? '' : '<span class="slug"></span>'}<span class="count">${cat.count || 0}</span>`;
-		row.querySelector('.name').textContent = cat.name;
-		if (cat.slug !== cat.name) row.querySelector('.slug').textContent = cat.slug;
-
-		const del = document.createElement('button');
-		del.className = 'del';
-		del.textContent = '×';
-		del.title = cat.count ? `还有 ${cat.count} 篇在用` : '删除分类';
-		del.onclick = (e) => {
-			e.stopPropagation();
-			removeCategory(cat);
+		const tr = document.createElement('tr');
+		tr.innerHTML = `
+			<td><span class="row-title"></span></td>
+			<td class="c-cat"></td>
+			<td class="c-date">${post.draft ? '—' : post.pubDate || '—'}</td>
+			<td class="c-state">${post.draft ? '<span class="tag-draft">草稿</span>' : ''}</td>`;
+		tr.querySelector('.row-title').textContent = post.title || post.slug;
+		tr.querySelector('.c-cat').textContent = post.category || '未分类';
+		tr.onclick = () => {
+			location.hash = `#/edit/${encodeURIComponent(post.slug)}`;
 		};
-		row.appendChild(del);
-		box.appendChild(row);
-	}
-
-	const select = $('category');
-	const keep = select.value;
-	select.innerHTML =
-		'<option value="">未分类</option>' +
-		state.categories.map((c) => `<option value="${c.slug}">${c.name}</option>`).join('');
-	select.value = keep;
-}
-
-async function renderTrash() {
-	const { items } = await api('/api/trash');
-	$('trashCount').textContent = items.length ? ` ${items.length}` : ' 空';
-	const box = $('trashList');
-	box.innerHTML = '';
-
-	for (const item of items) {
-		const row = document.createElement('div');
-		row.className = 'row';
-		row.innerHTML = '<span></span>';
-		row.querySelector('span').textContent = item.id.replace(/^[^_]*__/, '').replace(/\.md$/, '');
-		const btn = document.createElement('button');
-		btn.textContent = '恢复';
-		btn.onclick = async () => {
-			const r = await api('/api/trash/restore', { method: 'POST', body: JSON.stringify({ id: item.id }) });
-			await refresh();
-			toast(`已恢复 ${r.slug}.md`);
-		};
-		row.appendChild(btn);
-		box.appendChild(row);
+		tbody.appendChild(tr);
 	}
 }
 
-/* ---------- 表单 ---------- */
+/* ---------- 编辑 ---------- */
 
 function fillForm(post) {
 	$('title').value = post.title ?? '';
@@ -207,6 +191,7 @@ function fillForm(post) {
 	$('draft').checked = !!post.draft;
 	$('body').value = post.body ?? '## 环境\n\n';
 	countWords();
+	updatePreview();
 	state.dirty = false;
 	setState('');
 }
@@ -233,35 +218,57 @@ function countWords() {
 	$('wc').textContent = n ? `${n} 字` : '';
 }
 
-/* ---------- 动作 ---------- */
+function updatePreview() {
+	const slug = $('slug').value.trim() || state.current;
+	const link = $('preview');
+	if (!slug) {
+		link.removeAttribute('href');
+		link.style.opacity = '0.5';
+		return;
+	}
+	link.href = `${state.site}/posts/${slug}/`;
+	link.style.opacity = '';
+}
 
-async function refresh() {
-	const data = await api('/api/state');
-	state.posts = data.posts;
-	state.categories = data.categories;
-	renderChips();
-	renderList();
-	renderCategories();
-	await renderTrash();
+async function startNewPost() {
+	if (state.dirty && !(await confirmDialog('当前改动还没保存，确定新建？', { ok: '放弃改动' }))) {
+		location.hash = state.current ? `#/edit/${state.current}` : '#/';
+		return;
+	}
+	state.current = null;
+	state.originalSlug = null;
+	fillCategoriesSelect();
+	fillForm({ pubDate: stamp(), body: '## 环境\n\n', category: '' });
+	$('editFile').textContent = '新文章 · 尚未保存';
+	$('title').focus();
 }
 
 async function openPost(slug) {
-	if (slug === state.current) return;
-	if (state.dirty && !(await confirmDialog('当前改动还没保存，确定切走？', { ok: '切走' }))) return;
-	const post = await api(`/api/post?slug=${encodeURIComponent(slug)}`);
-	state.current = slug;
-	state.originalSlug = slug;
-	fillForm(post);
-	renderList();
+	if (state.dirty && slug !== state.current && !(await confirmDialog('当前改动还没保存，确定切走？', { ok: '切走' }))) {
+		location.hash = state.current ? `#/edit/${state.current}` : '#/';
+		return;
+	}
+	try {
+		const post = await api(`/api/post?slug=${encodeURIComponent(slug)}`);
+		state.current = slug;
+		state.originalSlug = slug;
+		fillCategoriesSelect();
+		fillForm(post);
+		$('editFile').textContent = `${slug}.md`;
+		document.title = `${post.title || slug} · 写作台`;
+	} catch (error) {
+		toast(error.message);
+		location.hash = '#/';
+	}
 }
 
-function newPost() {
-	state.current = null;
-	state.originalSlug = null;
-	fillForm({ pubDate: stamp(), category: state.filter === 'all' ? '' : state.filter, body: '## 环境\n\n' });
-	$('slug').value = '';
-	renderList();
-	$('title').focus();
+function fillCategoriesSelect() {
+	const select = $('category');
+	const keep = select.value;
+	select.innerHTML =
+		'<option value="">未分类</option>' +
+		state.categories.map((c) => `<option value="${c.slug}">${c.name}</option>`).join('');
+	select.value = keep;
 }
 
 async function save() {
@@ -269,12 +276,14 @@ async function save() {
 		const result = await api('/api/post', { method: 'POST', body: JSON.stringify(readForm()) });
 		state.current = result.slug;
 		state.originalSlug = result.slug;
-		$('slug').value = result.slug;
 		state.dirty = false;
-		await refresh();
-		setState(`已保存 ${result.slug}.md`);
-		setTimeout(() => setState(''), 4000);
-		if (result.renamedFrom) toast(`改名完成，旧文件进了回收站`);
+		$('slug').value = result.slug;
+		$('editFile').textContent = `${result.slug}.md`;
+		updatePreview();
+		setState('已保存');
+		setTimeout(() => setState(''), 3000);
+		await refreshState();
+		if (result.renamedFrom) toast('改名完成，旧文件进了回收站');
 	} catch (error) {
 		setState(error.message, 'error');
 		toast(error.message);
@@ -284,7 +293,7 @@ async function save() {
 async function removePost() {
 	if (!state.current) return toast('还没保存过，没法删');
 	const ok = await confirmDialog(
-		`把 <b>${state.current}.md</b> 挪进回收站？<br><span style="color:var(--muted)">之后可以在左下角回收站恢复。</span>`,
+		`把 <b>${state.current}.md</b> 挪进回收站？<br><span style="color:var(--muted)">之后可以在「回收站」里恢复。</span>`,
 		{ ok: '挪进回收站', danger: true },
 	);
 	if (!ok) return;
@@ -292,33 +301,53 @@ async function removePost() {
 	const { trashId } = await api(`/api/post?slug=${encodeURIComponent(state.current)}`, { method: 'DELETE' });
 	state.current = null;
 	state.originalSlug = null;
-	fillForm({ pubDate: stamp(), body: '## 环境\n\n' });
-	await refresh();
+	state.dirty = false;
+	await refreshState();
+	location.hash = '#/';
 	toast('已挪进回收站', {
 		label: '撤销',
 		run: async () => {
 			await api('/api/trash/restore', { method: 'POST', body: JSON.stringify({ id: trashId }) });
-			await refresh();
+			await refreshState();
 			toast('已恢复');
 		},
 	});
 }
 
-async function removeCategory(cat) {
-	if (cat.count) return toast(`「${cat.name}」下还有 ${cat.count} 篇，先把它们的分类改掉`);
-	const ok = await confirmDialog(`删除分类 <b>${cat.name}</b>（${cat.slug}）？`, { ok: '删除', danger: true });
-	if (!ok) return;
-	try {
-		await api('/api/categories', {
-			method: 'POST',
-			body: JSON.stringify({ categories: state.categories.filter((c) => c.slug !== cat.slug) }),
-		});
-		if (state.filter === cat.slug) state.filter = 'all';
-		await refresh();
-		setState('分类已删除，dev 已重启');
-	} catch (error) {
-		setState(error.message, 'error');
-		toast(error.message);
+/* ---------- 分类 ---------- */
+
+function renderCategories() {
+	const tbody = $('catRows');
+	tbody.innerHTML = '';
+	$('catTotal').textContent = String(state.categories.length);
+
+	for (const cat of state.categories) {
+		const tr = document.createElement('tr');
+		tr.innerHTML = `
+			<td><span class="row-title"></span></td>
+			<td class="c-cat">${cat.slug}</td>
+			<td class="c-date">${cat.count || 0}</td>
+			<td class="c-state"></td>`;
+		tr.querySelector('.row-title').textContent = cat.name;
+
+		const del = document.createElement('button');
+		del.className = 'ghost danger';
+		del.textContent = '删除';
+		del.disabled = !!cat.count;
+		del.title = cat.count ? `还有 ${cat.count} 篇文章在用` : '';
+		del.onclick = async () => {
+			const ok = await confirmDialog(`删除分类 <b>${cat.name}</b>（${cat.slug}）？`, { ok: '删除', danger: true });
+			if (!ok) return;
+			await api('/api/categories', {
+				method: 'POST',
+				body: JSON.stringify({ categories: state.categories.filter((c) => c.slug !== cat.slug) }),
+			});
+			await refreshState();
+			renderCategories();
+			setState('分类已删除，dev 已重启');
+		};
+		tr.querySelector('.c-state').appendChild(del);
+		tbody.appendChild(tr);
 	}
 }
 
@@ -326,15 +355,18 @@ async function addCategory(event) {
 	event.preventDefault();
 	const slug = $('cSlug').value.trim().toLowerCase();
 	const name = $('cName').value.trim() || slug;
+	const description = $('cDesc').value.trim();
 	if (!slug) return toast('先填 slug');
 	try {
 		await api('/api/categories', {
 			method: 'POST',
-			body: JSON.stringify({ categories: [...state.categories, { slug, name, description: '' }] }),
+			body: JSON.stringify({ categories: [...state.categories, { slug, name, description }] }),
 		});
 		$('cSlug').value = '';
 		$('cName').value = '';
-		await refresh();
+		$('cDesc').value = '';
+		await refreshState();
+		renderCategories();
 		setState(`分类 ${name} 已添加，dev 已重启`);
 	} catch (error) {
 		setState(error.message, 'error');
@@ -342,25 +374,81 @@ async function addCategory(event) {
 	}
 }
 
-function preview() {
-	const slug = $('slug').value.trim() || state.current;
-	if (!slug) return toast('先保存一次再预览');
-	const base = document.body.dataset.site || '';
-	window.open(`${base}/posts/${slug}/`, '_blank', 'noopener');
+/* ---------- 回收站 ---------- */
+
+async function renderTrash() {
+	const { items } = await api('/api/trash');
+	$('trashTotal').textContent = String(items.length);
+	const list = $('trashList');
+	list.innerHTML = '';
+
+	if (!items.length) {
+		list.innerHTML = '<li><span class="name" style="color:var(--muted)">空的。</span></li>';
+		return;
+	}
+
+	for (const item of items) {
+		const li = document.createElement('li');
+		li.innerHTML = '<span class="name"></span><time></time><span class="acts"></span>';
+		li.querySelector('.name').textContent = item.id.replace(/^[^_]*__/, '');
+		li.querySelector('time').textContent = item.at.slice(0, 10);
+
+		const restore = document.createElement('button');
+		restore.className = 'ghost';
+		restore.textContent = '恢复';
+		restore.onclick = async () => {
+			const r = await api('/api/trash/restore', { method: 'POST', body: JSON.stringify({ id: item.id }) });
+			await refreshState();
+			renderTrash();
+			toast(`已恢复 ${r.slug}.md`);
+		};
+
+		const purge = document.createElement('button');
+		purge.className = 'ghost danger';
+		purge.textContent = '彻底删除';
+		purge.onclick = async () => {
+			const ok = await confirmDialog('彻底删除这条？文件会真的消失。', { ok: '彻底删除', danger: true });
+			if (!ok) return;
+			await api(`/api/trash?id=${encodeURIComponent(item.id)}`, { method: 'DELETE' });
+			renderTrash();
+			toast('已彻底删除');
+		};
+
+		li.querySelector('.acts').append(restore, purge);
+		list.appendChild(li);
+	}
 }
 
-/* ---------- 绑定 ---------- */
+/* ---------- 全局 ---------- */
 
-$('new').onclick = newPost;
+async function refreshState() {
+	const data = await api('/api/state');
+	state.posts = data.posts;
+	state.categories = data.categories;
+	state.site = data.siteDev;
+}
+
+$('new').onclick = () => {
+	location.hash = '#/edit/new';
+};
 $('save').onclick = save;
 $('del').onclick = removePost;
-$('preview').onclick = preview;
 $('catForm').addEventListener('submit', addCategory);
-$('body').addEventListener('input', countWords);
+$('body').addEventListener('input', () => {
+	countWords();
+	updatePreview();
+});
+
+$('metaToggle').onclick = () => {
+	const meta = $('meta');
+	const open = meta.hidden;
+	meta.hidden = !open;
+	$('metaToggle').setAttribute('aria-expanded', String(open));
+};
 
 $('search').addEventListener('input', (e) => {
 	state.query = e.target.value;
-	renderList();
+	renderRows();
 });
 
 for (const id of ['title', 'description', 'category', 'pubDate', 'tags', 'slug', 'body', 'draft']) {
@@ -378,12 +466,12 @@ document.addEventListener('keydown', (e) => {
 	const meta = e.metaKey || e.ctrlKey;
 	if (meta && e.key.toLowerCase() === 's') {
 		e.preventDefault();
-		save();
+		if (document.body.dataset.view === 'edit') save();
 	}
 	if (meta && e.key.toLowerCase() === 'k') {
 		e.preventDefault();
-		$('search').focus();
-		$('search').select?.();
+		location.hash = '#/';
+		setTimeout(() => $('search').focus(), 60);
 	}
 });
 
@@ -393,8 +481,7 @@ window.addEventListener('beforeunload', (e) => {
 	e.returnValue = '';
 });
 
-const initial = await api('/api/state');
-document.body.dataset.site = initial.siteDev;
-await refresh();
-if (!state.posts.length) newPost();
-else await openPost(state.posts[0].slug);
+window.addEventListener('hashchange', route);
+
+await refreshState();
+await route();
