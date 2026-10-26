@@ -25,7 +25,7 @@ export const SITE = {
 	/** 作者名，显示在页脚和文章页 */
 	author: 'Findkey',
 	/** 正式域名：项目站写 https://<用户名>.github.io（不要带 /blog） */
-	url: 'https://USERNAME.github.io',
+	url: 'https://find-key.github.io',
 	/** 站点根路径：项目站写 '/blog'；用户主页站（<用户名>.github.io）改成 '/' */
 	base: '/blog',
 	/** html lang 属性 */
@@ -33,7 +33,7 @@ export const SITE = {
 	/** 日期显示时区 */
 	timeZone: 'Asia/Shanghai',
 	/** 社交链接，改成你自己的；留空字符串则不显示该图标 */
-	github: 'https://github.com/USERNAME',
+	github: 'https://github.com/Find-key',
 	email: 'find_key@foxmail.com',
 	/** QQ 号（纯展示，不生成链接）；留空则不显示 */
 	qq: '1559703162',
@@ -100,11 +100,11 @@ export interface CategoryItem {
 // #region categories
 // 这一段由 npm run admin 的后台维护；手写也可以，保持格式即可
 export const CATEGORIES: CategoryItem[] = [
-	{ slug: 'pwn', name: 'pwn', description: '栈与堆的利用、IO_FILE / FSOP、ret2dl 与 hook 劫持。' },
-	{ slug: 'wp', name: 'WP', description: '比赛题解与复现：羊城杯、HGAME、校赛、XYCTF。' },
-	{ slug: 'v8', name: 'V8', description: 'V8 引擎：环境搭建、对象内存布局、OOB 与利用。' },
-	{ slug: 'iot', name: '嵌入式与 IoT', description: '路由器等设备的固件与漏洞复现。' },
-	{ slug: 'tools', name: '工具与笔记', description: 'GDB 脚本、protobuf 之类的工具笔记。' },
+	{ slug: 'pwn', name: 'pwn', description: '栈与堆的利用、IO_FILE / FSOP、ret2dl 与 hook 劫持' },
+	{ slug: 'wp', name: 'WP', description: '比赛题解与复现' },
+	{ slug: 'v8', name: 'V8', description: 'V8 引擎：环境搭建、对象内存布局、OOB 与利用' },
+	{ slug: 'iot', name: '嵌入式与 IoT', description: '路由器等设备的固件与漏洞复现' },
+	{ slug: 'tools', name: '工具与笔记', description: '' },
 ];
 // #endregion
 
