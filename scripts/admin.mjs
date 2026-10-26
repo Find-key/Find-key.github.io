@@ -227,47 +227,105 @@ const PAGE = `<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><title>写作后台</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-  :root{--bg:#fbf9f5;--text:#262220;--muted:#736d64;--line:#e7e2d8;--soft:#f2ede4;--accent:#1f6f5c}
+  :root{
+    --bg:#faf7f1; --paper:#fdfbf6; --text:#262220; --muted:#7d766c;
+    --line:#e4ded1; --soft:#f2ece1; --accent:#1f6f5c; --danger:#a1493c;
+    --serif:"Iowan Old Style",Palatino,"Songti SC","Noto Serif CJK SC",Georgia,serif;
+    --mono:ui-monospace,SFMono-Regular,"Liberation Mono",Menlo,monospace;
+  }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.7 -apple-system,"PingFang SC","Noto Sans CJK SC",sans-serif}
-  header{display:flex;align-items:baseline;gap:12px;padding:18px 26px;border-bottom:1px solid var(--line)}
-  header h1{font:600 19px/1 -apple-system,Georgia,serif;margin:0}
-  header span{color:var(--muted);font-size:12px}
-  main{display:grid;grid-template-columns:300px 1fr;gap:0;min-height:calc(100vh - 58px)}
-  aside{border-right:1px solid var(--line);padding:16px 18px;overflow:auto}
-  .label{font:11px/1 ui-monospace,monospace;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
-  ul{list-style:none;margin:10px 0 22px;padding:0}
-  li{padding:7px 8px;border-radius:4px;cursor:pointer;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.72 -apple-system,"PingFang SC","Noto Sans CJK SC",sans-serif;
+    -webkit-font-smoothing:antialiased}
+  header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:14px;
+    padding:16px 28px;background:var(--bg);border-bottom:1px solid var(--line)}
+  header .mark{font:600 20px/1 var(--serif);letter-spacing:.01em}
+  header .mark i{font-style:normal;color:var(--accent)}
+  header .tag{font:10.5px/1 var(--mono);letter-spacing:.16em;color:var(--muted);
+    text-transform:uppercase;padding:3px 7px;border:1px solid var(--line);border-radius:2px}
+  header .note{margin-left:auto;color:var(--muted);font-size:12px}
+  main{display:grid;grid-template-columns:284px minmax(0,1fr);min-height:calc(100vh - 61px)}
+
+  /* 侧栏 */
+  aside{border-right:1px solid var(--line);padding:22px 20px 18px;
+    display:flex;flex-direction:column;gap:2px;height:calc(100vh - 61px);
+    position:sticky;top:61px;overflow:hidden}
+  #list{flex:1 1 auto;min-height:0;overflow:auto;margin-bottom:10px;
+    scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+  #list::-webkit-scrollbar{width:6px}
+  #list::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+  .cats-block{flex:none;border-top:1px solid var(--line);padding-top:14px}
+  .label{display:flex;align-items:center;justify-content:space-between;
+    font:10.5px/1 var(--mono);letter-spacing:.16em;color:var(--muted);text-transform:uppercase;
+    padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .label .add{font:10.5px/1 var(--mono);letter-spacing:.1em;color:var(--muted);background:none;
+    border:1px solid var(--line);border-radius:2px;padding:3px 7px;cursor:pointer;transition:.15s}
+  .label .add:hover{color:var(--text);border-color:var(--muted)}
+
+  ul{list-style:none;margin:0;padding:0}
+  li{position:relative;padding:9px 8px 9px 12px;cursor:pointer;border-bottom:1px solid var(--soft);
+    display:flex;flex-direction:column;gap:2px;transition:background .12s}
+  li:last-child{border-bottom:0}
   li:hover{background:var(--soft)}
   li.active{background:var(--soft)}
-  li .t{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  li .m{font:11px/1 ui-monospace,monospace;color:var(--muted);flex:none}
-  .draft{color:#b06a2c}
-  section.editor{padding:18px 26px 60px;max-width:860px}
-  .row{display:grid;grid-template-columns:120px 1fr;gap:10px 14px;align-items:center;margin-bottom:10px}
-  .row.col{grid-template-columns:1fr}
-  label{color:var(--muted);font-size:12.5px}
-  input,select,textarea{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:4px;background:#fff;color:inherit;font:inherit}
-  textarea{min-height:340px;font:13px/1.75 ui-monospace,"Liberation Mono",monospace;resize:vertical}
-  .actions{display:flex;gap:10px;align-items:center;margin:16px 0 0}
-  button{padding:8px 14px;border:1px solid var(--line);border-radius:4px;background:#fff;cursor:pointer;font:inherit}
-  button.primary{background:var(--text);color:var(--bg);border-color:var(--text)}
-  button.danger{color:#a33}
-  .hint{color:var(--muted);font-size:12px}
-  .status{margin-left:auto;font-size:12.5px;color:var(--accent);min-height:1.2em}
-  .cat{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--soft)}
-  .cat .slug{font:11px/1 ui-monospace,monospace;color:var(--muted)}
-  .cat button{padding:2px 7px;font-size:12px}
-  .cat-add{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-top:8px}
-  .cat-add input{padding:5px 7px;font-size:12.5px}
-  @media(max-width:760px){main{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid var(--line)}.row{grid-template-columns:1fr}}
+  li.active::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:2px;background:var(--accent)}
+  li .t{font-size:13.5px;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  li .m{font:10.5px/1 var(--mono);color:var(--muted);letter-spacing:.04em}
+  li .m b{font-weight:400;color:var(--danger)}
+
+  /* 分类 */
+  .cat{display:flex;align-items:baseline;gap:8px;padding:7px 2px;border-bottom:1px solid var(--soft)}
+  .cat .slug{font:10.5px/1 var(--mono);color:var(--muted)}
+  .cat button{margin-left:auto;padding:0 2px;border:0;background:none;cursor:pointer;
+    color:var(--muted);font:15px/1 var(--mono)}
+  .cat button:hover{color:var(--danger)}
+  .cat-add{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+  .cat-add input{padding:6px 8px;font:12px/1.4 var(--mono)}
+  .cat-add button{grid-column:1/-1;padding:7px;border:1px dashed var(--line);background:none;
+    border-radius:2px;cursor:pointer;font:12px/1 var(--mono);color:var(--muted)}
+  .cat-add button:hover{color:var(--text);border-color:var(--muted)}
+
+  /* 编辑区 */
+  section.editor{padding:26px 32px 80px;max-width:900px}
+  .row{display:grid;grid-template-columns:92px minmax(0,1fr);gap:10px 18px;align-items:center;margin-bottom:11px}
+  .row.col{grid-template-columns:1fr;align-items:start}
+  .row.col > label{margin-bottom:6px}
+  label{color:var(--muted);font:11.5px/1.5 var(--mono);letter-spacing:.06em}
+  input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:2px;
+    background:var(--paper);color:inherit;font:inherit;transition:border-color .15s,background .15s}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--muted);background:#fff}
+  input::placeholder,textarea::placeholder{color:#b3aca0}
+  textarea{min-height:52vh;font:13px/1.85 var(--mono);resize:vertical;tab-size:4}
+  .check{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--text);cursor:pointer}
+  .check input{width:auto}
+
+  .actions{display:flex;align-items:center;gap:10px;margin-top:18px;
+    padding-top:18px;border-top:1px solid var(--line)}
+  button{padding:8px 16px;border:1px solid var(--line);border-radius:2px;background:var(--paper);
+    cursor:pointer;font:12.5px/1.2 var(--mono);letter-spacing:.06em;color:var(--muted);transition:.15s}
+  button:hover{color:var(--text);border-color:var(--muted)}
+  button.primary{background:var(--text);border-color:var(--text);color:var(--bg)}
+  button.primary:hover{background:#000;border-color:#000}
+  button.danger{margin-left:auto;color:var(--danger);border-color:transparent}
+  button.danger:hover{border-color:var(--danger)}
+  .hint{margin:10px 0 0;color:var(--muted);font-size:11.5px;line-height:1.6}
+  .status{font:12px/1 var(--mono);color:var(--accent);min-height:1.1em;letter-spacing:.04em}
+  .empty{color:var(--muted);font-size:12.5px;padding:10px 2px}
+
+  @media(max-width:820px){
+    main{grid-template-columns:1fr}
+    aside{border-right:0;border-bottom:1px solid var(--line)}
+    section.editor{padding:20px 18px 60px}
+    .row{grid-template-columns:1fr;gap:5px}
+  }
 </style></head>
 <body>
-<header><h1>写作后台</h1><span>只在本机运行 · 写的是仓库里的真实文件 · 完成后记得 git commit</span></header>
+<header><span class="mark">0x<i>Findkey</i></span><span class="tag">writing desk</span><span class="status" id="status"></span><span class="note">只在本机运行 · 直接写仓库里的文件 · 完事记得 commit</span></header>
 <main>
   <aside>
-    <div class="label">文章 <button id="new" style="float:right;padding:2px 8px;font-size:11px">+ 新建</button></div>
+    <div class="label"><span>文章</span><button class="add" id="new">+ 新建</button></div>
     <ul id="list"></ul>
+    <div class="cats-block">
     <div class="label">分类</div>
     <div id="cats"></div>
     <div class="cat-add">
@@ -275,7 +333,8 @@ const PAGE = `<!doctype html>
       <input id="cName" placeholder="显示名">
       <button id="cAdd">加</button>
     </div>
-    <p class="hint" style="margin-top:10px">改分类会重写 consts.ts 并重启 dev。</p>
+    <p class="hint">改分类会重写 consts.ts 并重启 dev。<br>⌘/Ctrl + S 保存。</p>
+    </div>
   </aside>
   <section class="editor">
     <div class="row"><label>标题</label><input id="title" placeholder="文章标题"></div>
@@ -284,13 +343,12 @@ const PAGE = `<!doctype html>
     <div class="row"><label>日期</label><input id="pubDate" type="date"></div>
     <div class="row"><label>标签</label><input id="tags" placeholder="逗号分隔，小写英文：stack, ret2text"></div>
     <div class="row"><label>文件名</label><input id="slug" placeholder="留空按标题生成"></div>
-    <div class="row"><label>草稿</label><label style="color:var(--text)"><input id="draft" type="checkbox" style="width:auto"> 只在本地可见</label></div>
-    <div class="row col"><label>正文（Markdown，从 ## 开始）</label><textarea id="body" placeholder="## 环境&#10;&#10;..."></textarea></div>
+    <div class="row"><label>草稿</label><label class="check"><input id="draft" type="checkbox"> 只在本地可见</label></div>
+    <div class="row col"><label>正文 · Markdown，从 ## 开始 <span id="wc" class="hint" style="float:right;margin:0"></span></label><textarea id="body" placeholder="## 环境&#10;&#10;..."></textarea></div>
     <div class="actions">
       <button class="primary" id="save">保存</button>
       <button id="preview">打开预览</button>
       <button class="danger" id="del">删除</button>
-      <span class="status" id="status"></span>
     </div>
   </section>
 </main>
@@ -313,7 +371,7 @@ function renderCats() {
     row.className = 'cat';
     row.innerHTML = '<span>' + c.name + '</span>' + (c.slug === c.name ? '' : '<span class="slug">' + c.slug + '</span>');
     const btn = document.createElement('button');
-    btn.textContent = '删';
+    btn.textContent = '×';
     btn.style.marginLeft = 'auto';
     btn.onclick = async () => {
       const next = state.categories.filter((x) => x.slug !== c.slug);
@@ -335,7 +393,8 @@ function renderList() {
   for (const p of state.posts) {
     const li = document.createElement('li');
     if (current === p.slug) li.className = 'active';
-    li.innerHTML = '<span class="t">' + (p.title || p.slug) + '</span><span class="m' + (p.draft ? ' draft' : '') + '">' + (p.draft ? '草稿' : p.pubDate) + '</span>';
+    const meta = (p.category ? p.category + ' · ' : '') + (p.draft ? '<b>草稿</b>' : p.pubDate);
+    li.innerHTML = '<span class="t">' + (p.title || p.slug) + '</span><span class="m">' + meta + '</span>';
     li.onclick = () => openPost(p.slug);
     ul.appendChild(li);
   }
@@ -375,6 +434,32 @@ async function load() {
   renderList();
 }
 
+function countWords() {
+  const t = $('body').value.trim();
+  const n = t.replace(/\s/g, '').length;
+  $('wc').textContent = n ? n + ' 字' : '';
+}
+$('body').addEventListener('input', countWords);
+
+let dirty = false;
+function markDirty() {
+  if (dirty) return;
+  dirty = true;
+  $('status').textContent = '未保存';
+  $('status').style.color = 'var(--muted)';
+}
+document.querySelectorAll('#title,#description,#category,#pubDate,#tags,#slug,#body,#draft').forEach((el) => {
+  el.addEventListener('input', markDirty);
+  el.addEventListener('change', markDirty);
+});
+
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+    e.preventDefault();
+    $('save').click();
+  }
+});
+
 $('new').onclick = newPost;
 
 $('save').onclick = async () => {
@@ -394,6 +479,7 @@ $('save').onclick = async () => {
   current = data.slug;
   $('slug').value = data.slug;
   await load();
+  dirty = false;
   say('已保存 ' + data.slug + '.md');
 };
 
