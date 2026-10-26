@@ -7,63 +7,97 @@
 		<link rel="stylesheet" href="/app.css" />
 	</head>
 	<body>
-		<header>
-			<span class="mark">0x<i>Findkey</i></span>
-			<span class="tag">writing desk</span>
-			<span class="status" id="status"></span>
-			<span class="note">只在本机运行 · 直接写仓库里的文件 · 完事记得 commit</span>
+		<header class="topbar">
+			<a class="brand" href="/" aria-label="写作台首页">
+				<span class="wordmark">0x<i>Findkey</i></span>
+				<span class="stamp">writing desk</span>
+			</a>
+
+			<div class="topbar-right">
+				<span class="state" id="status" role="status" aria-live="polite"></span>
+				<button class="ghost" id="new">＋ 新建</button>
+				<span class="kbd-hint">⌘S 保存</span>
+			</div>
 		</header>
 
-		<main>
-			<aside>
-				<div class="label">
-					<span>文章</span>
-					<button class="add" id="new">+ 新建</button>
+		<div class="shell">
+			<aside class="rail">
+				<div class="search">
+					<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.3">
+						<circle cx="7" cy="7" r="4.4" /><path d="M10.4 10.4 14 14" stroke-linecap="round" />
+					</svg>
+					<input id="search" type="search" placeholder="搜索标题、标签" autocomplete="off" />
 				</div>
-				<ul id="list"></ul>
 
-				<div class="cats-block">
-					<div class="label"><span>分类</span></div>
-					<div id="cats"></div>
-					<div class="cat-add">
-						<input id="cSlug" placeholder="slug（小写英文）" />
+				<div class="chips" id="chips"></div>
+
+				<ul class="list" id="list"></ul>
+
+				<div class="rail-foot">
+					<div class="cats" id="cats"></div>
+					<form class="cat-add" id="catForm">
+						<input id="cSlug" placeholder="slug" />
 						<input id="cName" placeholder="显示名" />
-						<button id="cAdd">加</button>
-					</div>
-					<details class="trash" id="trashBox">
-						<summary>回收站 <span id="trashCount"></span></summary>
+						<button type="submit">加</button>
+					</form>
+
+					<details class="trash">
+						<summary>回收站<span id="trashCount"></span></summary>
 						<div id="trashList"></div>
 					</details>
-					<p class="hint">改分类会重写 consts.ts 并重启 dev。<br />⌘/Ctrl + S 保存。</p>
 				</div>
 			</aside>
 
-			<section class="editor">
-				<div class="row"><label>标题</label><input id="title" placeholder="文章标题" /></div>
-				<div class="row">
-					<label>摘要</label><input id="description" placeholder="一句话说清写了什么（会出现在列表和 SEO）" />
+			<main class="doc">
+				<div class="doc-inner">
+					<input id="title" class="doc-title" placeholder="无标题" aria-label="标题" />
+					<input id="description" class="doc-sub" placeholder="一句话摘要（列表与 SEO 会用）" aria-label="摘要" />
+
+					<div class="meta">
+						<label class="field">
+							<span>分类</span>
+							<select id="category"></select>
+						</label>
+						<label class="field">
+							<span>日期</span>
+							<input id="pubDate" type="date" />
+						</label>
+						<label class="field grow">
+							<span>标签</span>
+							<input id="tags" placeholder="stack, ret2text" />
+						</label>
+						<label class="field">
+							<span>文件</span>
+							<input id="slug" placeholder="按标题生成" />
+						</label>
+						<label class="check">
+							<input id="draft" type="checkbox" />
+							<span>草稿</span>
+						</label>
+					</div>
+
+					<hr class="rule" />
+
+					<textarea
+						id="body"
+						class="doc-body"
+						spellcheck="false"
+						aria-label="正文"
+						placeholder="## 环境&#10;&#10;从二级标题开始写，正文用 Markdown。"></textarea>
 				</div>
-				<div class="row"><label>分类</label><select id="category"></select></div>
-				<div class="row"><label>日期</label><input id="pubDate" type="date" /></div>
-				<div class="row">
-					<label>标签</label><input id="tags" placeholder="逗号分隔，小写英文：stack, ret2text" />
+
+				<div class="dock">
+					<div class="dock-left">
+						<button class="primary" id="save">保存</button>
+						<button class="ghost" id="preview">预览</button>
+						<button class="ghost danger" id="del">删除</button>
+					</div>
+					<div class="dock-right">
+						<span class="count" id="wc"></span>
+					</div>
 				</div>
-				<div class="row"><label>文件名</label><input id="slug" placeholder="留空按标题生成" /></div>
-				<div class="row">
-					<label>草稿</label>
-					<label class="check"><input id="draft" type="checkbox" /> 只在本地可见</label>
-				</div>
-				<div class="row col">
-					<label>正文 · Markdown，从 ## 开始 <span id="wc" class="wc"></span></label>
-					<textarea id="body" placeholder="## 环境&#10;&#10;..."></textarea>
-				</div>
-				<div class="actions">
-					<button class="primary" id="save">保存</button>
-					<button id="preview">打开预览</button>
-					<button class="danger" id="del">删除</button>
-				</div>
-			</section>
-		</main>
+			</main>
+		</div>
 
 		<div class="toast" id="toast" role="status" aria-live="polite">
 			<span id="toastText"></span>
@@ -71,10 +105,10 @@
 		</div>
 
 		<div class="modal" id="modal" hidden>
-			<div class="modal-card">
+			<div class="modal-card" role="dialog" aria-modal="true">
 				<p id="modalText"></p>
 				<div class="modal-actions">
-					<button id="modalCancel">取消</button>
+					<button class="ghost" id="modalCancel">取消</button>
 					<button class="primary" id="modalOk">确定</button>
 				</div>
 			</div>
