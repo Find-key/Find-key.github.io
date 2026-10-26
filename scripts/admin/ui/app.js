@@ -1,31 +1,30 @@
 /**
- * 写作台前端：只负责渲染与调用 /api/*，所有校验在服务端。
+ * 写作台前端：渲染 + 调用 /api/*。校验都在服务端，这里只管交互。
  */
 const $ = (id) => document.getElementById(id);
 
 const state = {
 	posts: [],
 	categories: [],
-	orphans: [],
-	siteDev: '',
-	current: null, // 正在编辑的 slug
-	originalSlug: null, // 打开时的 slug：改名时用来挪走旧文件
+	current: null,
+	originalSlug: null,
 	dirty: false,
+	filter: 'all', // 分类 chip 选中项
+	query: '',
 };
-
-/* ---------- 小工具 ---------- */
 
 const stamp = () => new Date().toISOString().slice(0, 10);
 
-function setStatus(text, tone = 'accent') {
+/* ---------- 状态与提示 ---------- */
+
+function setState(text, kind = '') {
 	const el = $('status');
 	el.textContent = text;
-	el.style.color = tone === 'danger' ? 'var(--danger)' : tone === 'muted' ? 'var(--muted)' : 'var(--accent)';
+	el.className = 'state' + (kind ? ' ' + kind : '');
 }
 
 let toastTimer;
 function toast(text, action) {
-	const box = $('toast');
 	$('toastText').textContent = text;
 	const btn = $('toastAction');
 	if (action) {
@@ -39,26 +38,22 @@ function toast(text, action) {
 		btn.hidden = true;
 		btn.onclick = null;
 	}
-	box.classList.add('show');
+	$('toast').classList.add('show');
 	clearTimeout(toastTimer);
-	toastTimer = setTimeout(hideToast, action ? 8000 : 2600);
+	toastTimer = setTimeout(hideToast, action ? 9000 : 2600);
 }
+const hideToast = () => $('toast').classList.remove('show');
 
-function hideToast() {
-	$('toast').classList.remove('show');
-}
-
-/** 自绘确认框，比 window.confirm 好控文案，也能带高危色 */
 function confirmDialog(message, { ok = '确定', danger = false } = {}) {
 	const modal = $('modal');
 	$('modalText').innerHTML = message;
 	$('modalOk').textContent = ok;
-	$('modalOk').classList.toggle('primary', !danger);
 	$('modalOk').classList.toggle('danger', danger);
 	modal.hidden = false;
+	$('modalCancel').focus?.();
 
 	return new Promise((resolve) => {
-		const done = (value) => {
+		const finish = (value) => {
 			modal.hidden = true;
 			$('modalOk').onclick = null;
 			$('modalCancel').onclick = null;
@@ -66,16 +61,16 @@ function confirmDialog(message, { ok = '确定', danger = false } = {}) {
 			resolve(value);
 		};
 		const onKey = (e) => {
-			if (e.key === 'Escape') done(false);
-			if (e.key === 'Enter') done(true);
+			if (e.key === 'Escape') finish(false);
+			if (e.key === 'Enter') finish(true);
 		};
-		$('modalOk').onclick = () => done(true);
-		$('modalCancel').onclick = () => done(false);
+		$('modalOk').onclick = () => finish(true);
+		$('modalCancel').onclick = () => finish(false);
 		document.addEventListener('keydown', onKey);
 	});
 }
 
-const api = async (path, options = {}) => {
+async function api(path, options = {}) {
 	const res = await fetch(path, {
 		headers: options.body ? { 'content-type': 'application/json' } : undefined,
 		...options,
@@ -83,25 +78,64 @@ const api = async (path, options = {}) => {
 	const data = await res.json().catch(() => ({}));
 	if (!res.ok) throw new Error(data.error || `请求失败（${res.status}）`);
 	return data;
-};
+}
 
 /* ---------- 渲染 ---------- */
+
+function visiblePosts() {
+	const q = state.query.trim().toLowerCase();
+	return state.posts.filter((p) => {
+		if (state.filter !== 'all' && (p.category || '') !== state.filter) return false;
+		if (!q) return true;
+		return (
+			(p.title || '').toLowerCase().includes(q) ||
+			(p.slug || '').toLowerCase().includes(q) ||
+			(p.tags || []).join(' ').toLowerCase().includes(q)
+		);
+	});
+}
+
+function renderChips() {
+	const box = $('chips');
+	const total = state.posts.length;
+	const chips = [{ slug: 'all', name: '全部', count: total }, ...state.categories];
+
+	box.innerHTML = '';
+	for (const chip of chips) {
+		const b = document.createElement('button');
+		b.className = 'chip';
+		b.textContent = chip.slug === 'all' ? `全部 ${total}` : `${chip.name} ${chip.count ?? ''}`.trim();
+		b.setAttribute('aria-pressed', String(state.filter === chip.slug));
+		b.onclick = () => {
+			state.filter = chip.slug;
+			renderChips();
+			renderList();
+		};
+		box.appendChild(b);
+	}
+}
 
 function renderList() {
 	const ul = $('list');
 	ul.innerHTML = '';
+	const posts = visiblePosts();
 
-	if (!state.posts.length) {
-		ul.innerHTML = '<li class="post"><span class="t" style="color:var(--muted)">还没有文章</span></li>';
+	if (!posts.length) {
+		const li = document.createElement('li');
+		li.className = 'item';
+		li.innerHTML = '<span class="item-title" style="color:var(--faint)">没有匹配的文章</span>';
+		ul.appendChild(li);
 		return;
 	}
 
-	for (const post of state.posts) {
+	for (const post of posts) {
 		const li = document.createElement('li');
-		li.className = 'post' + (state.current === post.slug ? ' active' : '');
-		const meta = [post.category || '未分类', post.draft ? '<b>草稿</b>' : post.pubDate].filter(Boolean).join(' · ');
-		li.innerHTML = `<span class="t"></span><span class="m">${meta}</span>`;
-		li.querySelector('.t').textContent = post.title || post.slug;
+		li.className = 'item';
+		if (state.current === post.slug) li.setAttribute('aria-current', 'true');
+
+		const meta = [post.category || '未分类', post.draft ? '<span class="draft">草稿</span>' : post.pubDate];
+		li.innerHTML = `<span class="item-title"></span><span class="item-meta">${meta.filter(Boolean).join(' · ')}</span>`;
+		li.querySelector('.item-title').textContent = post.title || post.slug;
 		li.onclick = () => openPost(post.slug);
 		ul.appendChild(li);
 	}
@@ -114,49 +148,47 @@ function renderCategories() {
 	for (const cat of state.categories) {
 		const row = document.createElement('div');
 		row.className = 'cat';
-		row.innerHTML = `<span></span>${cat.slug === cat.name ? '' : '<span class="slug"></span>'}<span class="count">${cat.count || 0}</span>`;
-		row.children[0].textContent = cat.name;
-		if (cat.slug !== cat.name) row.children[1].textContent = cat.slug;
+		row.innerHTML = `<span class="name"></span>${cat.slug === cat.name ? '' : '<span class="slug"></span>'}<span class="count">${cat.count || 0}</span>`;
+		row.querySelector('.name').textContent = cat.name;
+		if (cat.slug !== cat.name) row.querySelector('.slug').textContent = cat.slug;
 
 		const del = document.createElement('button');
+		del.className = 'del';
 		del.textContent = '×';
-		del.title = cat.count ? `还有 ${cat.count} 篇在用，删不掉` : '删除这个分类';
-		del.onclick = () => removeCategory(cat);
+		del.title = cat.count ? `还有 ${cat.count} 篇在用` : '删除分类';
+		del.onclick = (e) => {
+			e.stopPropagation();
+			removeCategory(cat);
+		};
 		row.appendChild(del);
 		box.appendChild(row);
 	}
 
 	const select = $('category');
-	const current = select.value;
+	const keep = select.value;
 	select.innerHTML =
-		'<option value="">（不设分类）</option>' +
-		state.categories.map((c) => `<option value="${c.slug}">${c.name}（${c.slug}）</option>`).join('');
-	select.value = current;
+		'<option value="">未分类</option>' +
+		state.categories.map((c) => `<option value="${c.slug}">${c.name}</option>`).join('');
+	select.value = keep;
 }
 
 async function renderTrash() {
 	const { items } = await api('/api/trash');
-	$('trashCount').textContent = items.length ? `(${items.length})` : '';
+	$('trashCount').textContent = items.length ? ` ${items.length}` : ' 空';
 	const box = $('trashList');
 	box.innerHTML = '';
 
-	if (!items.length) {
-		box.innerHTML = '<p class="hint" style="margin:6px 0">空的。</p>';
-		return;
-	}
-
 	for (const item of items) {
 		const row = document.createElement('div');
-		row.className = 'item';
+		row.className = 'row';
 		row.innerHTML = '<span></span>';
-		row.children[0].textContent = item.id.replace(/^[^_]*__/, '').replace(/\.md$/, '');
-
+		row.querySelector('span').textContent = item.id.replace(/^[^_]*__/, '').replace(/\.md$/, '');
 		const btn = document.createElement('button');
 		btn.textContent = '恢复';
 		btn.onclick = async () => {
 			const r = await api('/api/trash/restore', { method: 'POST', body: JSON.stringify({ id: item.id }) });
 			await refresh();
-			toast(`已恢复到 ${r.slug}.md`);
+			toast(`已恢复 ${r.slug}.md`);
 		};
 		row.appendChild(btn);
 		box.appendChild(row);
@@ -176,7 +208,7 @@ function fillForm(post) {
 	$('body').value = post.body ?? '## 环境\n\n';
 	countWords();
 	state.dirty = false;
-	setStatus('');
+	setState('');
 }
 
 function readForm() {
@@ -207,14 +239,14 @@ async function refresh() {
 	const data = await api('/api/state');
 	state.posts = data.posts;
 	state.categories = data.categories;
-	state.orphans = data.orphans;
-	state.siteDev = data.siteDev;
+	renderChips();
 	renderList();
 	renderCategories();
 	await renderTrash();
 }
 
 async function openPost(slug) {
+	if (slug === state.current) return;
 	if (state.dirty && !(await confirmDialog('当前改动还没保存，确定切走？', { ok: '切走' }))) return;
 	const post = await api(`/api/post?slug=${encodeURIComponent(slug)}`);
 	state.current = slug;
@@ -226,36 +258,33 @@ async function openPost(slug) {
 function newPost() {
 	state.current = null;
 	state.originalSlug = null;
-	fillForm({
-		pubDate: stamp(),
-		category: state.categories[0]?.slug ?? '',
-		body: '## 环境\n\n',
-	});
+	fillForm({ pubDate: stamp(), category: state.filter === 'all' ? '' : state.filter, body: '## 环境\n\n' });
+	$('slug').value = '';
 	renderList();
 	$('title').focus();
 }
 
 async function save() {
 	try {
-		const payload = readForm();
-		const result = await api('/api/post', { method: 'POST', body: JSON.stringify(payload) });
+		const result = await api('/api/post', { method: 'POST', body: JSON.stringify(readForm()) });
 		state.current = result.slug;
 		state.originalSlug = result.slug;
 		$('slug').value = result.slug;
 		state.dirty = false;
 		await refresh();
-		setStatus(`已保存 ${result.slug}.md`);
-		if (result.renamedFrom) toast(`已改名为 ${result.slug}.md，旧文件进了回收站`);
+		setState(`已保存 ${result.slug}.md`);
+		setTimeout(() => setState(''), 4000);
+		if (result.renamedFrom) toast(`改名完成，旧文件进了回收站`);
 	} catch (error) {
-		setStatus(error.message, 'danger');
+		setState(error.message, 'error');
 		toast(error.message);
 	}
 }
 
 async function removePost() {
-	if (!state.current) return;
+	if (!state.current) return toast('还没保存过，没法删');
 	const ok = await confirmDialog(
-		`把 <b>${state.current}.md</b> 挪进回收站？<br><span style="color:var(--muted)">之后可以在侧栏回收站里恢复。</span>`,
+		`把 <b>${state.current}.md</b> 挪进回收站？<br><span style="color:var(--muted)">之后可以在左下角回收站恢复。</span>`,
 		{ ok: '挪进回收站', danger: true },
 	);
 	if (!ok) return;
@@ -276,27 +305,25 @@ async function removePost() {
 }
 
 async function removeCategory(cat) {
-	if (cat.count) {
-		toast(`「${cat.name}」下还有 ${cat.count} 篇文章，先改文章再删`);
-		return;
-	}
+	if (cat.count) return toast(`「${cat.name}」下还有 ${cat.count} 篇，先把它们的分类改掉`);
 	const ok = await confirmDialog(`删除分类 <b>${cat.name}</b>（${cat.slug}）？`, { ok: '删除', danger: true });
 	if (!ok) return;
-
 	try {
 		await api('/api/categories', {
 			method: 'POST',
 			body: JSON.stringify({ categories: state.categories.filter((c) => c.slug !== cat.slug) }),
 		});
+		if (state.filter === cat.slug) state.filter = 'all';
 		await refresh();
-		setStatus('分类已删除，dev 已重启');
+		setState('分类已删除，dev 已重启');
 	} catch (error) {
-		setStatus(error.message, 'danger');
+		setState(error.message, 'error');
 		toast(error.message);
 	}
 }
 
-async function addCategory() {
+async function addCategory(event) {
+	event.preventDefault();
 	const slug = $('cSlug').value.trim().toLowerCase();
 	const name = $('cName').value.trim() || slug;
 	if (!slug) return toast('先填 slug');
@@ -308,43 +335,55 @@ async function addCategory() {
 		$('cSlug').value = '';
 		$('cName').value = '';
 		await refresh();
-		setStatus(`分类 ${name} 已添加，dev 已重启`);
+		setState(`分类 ${name} 已添加，dev 已重启`);
 	} catch (error) {
-		setStatus(error.message, 'danger');
+		setState(error.message, 'error');
 		toast(error.message);
 	}
 }
 
-async function preview() {
+function preview() {
 	const slug = $('slug').value.trim() || state.current;
 	if (!slug) return toast('先保存一次再预览');
-	window.open(`${state.siteDev}/posts/${slug}/`, '_blank', 'noopener');
+	const base = document.body.dataset.site || '';
+	window.open(`${base}/posts/${slug}/`, '_blank', 'noopener');
 }
 
-/* ---------- 事件绑定 ---------- */
+/* ---------- 绑定 ---------- */
 
 $('new').onclick = newPost;
 $('save').onclick = save;
 $('del').onclick = removePost;
 $('preview').onclick = preview;
-$('cAdd').onclick = addCategory;
+$('catForm').addEventListener('submit', addCategory);
 $('body').addEventListener('input', countWords);
+
+$('search').addEventListener('input', (e) => {
+	state.query = e.target.value;
+	renderList();
+});
 
 for (const id of ['title', 'description', 'category', 'pubDate', 'tags', 'slug', 'body', 'draft']) {
 	const el = $(id);
 	const mark = () => {
 		if (state.dirty) return;
 		state.dirty = true;
-		setStatus('未保存', 'muted');
+		setState('未保存', 'dirty');
 	};
 	el.addEventListener('input', mark);
 	el.addEventListener('change', mark);
 }
 
 document.addEventListener('keydown', (e) => {
-	if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+	const meta = e.metaKey || e.ctrlKey;
+	if (meta && e.key.toLowerCase() === 's') {
 		e.preventDefault();
 		save();
+	}
+	if (meta && e.key.toLowerCase() === 'k') {
+		e.preventDefault();
+		$('search').focus();
+		$('search').select?.();
 	}
 });
 
@@ -354,5 +393,8 @@ window.addEventListener('beforeunload', (e) => {
 	e.returnValue = '';
 });
 
+const initial = await api('/api/state');
+document.body.dataset.site = initial.siteDev;
 await refresh();
-if (!state.current) newPost();
+if (!state.posts.length) newPost();
+else await openPost(state.posts[0].slug);
