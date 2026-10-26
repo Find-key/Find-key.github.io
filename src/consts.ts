@@ -98,7 +98,7 @@ export interface CategoryItem {
 }
 
 // #region categories
-// 这一段由 `npm run admin` 的后台维护；手写也可以，保持格式即可
+// 这一段由 npm run admin 的后台维护；手写也可以，保持格式即可
 export const CATEGORIES: CategoryItem[] = [
 	{ slug: 'pwn', name: 'pwn', description: '二进制本身：glibc 堆与栈、IO_FILE、ret2dl、调用链。' },
 	{ slug: 'wp', name: 'WP', description: '比赛题解与复现：羊城杯、HGAME、校赛、XYCTF。' },
