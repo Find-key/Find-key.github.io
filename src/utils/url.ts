@@ -1,8 +1,8 @@
 /**
  * base 路径工具
  *
- * GitHub Pages 的项目站部署在 /blog 子路径下，页面里写死的 href="/blog/xxx"
- * 在本地 dev、以及将来换成自定义域名时会全部失效。
+ * 站点现在部署在用户站的根路径（base = ''）。历史上做过 /blog 项目站，
+ * 页面里写死的 href="/blog/xxx" 一改 base 就会全部失效。
  * 所以：所有站内链接一律过 withBase()，只写逻辑路径。
  */
 import { SITE } from '../consts';
