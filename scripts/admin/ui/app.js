@@ -92,7 +92,7 @@ const VIEWS = ['list', 'edit', 'categories', 'trash'];
 function showView(name) {
 	for (const view of VIEWS) $(`view-${view}`).hidden = view !== name;
 	document.body.dataset.view = name;
-	document.querySelectorAll('.rail-nav a').forEach((a) => {
+	document.querySelectorAll('.sitebar-nav a[data-nav]').forEach((a) => {
 		const nav = a.dataset.nav;
 		a.classList.toggle('active', nav === name || (name === 'edit' && nav === 'list'));
 	});
@@ -110,8 +110,7 @@ async function route() {
 	const { view, slug } = parseRoute();
 	showView(view);
 	if (view === 'list') {
-		renderChips();
-		renderRows();
+		renderGroups();
 		return;
 	}
 	if (view === 'edit') {
@@ -126,67 +125,68 @@ async function route() {
 	if (view === 'trash') return renderTrash();
 }
 
-/* ---------- 导航计数 ---------- */
+/* ---------- 计数 ---------- */
 
-function renderNav() {
-	$('navPosts').textContent = state.posts.length || '';
-	$('navCats').textContent = state.categories.length || '';
-	$('navTrash').textContent = state.trash.length || '';
+function renderCounts() {
+	$('totalCount').textContent = state.posts.length ? `共 ${state.posts.length} 篇` : '';
+	$('catTotal').textContent = state.categories.length ? `${state.categories.length} 个` : '';
+	$('trashTotal').textContent = state.trash.length ? `${state.trash.length} 条` : '';
 }
 
-/* ---------- 列表 ---------- */
+/* ---------- 列表：按分类分组 ---------- */
 
-function visiblePosts() {
+function matchesQuery(post) {
 	const q = state.query.trim().toLowerCase();
-	return state.posts.filter((post) => {
-		if (state.filter !== 'all' && (post.category || '') !== state.filter) return false;
-		if (!q) return true;
-		return (
-			(post.title || '').toLowerCase().includes(q) ||
-			(post.slug || '').toLowerCase().includes(q) ||
-			(post.tags || []).join(' ').toLowerCase().includes(q)
-		);
-	});
+	if (!q) return true;
+	return (
+		(post.title || '').toLowerCase().includes(q) ||
+		(post.slug || '').toLowerCase().includes(q) ||
+		(post.tags || []).join(' ').toLowerCase().includes(q)
+	);
 }
 
-function renderChips() {
-	const box = $('chips');
+function renderGroups() {
+	const box = $('groups');
 	box.innerHTML = '';
-	const chips = [{ slug: 'all', name: '全部', count: state.posts.length }, ...state.categories];
 
-	for (const chip of chips) {
-		const b = document.createElement('button');
-		b.className = 'chip';
-		b.textContent = `${chip.name} ${chip.count ?? 0}`;
-		b.setAttribute('aria-pressed', String(state.filter === chip.slug));
-		b.onclick = () => {
-			state.filter = chip.slug;
-			renderChips();
-			renderRows();
-		};
-		box.appendChild(b);
-	}
-}
-
-function renderRows() {
-	const tbody = $('rows');
-	const posts = visiblePosts();
-	tbody.innerHTML = '';
+	const posts = state.posts.filter(matchesQuery);
 	$('listEmpty').hidden = posts.length > 0;
+	renderCounts();
 
-	for (const post of posts) {
-		const tr = document.createElement('tr');
-		tr.innerHTML = `
-			<td><span class="row-title"></span></td>
-			<td class="c-cat"></td>
-			<td class="c-date">${post.draft ? '—' : post.pubDate || '—'}</td>
-			<td class="c-state">${post.draft ? '<span class="tag-draft">草稿</span>' : ''}</td>`;
-		tr.querySelector('.row-title').textContent = post.title || post.slug;
-		tr.querySelector('.c-cat').textContent = post.category || '未分类';
-		tr.onclick = () => {
-			location.hash = `#/edit/${encodeURIComponent(post.slug)}`;
-		};
-		tbody.appendChild(tr);
+	const buckets = state.categories.map((cat) => ({
+		slug: cat.slug,
+		name: cat.name,
+		description: cat.description,
+		posts: posts.filter((p) => p.category === cat.slug),
+	}));
+
+	const orphans = posts.filter((p) => !state.categories.some((c) => c.slug === p.category));
+	if (orphans.length) buckets.push({ slug: '', name: '未分类', description: '', posts: orphans });
+
+	for (const bucket of buckets) {
+		if (!bucket.posts.length) continue;
+
+		const group = document.createElement('section');
+		group.className = 'group';
+		group.innerHTML = `
+			<div class="group-head"><h2></h2><span class="n">${bucket.posts.length}</span></div>
+			${bucket.description ? '<p class="group-desc"></p>' : ''}
+			<ul class="entries"></ul>`;
+		group.querySelector('h2').textContent = bucket.name;
+		if (bucket.description) group.querySelector('.group-desc').textContent = bucket.description;
+
+		const ul = group.querySelector('.entries');
+		for (const post of bucket.posts) {
+			const li = document.createElement('li');
+			li.innerHTML = `<span class="t"></span>${post.draft ? '<span class="draft">草稿</span>' : ''}<time></time>`;
+			li.querySelector('.t').textContent = post.title || post.slug;
+			li.querySelector('time').textContent = post.draft ? '' : post.pubDate || '';
+			li.onclick = () => {
+				location.hash = `#/edit/${encodeURIComponent(post.slug)}`;
+			};
+			ul.appendChild(li);
+		}
+		box.appendChild(group);
 	}
 }
 
@@ -332,8 +332,7 @@ async function saveCategories(next, { silent = false } = {}) {
 		...c,
 		count: state.categories.find((old) => old.slug === c.slug)?.count ?? 0,
 	}));
-	renderNav();
-	renderChips();
+	renderCounts();
 	fillCategoriesSelect();
 	if (!silent) setState('分类已保存，dev 已重启');
 	return saved;
@@ -342,42 +341,38 @@ async function saveCategories(next, { silent = false } = {}) {
 function renderCategories() {
 	const box = $('catRows');
 	box.innerHTML = '';
-
-	const head = document.createElement('div');
-	head.className = 'cat-head';
-	head.innerHTML = '<span>名称</span><span>slug</span><span>描述（显示在首页）</span><span>文章</span><span></span>';
-	box.appendChild(head);
+	renderCounts();
 
 	for (const cat of state.categories) {
 		const row = document.createElement('div');
 		row.className = 'cat-row';
 
 		const name = document.createElement('input');
+		name.className = 'name';
 		name.value = cat.name;
 		name.setAttribute('aria-label', '显示名');
 
 		const slug = document.createElement('span');
 		slug.className = 'slug';
 		slug.textContent = cat.slug;
-		slug.title = cat.slug;
+
+		const n = document.createElement('span');
+		n.className = 'n';
+		n.textContent = cat.count ? `${cat.count} 篇` : '—';
 
 		const desc = document.createElement('input');
 		desc.className = 'desc';
 		desc.value = cat.description ?? '';
-		desc.placeholder = '没有描述';
+		desc.placeholder = '点这里写一句描述（会显示在首页）';
 		desc.setAttribute('aria-label', '分类描述');
-
-		const count = document.createElement('span');
-		count.className = 'count';
-		count.textContent = cat.count ? `${cat.count} 篇` : '—';
 
 		const acts = document.createElement('span');
 		acts.className = 'acts';
 		const del = document.createElement('button');
-		del.className = 'ghost danger';
+		del.className = 'quiet danger';
 		del.textContent = '删除';
 		del.disabled = !!cat.count;
-		del.title = cat.count ? `还有 ${cat.count} 篇文章在用` : '';
+		del.title = cat.count ? `还有 ${cat.count} 篇在用` : '';
 		del.onclick = async () => {
 			const ok = await confirmDialog(`删除分类 <b>${cat.name}</b>（${cat.slug}）？`, { ok: '删除', danger: true });
 			if (!ok) return;
@@ -387,8 +382,11 @@ function renderCategories() {
 		acts.appendChild(del);
 
 		const commit = async () => {
+			const nextName = name.value.trim() || cat.name;
+			const nextDesc = desc.value;
+			if (nextName === cat.name && nextDesc === (cat.description ?? '')) return;
 			const next = state.categories.map((c) =>
-				c.slug === cat.slug ? { ...c, name: name.value.trim() || c.name, description: desc.value } : c,
+				c.slug === cat.slug ? { ...c, name: nextName, description: nextDesc } : c,
 			);
 			try {
 				await saveCategories(next, { silent: true });
@@ -406,7 +404,7 @@ function renderCategories() {
 			});
 		}
 
-		row.append(name, slug, desc, count, acts);
+		row.append(name, slug, n, desc, acts);
 		box.appendChild(row);
 	}
 }
@@ -434,7 +432,7 @@ async function addCategory(event) {
 async function renderTrash() {
 	const { items } = await api('/api/trash');
 	state.trash = items;
-	renderNav();
+	renderCounts();
 	const list = $('trashList');
 	list.innerHTML = '';
 
@@ -483,12 +481,9 @@ async function refreshState() {
 	state.categories = data.categories;
 	state.site = data.siteDev;
 	state.trash = trash.items;
-	renderNav();
+	renderCounts();
 }
 
-$('new').onclick = () => {
-	location.hash = '#/edit/new';
-};
 $('save').onclick = save;
 $('del').onclick = removePost;
 $('catForm').addEventListener('submit', addCategory);
@@ -506,7 +501,7 @@ $('metaToggle').onclick = () => {
 
 $('search').addEventListener('input', (e) => {
 	state.query = e.target.value;
-	renderRows();
+	renderGroups();
 });
 
 for (const id of ['title', 'description', 'category', 'pubDate', 'tags', 'slug', 'body', 'draft']) {
