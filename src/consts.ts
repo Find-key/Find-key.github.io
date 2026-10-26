@@ -100,7 +100,7 @@ export interface CategoryItem {
 // #region categories
 // 这一段由 npm run admin 的后台维护；手写也可以，保持格式即可
 export const CATEGORIES: CategoryItem[] = [
-	{ slug: 'pwn', name: 'pwn', description: '二进制本身：glibc 堆与栈、IO_FILE、ret2dl、调用链。' },
+	{ slug: 'pwn', name: 'pwn', description: '栈与堆的利用、IO_FILE / FSOP、ret2dl 与 hook 劫持。' },
 	{ slug: 'wp', name: 'WP', description: '比赛题解与复现：羊城杯、HGAME、校赛、XYCTF。' },
 	{ slug: 'v8', name: 'V8', description: 'V8 引擎：环境搭建、对象内存布局、OOB 与利用。' },
 	{ slug: 'iot', name: '嵌入式与 IoT', description: '路由器等设备的固件与漏洞复现。' },
