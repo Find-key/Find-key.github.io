@@ -25,5 +25,5 @@ startServer({
 	trashDir: join(ROOT, '.trash'),
 	constsPath: join(ROOT, 'src/consts.ts'),
 	port: Number(process.env.ADMIN_PORT ?? 4322),
-	siteDev: process.env.SITE_DEV ?? 'http://localhost:4321/blog',
+	siteDev: process.env.SITE_DEV ?? 'http://localhost:4321',
 });
