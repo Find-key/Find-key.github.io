@@ -27,7 +27,7 @@ export const SITE = {
 	/** 正式域名：项目站写 https://<用户名>.github.io（不要带 /blog） */
 	url: 'https://find-key.github.io',
 	/** 站点根路径：项目站写 '/blog'；用户主页站（<用户名>.github.io）改成 '/' */
-	base: '/blog',
+	base: '',
 	/** html lang 属性 */
 	lang: 'zh-CN',
 	/** 日期显示时区 */

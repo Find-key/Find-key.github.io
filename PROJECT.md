@@ -7,7 +7,7 @@
 | 项 | 值 |
 | --- | --- |
 | 本地路径 | `/home/key/Work/blog` |
-| 线上地址 | `https://USERNAME.github.io/blog/`（待填用户名） |
+| 线上地址 | `https://find-key.github.io/`（用户站，根路径） |
 | 技术栈 | Astro 7（静态输出）+ Markdown 内容集合 |
 | 组织方式 | **按分类组织**（不是按时间流） |
 | 视觉风格 | 纸感简约：暖白底、衬线标题、无衬线正文、等宽小标签、单一强调色（墨绿） |
@@ -85,14 +85,14 @@
 
 ### 为什么是「项目站」而不是「用户主页站」
 
-- 项目站：仓库名 `blog`，地址 `https://USERNAME.github.io/blog/`，需要 `base: '/blog'`
+- 用户站：仓库名 `Find-key.github.io`，地址 `https://find-key.github.io/`，`base: ''`
 - 用户主页站：仓库必须叫 `USERNAME.github.io`，地址是根路径，配置简单
 
 选项目站是为了以后能并置别的站点。代价是**所有站内链接必须过 `withBase()`**，见第 10 节 FAQ。
 
-### 为什么文章路由是 `/posts/` 而不是 `/blog/`
+### 为什么文章路由是 `/posts/`
 
-站点本身已经在 `/blog` 子路径下，文章路由若也叫 `/blog`，URL 会变成 `/blog/blog/xxx/`。所以：
+早先做过 `/blog` 项目站，文章路由若也叫 `/blog` 会变成 `/blog/blog/xxx/`；现在虽然改成根路径，`/posts/` 这套路由保持不变（已经分发出去的链接不用改）。所以：
 
 - 文章详情：`/blog/posts/<文章文件名>/`
 - 分类：`/blog/categories/<slug>/`
@@ -528,3 +528,4 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | 写作后台改成多视图（hash 路由）：`#/` 文章列表（表格 + 分类 chip 筛选 + 搜索）、`#/edit/<slug>` 编辑（无侧栏，默认只显示标题与正文，meta 折在「信息」按钮里）、`#/categories` 分类管理、`#/trash` 回收站。README：一屏只干一件事 |
 | 2026-10-25 | 后台二次重构：左侧固定导航（文章/分类/回收站，各带计数）+ 右侧内容区，每个视图一个页面。分类页改为行内可编辑表格（名称 / slug / 描述 / 文章数），desc 失焦即保存 |
 | 2026-10-25 | 后台外观第三次重构，改成「像站点归档页」而不是后台：顶栏与站点同款字标（0xFindkey / 写作）+ 下划线导航；文章页按分类分组、每组显示分类描述、条目只有标题与日期；分类页是行内可编辑的清单（名称/desc 直接改，失焦保存）。修复：编辑分类时整表回写会把其他分类的 desc 写坏（改为只在值变化时提交） |
+| 2026-10-25 | 部署方式从「项目站 /blog」改为「用户站根路径」：仓库改叫 `Find-key.github.io`，`SITE.base` 置空，线上地址 `https://find-key.github.io/`；同步更新 README / AGENTS.md / docs/how-to.md 里所有 `/blog/` 说法。构建产物校验：首页只剩 `/`、`/posts/...`、`/_astro/...` 这类根相对链接，无 `/blog/` 残留，canonical 为 `https://find-key.github.io/posts/<slug>/` |

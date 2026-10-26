@@ -8,11 +8,11 @@
 ## 硬性约定
 
 1. **站内链接一律用 `src/utils/url.ts` 的 `withBase()` / `postUrl()` / `tagUrl()`**
-   站点部署在 `https://<user>.github.io/blog`，硬写 `/blog/xxx` 在换域名或改 base 时会全部失效。
-   页面内相对引用 `Astro.url.pathname` 时不要再套 `withBase()`——pathname 已含 base，会变成 `/blog/blog/`。
+   站点部署在用户站根路径（`base: ''`，线上 `https://find-key.github.io/`），硬写 `/blog/xxx` 这类前缀在改 base 时会全部失效。
+   页面内相对引用 `Astro.url.pathname` 时不要再套 `withBase()`——pathname 已含 base，重复拼会变成 `/blog/blog/` 这样的双前缀。
 2. **站点元信息只在 `src/consts.ts` 改**（标题、描述、作者、域名、base、导航、社交链接）。
    `astro.config.mjs` 从那里读，不要在两处各写一份。
-3. **文章路由是 `/posts/<slug>/`**，不是 `/blog/<slug>/`（避免 `/blog/blog/` 双重嵌套）。
+3. **文章路由是 `/posts/<slug>/`**，归档在 `/posts/`，分类在 `/categories/<slug>/`。
 4. **新增页面时，文章查询必须带草稿过滤**：`getCollection('blog', ({ data }) => import.meta.env.DEV || !data.draft)`。
 5. frontmatter 字段定义在 `src/content.config.ts`，新增字段先改 schema。
 6. 标签用小写英文/连字符（会进 URL），别用中文。
@@ -27,19 +27,19 @@ astro dev --background
 ```
 
 用 `astro dev stop`、`astro dev status`、`astro dev logs` 管理。
-**注意**：dev 和 preview 的站点根路径都是 `http://localhost:4321/blog/`，访问 `/` 是 404，不是 bug。
+**注意**：dev 和 preview 的根路径是 `http://localhost:4321/`（base 为空时）。
 
 改完必须验证：
 
 ```bash
 npm run build     # 必须通过（content schema 会在这一步校验 frontmatter）
-npm run preview   # 抽查 /blog/、/blog/posts/、/blog/tags/、文章页
+npm run preview   # 抽查 /、/posts/、/tags/、文章页
 ```
 
 重点核对构建产物里的链接前缀：
 
 ```bash
-grep -oE '(href|src)="[^"]*"' dist/index.html | grep -v https:// | sort -u   # 不应出现 /blog/blog/
+grep -oE '(href|src)="[^"]*"' dist/index.html | grep -v https:// | sort -u   # 不应出现重复前缀
 ```
 
 ## 文档

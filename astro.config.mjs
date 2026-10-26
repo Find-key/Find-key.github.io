@@ -11,7 +11,7 @@ import { SITE } from './src/consts.ts';
 
 // https://astro.build/config
 export default defineConfig({
-	// GitHub Pages 项目站：https://<user>.github.io/blog
+	// GitHub Pages 用户站：https://find-key.github.io/ （根路径，base 为空）
 	site: SITE.url,
 	base: SITE.base,
 	// 静态托管环境（GitHub Pages）对 /foo 和 /foo/ 都返回同一份 index.html

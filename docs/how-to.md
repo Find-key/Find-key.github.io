@@ -67,13 +67,13 @@ tags: [stack, ret2text]              # 可选
 - **从 `##` 开始写**，不要写 `#` —— 一级标题由 `title` 渲染
 - **`##` / `###` 会自动进左侧目录**（滚动时高亮），所以标题写成有信息量的短语，不要写"一、二、三"
 - 代码块标语言：```` ```c ```` / ```` ```python ```` / ```` ```bash ````
-- 图片放 `public/images/`，正文里写 `![说明](/blog/images/xxx.png)`（含 base，markdown 里没法调 `withBase()`；将来换域名要全局替换这一处）
+- 图片放 `public/images/`，正文里写 `![说明](/images/xxx.png)`（base 为空时直接就是根路径；若以后改回子路径部署，这里要跟着加前缀）
 - 表格、引用块都直接写，样式已有
 
 ### 4. 预览与发布
 
 ```bash
-npx astro dev            # http://localhost:4321/blog/ 热更新
+npx astro dev            # http://localhost:4321/ 热更新
 npm run build            # 构建；frontmatter 写错会在这里报错
 ```
 
@@ -143,7 +143,7 @@ export const FRIENDS: Friend[] = [
 | `category` 报错，列出可选项 | frontmatter 的 `category` 不在 `CATEGORIES` 里 |
 | YAML 解析失败 | 值里有 `: ` 或以 `%`、`@` 开头时，整个值要用双引号包起来 |
 | 首页分类是旧的 | `consts.ts` 热更新失效，重启 dev |
-| 链接 404 / 变成 `/blog/blog/` | 手写了 `/blog/...`；站内路径一律用 `withBase()` / `postUrl()` |
+| 链接 404 / 出现重复前缀 | 手写了带 base 的绝对路径；站内路径一律用 `withBase()` / `postUrl()` |
 | 文章不出现 | 看是不是 `draft: true`，或者日期在未来（未来日期不会自动隐藏，但排序会靠前） |
 
 ---
