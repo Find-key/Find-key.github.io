@@ -46,7 +46,7 @@ const rows = CATEGORIES.map((category) => ({
 		<main class="container home">
 			<!-- hero：头像 + 名字 + tagline + 一行 dump 出来的 flag + 图标 -->
 			<section class="hero">
-				<img class="avatar" src={withBase('/avatar.svg')} alt="" width="96" height="96" />
+				<img class="avatar" src={withBase('/kirito.webp')} alt={SITE.author} width="96" height="96" />
 				<div class="who">
 					<p class="who-name">{SITE.author}</p>
 					{SITE.quote.text && (
@@ -533,22 +533,6 @@ const rows = CATEGORIES.map((category) => ({
 		.spread {
 			grid-template-columns: 1fr;
 			row-gap: 2.2rem;
-		}
-		.name {
-			font-size: 1.28rem;
-		}
-		.intro {
-			gap: 1rem;
-		}
-		.photo {
-			width: 56px;
-			height: 56px;
-		}
-		.bio p {
-			font-size: 1.08rem;
-		}
-		.bio p + p {
-			font-size: 0.94rem;
 		}
 	}
 </style>

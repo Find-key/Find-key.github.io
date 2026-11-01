@@ -122,6 +122,12 @@ h3 {
 	letter-spacing: -0.005em;
 }
 
+/* 锚点滚动留白：避免吸顶 Header (58px) 遮挡正文各级标题及首页分类锚点 */
+.prose :is(h2, h3, h4),
+.spread .block {
+	scroll-margin-top: calc(var(--header-height) + 1.25rem);
+}
+
 /* 等宽小标签：分组标题、日期、面包屑用，带字距很像印刷品上的小字 */
 .label {
 	font-family: var(--font-mono);
