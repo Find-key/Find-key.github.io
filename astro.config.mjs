@@ -16,6 +16,8 @@ export default defineConfig({
 	base: SITE.base,
 	// 静态托管环境（GitHub Pages）对 /foo 和 /foo/ 都返回同一份 index.html
 	trailingSlash: 'ignore',
+	// 启用链接预获取：用户鼠标悬停（hover）站内链接时自动预载，提升翻页流畅度
+	prefetch: true,
 	// 不加载 webfont：中文用系统字体栈，首屏没有字体闪烁，也少两个请求
 	integrations: [mdx(), sitemap()],
 	// 关掉开发工具条：它只出现在 npm run dev，容易让人以为是站点的一部分
@@ -25,6 +27,14 @@ export default defineConfig({
 		remarkPlugins: [remarkMath],
 		rehypePlugins: [[rehypeKatex, { throwOnError: false, strict: false }]],
 		// 代码高亮用 github-light：注释对比度够（min-light 的注释是 #c2c3c7，太淡看不清）
-		shikiConfig: { theme: 'github-light' },
+		// langAlias: 别名兼容（文章中大写的 C/Python，以及 gdb 命令输出转为 bash 高亮）
+		shikiConfig: {
+			theme: 'github-light',
+			langAlias: {
+				C: 'c',
+				Python: 'python',
+				gdb: 'bash',
+			},
+		},
 	},
 });

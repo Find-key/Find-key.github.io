@@ -53,6 +53,7 @@
 - [x] 本机写作后台 `npm run admin`（零依赖 Node 服务，127.0.0.1:4322）：文章增删改 + 分类增删，改写真实文件；分类变化后自动重启 dev
 - [x] Open Graph 分享卡（`public/og.png`）、favicon 三档（svg / 32 png / apple-touch）
 - [x] GitHub Actions 部署工作流、base 路径（`/blog`）全链路核对
+- [x] 前端体验调优：Shiki 语言别名映射（C/Python/gdb 高亮恢复）、Astro 链接预加载（prefetch）、吸顶站头锚点遮挡修复（scroll-margin-top）、移动端 theme-color 暖白对齐、友链透明头像防穿透、死样式清理与长代码块收起平滑回滚
 
 **内容现状**：17 篇文章、4 个分类、16 条友链（从旧 Hexo 站 `../Saved-blog-doc` 迁入）。
 
@@ -529,3 +530,5 @@ RSS / GitHub / 邮箱在版权页，来自 `SITE` 字段（留空就不显示）
 | 2026-10-25 | 后台二次重构：左侧固定导航（文章/分类/回收站，各带计数）+ 右侧内容区，每个视图一个页面。分类页改为行内可编辑表格（名称 / slug / 描述 / 文章数），desc 失焦即保存 |
 | 2026-10-25 | 后台外观第三次重构，改成「像站点归档页」而不是后台：顶栏与站点同款字标（0xFindkey / 写作）+ 下划线导航；文章页按分类分组、每组显示分类描述、条目只有标题与日期；分类页是行内可编辑的清单（名称/desc 直接改，失焦保存）。修复：编辑分类时整表回写会把其他分类的 desc 写坏（改为只在值变化时提交） |
 | 2026-10-25 | 部署方式从「项目站 /blog」改为「用户站根路径」：仓库改叫 `Find-key.github.io`，`SITE.base` 置空，线上地址 `https://find-key.github.io/`；同步更新 README / AGENTS.md / docs/how-to.md 里所有 `/blog/` 说法。构建产物校验：首页只剩 `/`、`/posts/...`、`/_astro/...` 这类根相对链接，无 `/blog/` 残留，canonical 为 `https://find-key.github.io/posts/<slug>/` |
+| 2026-10-27 | 前端体验与构建优化：① `astro.config.mjs` 配置 Shiki 语言别名（`langAlias: { C: 'c', Python: 'python', gdb: 'bash' }`），解决 80 余处代码块语法高亮失效与构建警告；开启 `prefetch: true` 链接预载；② 修复吸顶 Header (58px) 遮挡正文 TOC 标题与分类锚点的问题（全局补 `scroll-margin-top`）；③ 修复移动端顶栏 `theme-color` 与暖白底色色差（改 `#fbf9f5`）；④ 修复友链页面透明 WebP 头像透出底层首字母的问题（纯 CSS `:has(img)` 处理）；⑤ 清理 Footer 与首页残存的死样式（`.contact`, `.intro`, `.photo`, `.bio` 等），补齐头像 `alt`；⑥ 代码块收起时增加平滑回滚定位，防止视口跳跃 |
+| 2026-10-25 | 头像：首页换成 `public/kirito.webp`（192px，圆裁），友链 Yolo 换成 `public/friends/yolo-s.webp`；两张原图 1080×1080 JPEG 由 sharp 转 webp（3.9KB / 2.5KB）后删除，去掉未再使用的 `avatar.svg` |

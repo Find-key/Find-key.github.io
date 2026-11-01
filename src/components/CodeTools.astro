@@ -56,7 +56,7 @@
 		wrap.className = 'code-block';
 		pre.parentNode?.insertBefore(wrap, pre);
 
-		const text = pre.innerText.replace(/\n$/, '');
+		const text = (pre.textContent ?? '').replace(/\n$/, '');
 		const lines = text.split('\n').length;
 
 		const head = document.createElement('div');
@@ -85,6 +85,13 @@
 				const folded = body.classList.toggle('is-folded');
 				body.style.maxHeight = folded ? `${PREVIEW_ROWS * 1.5}rem` : 'none';
 				more.textContent = folded ? `展开（共 ${lines} 行）` : '收起';
+				if (folded) {
+					// 收起时若代码块头部已滚出视口上方，平滑回滚至代码块头部，避免视口剧烈跳跃
+					const rect = wrap.getBoundingClientRect();
+					if (rect.top < 60) {
+						wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+					}
+				}
 			});
 			wrap.appendChild(more);
 			return;
@@ -152,11 +159,6 @@
 		height: 3.5rem;
 		pointer-events: none;
 		background: linear-gradient(to bottom, transparent, var(--code-bg) 80%);
-	}
-
-	.code-tools {
-		display: flex;
-		gap: 0.3rem;
 	}
 
 	.code-btn,

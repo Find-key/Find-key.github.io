@@ -8,10 +8,6 @@ import { withBase } from '../utils/url';
 
 const year = String(new Date().getFullYear());
 const cn = [...year].map((d) => '〇一二三四五六七八九'[Number(d)] ?? d).join('');
-
-// 占位符还在（USERNAME）就先不渲染，免得挂个死链
-const githubReady = SITE.github && !SITE.github.includes('USERNAME');
-const githubLabel = SITE.github.replace(/^https?:\/\//, '').replace(/\/$/, '');
 ---
 
 <footer class="colophon">
@@ -20,7 +16,6 @@ const githubLabel = SITE.github.replace(/^https?:\/\//, '').replace(/\/$/, '');
 			<a href={withBase('/posts')}>归档</a>
 			<a href={withBase('/tags')}>标签</a>
 		</p>
-
 
 		<p class="sign">
 			{SITE.author} · {cn}
@@ -56,31 +51,6 @@ const githubLabel = SITE.github.replace(/^https?:\/\//, '').replace(/\/$/, '');
 	.links a:hover {
 		color: var(--text);
 		text-decoration: none;
-	}
-	/* 联系方式：纯文本为主，选中即可复制 */
-	.contact {
-		margin: 0 0 0.85rem;
-		color: var(--muted);
-		font-family: var(--font-mono);
-		font-size: 0.68rem;
-		line-height: 1.9;
-		letter-spacing: 0.03em;
-	}
-	.contact .mail {
-		user-select: all;
-	}
-	.contact .sep {
-		margin: 0 0.5em;
-		opacity: 0.5;
-	}
-	.contact a {
-		color: inherit;
-		text-decoration: none;
-		border-bottom: 1px solid var(--line-strong);
-	}
-	.contact a:hover {
-		color: var(--text);
-		border-bottom-color: var(--muted);
 	}
 	.sign {
 		margin: 0;

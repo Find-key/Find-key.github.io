@@ -123,6 +123,10 @@ const initial = (name: string) => name.trim().slice(0, 1).toUpperCase();
 		font-size: 0.95rem;
 		line-height: 1;
 	}
+	/* 图片存在时隐藏底层首字母，避免透明头像透出底字；图片 onerror 移除后首字母自动显现 */
+	.avatar:has(img) .initial {
+		display: none;
+	}
 	.avatar img {
 		position: relative;
 		width: 40px;
