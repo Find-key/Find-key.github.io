@@ -25,3 +25,6 @@ pnpm-debug.log*
 
 # 写作后台的回收站（软删除的文章，不提交）
 .trash/
+
+# 本地操作手册（不进仓库）
+README.md
