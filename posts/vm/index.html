@@ -1,0 +1,262 @@
+<!DOCTYPE html><html lang="zh-CN" data-astro-cid-tldeq5d5><head><!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="theme-color" content="#fbf9f5"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="sitemap" href="/sitemap-index.xml"><meta name="generator" content="Astro v7.4.2"><meta name="author" content="Findkey"><!-- Canonical URL --><link rel="canonical" href="https://find-key.github.io/posts/vm/"><!-- Primary Meta Tags --><title>VM 题的 trace 脚本 · Findkey’s Blog</title><meta name="description" content="用 gdb 的 Python 断点给 VM 解释器做 trace：每条 opcode、每个寄存器、栈指针都记进日志，省去手啃字节码。"><!-- Open Graph / Facebook --><meta property="og:type" content="article"><meta property="og:url" content="https://find-key.github.io/posts/vm/"><meta property="og:site_name" content="Findkey’s Blog"><meta property="og:locale" content="zh_CN"><meta property="og:title" content="VM 题的 trace 脚本 · Findkey’s Blog"><meta property="og:description" content="用 gdb 的 Python 断点给 VM 解释器做 trace：每条 opcode、每个寄存器、栈指针都记进日志，省去手啃字节码。"><meta property="og:image" content="https://find-key.github.io/og.png"><!-- Twitter --><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="VM 题的 trace 脚本 · Findkey’s Blog"><meta name="twitter:description" content="用 gdb 的 Python 断点给 VM 解释器做 trace：每条 opcode、每个寄存器、栈指针都记进日志，省去手啃字节码。"><meta name="twitter:image" content="https://find-key.github.io/og.png"><link rel="stylesheet" href="/_astro/_..YMHo4NxU.css"><link rel="stylesheet" href="/_astro/Header.Cvwz3oM9.css"><script type="module" src="/_astro/page.tougUCvb.js"></script></head><body data-astro-cid-tldeq5d5><header class="site-header" data-astro-cid-nen7h5rs><div class="inner" data-astro-cid-nen7h5rs><a class="brand" href="/" data-astro-cid-nen7h5rs>Findkey’s Blog</a><nav class="nav" data-astro-cid-nen7h5rs><a href="/posts" class="active" data-astro-cid-nen7h5rs>归档</a><a href="/links" data-astro-cid-nen7h5rs>友链</a></nav></div></header><main class="wrap" data-astro-cid-tldeq5d5><div class="grid" data-astro-cid-tldeq5d5><aside class="sidebar" data-astro-cid-7k3pnqyz><span class="label" data-astro-cid-7k3pnqyz>目录</span><ol class="toc" data-astro-cid-7k3pnqyz><li class="d2" data-astro-cid-7k3pnqyz><a href="#前言" data-heading="前言" data-astro-cid-7k3pnqyz>前言</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#分析" data-heading="分析" data-astro-cid-7k3pnqyz>分析</a></li><li class="d3" data-astro-cid-7k3pnqyz><a href="#解释器vvmm" data-heading="解释器vvmm" data-astro-cid-7k3pnqyz>解释器：vvmm</a></li><li class="d3" data-astro-cid-7k3pnqyz><a href="#代码vmcode" data-heading="代码vmcode" data-astro-cid-7k3pnqyz>代码：vmcode</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#漏洞利用" data-heading="漏洞利用" data-astro-cid-7k3pnqyz>漏洞利用</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#模板" data-heading="模板" data-astro-cid-7k3pnqyz>模板</a></li></ol></aside><script type="module">var e=new Map;document.querySelectorAll(`a[data-heading]`).forEach(t=>{let n=t.dataset.heading;if(!n)return;let r=e.get(n)??[];r.push(t),e.set(n,r)});var t=Array.from(document.querySelectorAll(`.prose h2[id], .prose h3[id]`));if(document.querySelectorAll(`.toc-inline a[data-heading]`).forEach(e=>{e.addEventListener(`click`,()=>{let t=e.closest(`details`);t&&(t.open=!1)})}),e.size>0&&t.length>0){let n=new IntersectionObserver(t=>{for(let n of t)n.isIntersecting&&(e.forEach(e=>e.forEach(e=>e.classList.remove(`active`))),e.get(n.target.id)?.forEach(e=>e.classList.add(`active`)))},{rootMargin:`-84px 0px -65% 0px`});t.forEach(e=>n.observe(e))}</script><article class="article" data-astro-cid-tldeq5d5><nav class="crumb" aria-label="位置" data-astro-cid-tldeq5d5><a href="/" data-astro-cid-tldeq5d5>首页</a><span class="sep" data-astro-cid-tldeq5d5>/</span><a href="/categories/tools/" data-astro-cid-tldeq5d5>工具与笔记</a></nav><h1 data-astro-cid-tldeq5d5>VM 题的 trace 脚本</h1><p class="meta" data-astro-cid-tldeq5d5><time datetime="2025-12-08">2025年12月8日</time><span class="dot" data-astro-cid-tldeq5d5>·</span><span data-astro-cid-tldeq5d5>约 14 分钟</span></p><div class="tags" data-astro-cid-tldeq5d5><a href="/tags/gdb-script/" data-astro-cid-tldeq5d5>#gdb-script</a></div><details class="toc-inline" data-astro-cid-7k3pnqyz><summary data-astro-cid-7k3pnqyz>目录</summary><ol class="toc" data-astro-cid-7k3pnqyz><li class="d2" data-astro-cid-7k3pnqyz><a href="#前言" data-heading="前言" data-astro-cid-7k3pnqyz>前言</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#分析" data-heading="分析" data-astro-cid-7k3pnqyz>分析</a></li><li class="d3" data-astro-cid-7k3pnqyz><a href="#解释器vvmm" data-heading="解释器vvmm" data-astro-cid-7k3pnqyz>解释器：vvmm</a></li><li class="d3" data-astro-cid-7k3pnqyz><a href="#代码vmcode" data-heading="代码vmcode" data-astro-cid-7k3pnqyz>代码：vmcode</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#漏洞利用" data-heading="漏洞利用" data-astro-cid-7k3pnqyz>漏洞利用</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#模板" data-heading="模板" data-astro-cid-7k3pnqyz>模板</a></li></ol></details><div class="prose" data-astro-cid-tldeq5d5><h2 id="前言">前言</h2>
+<p>DASCTF 2025 下半年的 VM 题，对着 vmcode 手啃太费劲，就想着能不能直接 trace。先试了 frida，遇到些问题，改用 gdb 的 Python 断点，效果不错。</p>
+<h2 id="分析">分析</h2>
+<p>附件是 <code>vvmm</code>（解释器）和 <code>vmcode</code>（字节码）。常见的题型是让你输入代码、由解释器执行；这次反过来——解释器直接跑给定的 vmcode，再和你交互。</p>
+<h3 id="解释器vvmm">解释器：vvmm</h3>
+<p>程序部分</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="C"><code><span class="line"><span style="color:#D73A49">void</span><span style="color:#24292E"> __fastcall __noreturn </span><span style="color:#6F42C1">main</span><span style="color:#24292E">(</span><span style="color:#D73A49">int</span><span style="color:#E36209"> a1</span><span style="color:#24292E">, </span><span style="color:#D73A49">char</span><span style="color:#D73A49"> **</span><span style="color:#E36209">a2</span><span style="color:#24292E">, </span><span style="color:#D73A49">char</span><span style="color:#D73A49"> **</span><span style="color:#E36209">a3</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#D73A49">  int</span><span style="color:#24292E"> fd;</span><span style="color:#6A737D">      // [rsp+Ch] [rbp-14h]</span></span>
+<span class="line"><span style="color:#D73A49">  char</span><span style="color:#D73A49"> *</span><span style="color:#24292E">buf;</span><span style="color:#6A737D">   // [rsp+10h] [rbp-10h]</span></span>
+<span class="line"><span style="color:#24292E">  vm </span><span style="color:#D73A49">*</span><span style="color:#24292E">s;</span><span style="color:#6A737D">       // [rsp+18h] [rbp-8h]</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">  init</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">  s </span><span style="color:#D73A49">=</span><span style="color:#24292E"> (vm </span><span style="color:#D73A49">*</span><span style="color:#24292E">)</span><span style="color:#6F42C1">malloc</span><span style="color:#24292E">(</span><span style="color:#D73A49">0x</span><span style="color:#005CC5">30</span><span style="color:#D73A49">uLL</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#6F42C1">  memset</span><span style="color:#24292E">(s, </span><span style="color:#005CC5">0</span><span style="color:#24292E">, </span><span style="color:#D73A49">sizeof</span><span style="color:#24292E">(vm));</span></span>
+<span class="line"><span style="color:#24292E">  buf </span><span style="color:#D73A49">=</span><span style="color:#24292E"> (</span><span style="color:#D73A49">char</span><span style="color:#D73A49"> *</span><span style="color:#24292E">)</span><span style="color:#6F42C1">mmap</span><span style="color:#24292E">(</span><span style="color:#005CC5">0</span><span style="color:#D73A49">LL</span><span style="color:#24292E">, </span><span style="color:#D73A49">0x</span><span style="color:#005CC5">30000</span><span style="color:#D73A49">uLL</span><span style="color:#24292E">, </span><span style="color:#005CC5">7</span><span style="color:#24292E">, </span><span style="color:#005CC5">34</span><span style="color:#24292E">, </span><span style="color:#D73A49">-</span><span style="color:#005CC5">1</span><span style="color:#24292E">, </span><span style="color:#005CC5">0</span><span style="color:#D73A49">LL</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">  s->code </span><span style="color:#D73A49">=</span><span style="color:#24292E"> buf;</span></span>
+<span class="line"><span style="color:#24292E">  fd </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> open</span><span style="color:#24292E">(</span><span style="color:#032F62">"./vmcode"</span><span style="color:#24292E">, </span><span style="color:#005CC5">0</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#6F42C1">  read</span><span style="color:#24292E">(fd, </span><span style="color:#D73A49">&#x26;</span><span style="color:#24292E">s->ip, </span><span style="color:#005CC5">4</span><span style="color:#D73A49">uLL</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#D73A49">  while</span><span style="color:#24292E"> ( (</span><span style="color:#D73A49">unsigned</span><span style="color:#D73A49"> int</span><span style="color:#24292E">)</span><span style="color:#6F42C1">read</span><span style="color:#24292E">(fd, buf, </span><span style="color:#D73A49">0x</span><span style="color:#005CC5">400</span><span style="color:#D73A49">uLL</span><span style="color:#24292E">) )</span></span>
+<span class="line"><span style="color:#24292E">    buf </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> 0x</span><span style="color:#005CC5">400</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">  s->sp </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> 0x</span><span style="color:#005CC5">30000</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#6F42C1">  run</span><span style="color:#24292E">(s);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">void</span><span style="color:#24292E"> __fastcall __noreturn </span><span style="color:#6F42C1">run</span><span style="color:#24292E">(vm </span><span style="color:#D73A49">*</span><span style="color:#E36209">m</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#D73A49">  int</span><span style="color:#24292E"> type;</span><span style="color:#6A737D">    // eax</span></span>
+<span class="line"><span style="color:#24292E">  op </span><span style="color:#D73A49">*</span><span style="color:#24292E">opinfo;</span><span style="color:#6A737D">  // [rsp+18h] [rbp-8h]</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">  opinfo </span><span style="color:#D73A49">=</span><span style="color:#24292E"> (op </span><span style="color:#D73A49">*</span><span style="color:#24292E">)</span><span style="color:#6F42C1">malloc</span><span style="color:#24292E">(</span><span style="color:#D73A49">0x</span><span style="color:#005CC5">C</span><span style="color:#D73A49">uLL</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#6F42C1">  memset</span><span style="color:#24292E">(opinfo, </span><span style="color:#005CC5">0</span><span style="color:#24292E">, </span><span style="color:#005CC5">8</span><span style="color:#D73A49">uLL</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#D73A49">  do</span></span>
+<span class="line"><span style="color:#24292E">  {</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> ( (</span><span style="color:#D73A49">unsigned</span><span style="color:#D73A49"> int</span><span style="color:#24292E">)</span><span style="color:#6F42C1">GetOpType</span><span style="color:#24292E">(m, opinfo) </span><span style="color:#D73A49">==</span><span style="color:#D73A49"> -</span><span style="color:#005CC5">1</span><span style="color:#24292E"> )</span></span>
+<span class="line"><span style="color:#D73A49">      break</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">    type </span><span style="color:#D73A49">=</span><span style="color:#24292E"> opinfo->val </span><span style="color:#D73A49">&#x26;</span><span style="color:#005CC5"> 3</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> ( type </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> 3</span><span style="color:#24292E"> )</span></span>
+<span class="line"><span style="color:#24292E">    {</span></span>
+<span class="line"><span style="color:#6F42C1">      opt3</span><span style="color:#24292E">(m, opinfo);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#D73A49">    else</span><span style="color:#D73A49"> if</span><span style="color:#24292E"> ( (opinfo->val </span><span style="color:#D73A49">&#x26;</span><span style="color:#005CC5"> 3</span><span style="color:#D73A49">u</span><span style="color:#24292E">) </span><span style="color:#D73A49">&#x3C;=</span><span style="color:#005CC5"> 3</span><span style="color:#24292E"> )</span></span>
+<span class="line"><span style="color:#24292E">    {</span></span>
+<span class="line"><span style="color:#D73A49">      if</span><span style="color:#24292E"> ( type </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> 2</span><span style="color:#24292E"> )</span></span>
+<span class="line"><span style="color:#24292E">      {</span></span>
+<span class="line"><span style="color:#6F42C1">        opt2</span><span style="color:#24292E">(m, opinfo);</span></span>
+<span class="line"><span style="color:#24292E">      }</span></span>
+<span class="line"><span style="color:#D73A49">      else</span><span style="color:#D73A49"> if</span><span style="color:#24292E"> ( (opinfo->val </span><span style="color:#D73A49">&#x26;</span><span style="color:#005CC5"> 3</span><span style="color:#24292E">) </span><span style="color:#D73A49">!=</span><span style="color:#005CC5"> 0</span><span style="color:#24292E"> )</span></span>
+<span class="line"><span style="color:#24292E">      {</span></span>
+<span class="line"><span style="color:#6F42C1">        opt1</span><span style="color:#24292E">(m, opinfo);</span></span>
+<span class="line"><span style="color:#24292E">      }</span></span>
+<span class="line"><span style="color:#D73A49">      else</span></span>
+<span class="line"><span style="color:#24292E">      {</span></span>
+<span class="line"><span style="color:#6F42C1">        opt0</span><span style="color:#24292E">(m, opinfo);</span></span>
+<span class="line"><span style="color:#24292E">      }</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#6F42C1">    memset</span><span style="color:#24292E">(opinfo, </span><span style="color:#005CC5">0</span><span style="color:#24292E">, </span><span style="color:#D73A49">sizeof</span><span style="color:#24292E">(op));</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> ( m->sp </span><span style="color:#D73A49">></span><span style="color:#D73A49"> 0x</span><span style="color:#005CC5">30000</span><span style="color:#D73A49">u</span><span style="color:#24292E"> )</span></span>
+<span class="line"><span style="color:#D73A49">      break</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"><span style="color:#D73A49">  while</span><span style="color:#24292E"> ( m->ip </span><span style="color:#D73A49">&#x3C;=</span><span style="color:#D73A49"> 0x</span><span style="color:#005CC5">30000</span><span style="color:#D73A49">u</span><span style="color:#24292E"> );</span></span>
+<span class="line"><span style="color:#6F42C1">  puts</span><span style="color:#24292E">(</span><span style="color:#032F62">"Segment error"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#6F42C1">  _exit</span><span style="color:#24292E">(</span><span style="color:#005CC5">0</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>结构体部分</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="C"><code><span class="line"><span style="color:#D73A49">struct</span><span style="color:#24292E"> vm</span></span>
+<span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#D73A49">  char</span><span style="color:#D73A49"> *</span><span style="color:#24292E">code;</span></span>
+<span class="line"><span style="color:#D73A49">  int</span><span style="color:#24292E"> ip;</span></span>
+<span class="line"><span style="color:#D73A49">  int</span><span style="color:#E36209"> r</span><span style="color:#24292E">[</span><span style="color:#005CC5">6</span><span style="color:#24292E">];</span></span>
+<span class="line"><span style="color:#D73A49">  int</span><span style="color:#24292E"> sp;</span></span>
+<span class="line"><span style="color:#D73A49">  char</span><span style="color:#24292E"> flag;</span></span>
+<span class="line"><span style="color:#24292E">};</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">struct</span><span style="color:#24292E"> op</span></span>
+<span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#D73A49">  char</span><span style="color:#24292E"> val;</span></span>
+<span class="line"><span style="color:#D73A49">  char</span><span style="color:#24292E"> type;</span></span>
+<span class="line"><span style="color:#D73A49">  char</span><span style="color:#E36209"> pad</span><span style="color:#24292E">[</span><span style="color:#005CC5">2</span><span style="color:#24292E">];</span></span>
+<span class="line"><span style="color:#D73A49">  int</span><span style="color:#24292E"> num1;</span></span>
+<span class="line"><span style="color:#D73A49">  int</span><span style="color:#24292E"> num2;</span></span>
+<span class="line"><span style="color:#24292E">};</span></span></code></pre>
+<p>逆向解释器的细节不是重点，<code>opt0</code>~<code>opt3</code> 这几个函数就不贴了。</p>
+<h3 id="代码vmcode">代码：vmcode</h3>
+<p>用 hexdump 或 010 Editor 看一眼：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>(Pwn) air@Air-key ~/w/P/M/D/2/d/mvmp> hexdump ./vmcode</span></span>
+<span class="line"><span>0000000 0000 0000 0090 0800 008d 0047 6857 7461</span></span>
+<span class="line"><span>0000010 002b 0004 0000 0047 7327 7920 002b 0004</span></span>
+<span class="line"><span>0000020 0000 0047 756f 2072 002b 0004 0000 0047</span></span>
+<span class="line"><span>0000030 616e 656d 002b 0004 0000 0043 0a3f 0000</span></span>
+<span class="line"><span>0000040 008d 007d 00c0 6601 020e 8d00 0f01 0100</span></span>
+<span class="line"><span>0000050 0000 7d00 7d02 7d01 c000 0000 c08b 0000</span></span>
+<span class="line"><span>0000060 c00c 0000 944c 0000 ec08 0000 9000 0000</span></span>
+<span class="line"><span>0000070 8d06 0f00 0001 0000 0f00 1802 0000 7d00</span></span>
+<span class="line"><span>0000080 7d02 7d01 c000 0000 8d88 0f01 0000 0000</span></span>
+<span class="line"><span>0000090 0f00 5002 0000 7d00 7d02 7d01 c000 0000</span></span>
+<span class="line"><span>00000a0 8d1e 7d01 c001 0000 94a1 0000 ec06 0000</span></span>
+<span class="line"><span>00000b0 0f00 0000 0000 cc00 0000 ec3c 0000 7d00</span></span>
+<span class="line"><span>00000c0 8d05 2b05 0805 0000 3a00 0500 052b 0004</span></span>
+<span class="line"><span>00000d0 0000 013a 2b05 0405 0000 3a00 0502 00d4</span></span>
+<span class="line"><span>00000e0 0000 0581 00ec 0300 057d 058d 052b 0008</span></span>
+<span class="line"><span>00000f0 0000 003a 2b05 0405 0000 3a00 0501 052b</span></span>
+<span class="line"><span>0000100 0004 0000 023a d405 0000 8101 ec05 0000</span></span>
+<span class="line"><span>0000110 7d03 8d05 2b05 0805 0000 3a00 0500 052b</span></span>
+<span class="line"><span>0000120 0004 0000 013a 2b05 0405 0000 3a00 0502</span></span>
+<span class="line"><span>0000130 030f 0000 0000 003e 8501 8500 0603 0203</span></span>
+<span class="line"><span>0000140 80b0 0e00 0581 00ec 0300 057d 058d 052b</span></span>
+<span class="line"><span>0000150 0008 0000 0090 0300 018d 000e 4701 6800</span></span>
+<span class="line"><span>0000160 6c65 2b6c 0400 0000 4300 6f00 0020 0f00</span></span>
+<span class="line"><span>0000170 0100 0000 0f00 0602 0000 7d00 7d02 7d01</span></span>
+<span class="line"><span>0000180 c000 0080 3a9d 0501 017d 00c0 2000 020e</span></span>
+<span class="line"><span>0000190 3a00 0501 000f 0001 0000 027d 017d 007d</span></span>
+<span class="line"><span>00001a0 80c0 bc00 0094 0300 0581 00ec 0100 057d</span></span>
+<span class="line"><span>00001b0 058d 052b 0008 0000 013a 0e05 0100 0232</span></span>
+<span class="line"><span>00001c0 0700 0002 0000 a800 0000 8506 a400 0080</span></span>
+<span class="line"><span>00001d0 2e13 0100 0581 00ec 0100</span></span>
+<span class="line"><span>00001da</span></span></code></pre>
+<p>但对着十六进制硬啃太费精力。</p>
+<p>尝试写 gdb 脚本，思路是当程序运行到 opt0、opt1、opt2、opt3 这些函数的时候，打印出当时的参数</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="gdb"><code><span class="line"><span style="color:#6F42C1">start</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">python</span></span>
+<span class="line"><span style="color:#6F42C1">import</span><span style="color:#032F62"> gdb</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">class</span><span style="color:#032F62"> VmTrace</span><span style="color:#24292E">(</span><span style="color:#6F42C1">gdb.Breakpoint</span><span style="color:#24292E">)</span><span style="color:#032F62">:</span></span>
+<span class="line"><span style="color:#6F42C1">    def</span><span style="color:#032F62"> __init__</span><span style="color:#24292E">(</span><span style="color:#6F42C1">self,</span><span style="color:#032F62"> addr</span><span style="color:#24292E">)</span><span style="color:#032F62">:</span></span>
+<span class="line"><span style="color:#6F42C1">        super</span><span style="color:#24292E">().__init__(</span><span style="color:#6F42C1">addr,</span><span style="color:#032F62"> temporary=False</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">    def</span><span style="color:#032F62"> stop</span><span style="color:#24292E">(</span><span style="color:#6F42C1">self</span><span style="color:#24292E">)</span><span style="color:#032F62">:</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">        rdi</span><span style="color:#032F62"> =</span><span style="color:#032F62"> gdb.parse_and_eval</span><span style="color:#24292E">(</span><span style="color:#6F42C1">"</span><span style="color:#24292E">$rdi</span><span style="color:#6F42C1">"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#6F42C1">        rsi</span><span style="color:#032F62"> =</span><span style="color:#032F62"> gdb.parse_and_eval</span><span style="color:#24292E">(</span><span style="color:#6F42C1">"</span><span style="color:#24292E">$rsi</span><span style="color:#6F42C1">"</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#005CC5">        print</span><span style="color:#24292E">(</span><span style="color:#032F62">f</span><span style="color:#6F42C1">"rdi: {hex(int(rdi))}"</span><span style="color:#6F42C1">,end</span><span style="color:#032F62">=</span><span style="color:#6F42C1">", "</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#005CC5">        print</span><span style="color:#24292E">(</span><span style="color:#032F62">f</span><span style="color:#6F42C1">"rsi: {hex(int(rsi))}"</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#032F62"> False</span><span style="color:#6A737D">    # False = 自动 continue</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">VmTrace(f</span><span style="color:#6F42C1">"*{gdb.parse_and_eval('</span><span style="color:#24292E">$rebase</span><span style="color:#6F42C1">(0x14DE)')}"</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">end</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">continue</span></span></code></pre>
+<p>像是这样，继承自 gdb 的 Breakpoint 类，在每次经过断点的时候打印了 rdi 和 rsi 的值</p>
+<p>使用方法：<code>gdb -x ./sc --args ./vvmm</code>，其中 <code>./sc</code> 就是脚本文件。</p>
+<p>信息太多会盖住程序自己的输出，所以把 trace 写进 <code>./vm.log</code>；顺便在断点里把虚拟机状态也解析出来：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="gdb"><code><span class="line"><span style="color:#6F42C1">start</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">python</span></span>
+<span class="line"><span style="color:#6F42C1">import</span><span style="color:#032F62"> gdb</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">f</span><span style="color:#032F62"> =</span><span style="color:#032F62"> open</span><span style="color:#24292E">(</span><span style="color:#6F42C1">"./vm.log"</span><span style="color:#6F42C1">,</span><span style="color:#032F62"> "w"</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">def</span><span style="color:#032F62"> analyse</span><span style="color:#24292E">(</span><span style="color:#D73A49">*</span><span style="color:#24292E">args)</span><span style="color:#032F62">:</span></span>
+<span class="line"><span style="color:#6F42C1">    inf</span><span style="color:#032F62"> =</span><span style="color:#032F62"> gdb.selected_inferior</span><span style="color:#24292E">()   </span><span style="color:#6A737D"># 获取调试实例</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">    vm_addr</span><span style="color:#032F62"> =</span><span style="color:#032F62"> args[0]</span></span>
+<span class="line"><span style="color:#6F42C1">    info_addr</span><span style="color:#032F62"> =</span><span style="color:#032F62"> args[1]</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">    code_ptr</span><span style="color:#032F62"> =</span><span style="color:#032F62"> int.from_bytes</span><span style="color:#24292E">(</span><span style="color:#6F42C1">inf.read_memory(vm_addr</span><span style="color:#032F62"> +</span><span style="color:#032F62"> 0,</span><span style="color:#005CC5"> 8</span><span style="color:#24292E">)</span><span style="color:#032F62">,</span><span style="color:#032F62"> "little",</span><span style="color:#032F62"> signed=False</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#6F42C1">    ip</span><span style="color:#032F62"> =</span><span style="color:#032F62"> int.from_bytes</span><span style="color:#24292E">(</span><span style="color:#6F42C1">inf.read_memory(vm_addr</span><span style="color:#032F62"> +</span><span style="color:#032F62"> 8,</span><span style="color:#005CC5"> 4</span><span style="color:#24292E">)</span><span style="color:#032F62">,</span><span style="color:#032F62"> "little",</span><span style="color:#032F62"> signed=False</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#6F42C1">    regs</span><span style="color:#032F62"> =</span><span style="color:#24292E"> []</span></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#24292E"> i </span><span style="color:#D73A49">in</span><span style="color:#032F62"> range</span><span style="color:#24292E">(</span><span style="color:#6F42C1">6</span><span style="color:#24292E">)</span><span style="color:#032F62">:</span></span>
+<span class="line"><span style="color:#6F42C1">        reg_val</span><span style="color:#032F62"> =</span><span style="color:#032F62"> int.from_bytes</span><span style="color:#24292E">(</span><span style="color:#6F42C1">inf.read_memory(vm_addr</span><span style="color:#032F62"> +</span><span style="color:#005CC5"> 12</span><span style="color:#032F62"> +</span><span style="color:#032F62"> i</span><span style="color:#005CC5"> *</span><span style="color:#032F62"> 4,</span><span style="color:#005CC5"> 4</span><span style="color:#24292E">)</span><span style="color:#032F62">,</span><span style="color:#032F62"> "little",</span><span style="color:#032F62"> signed=False</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#6F42C1">        regs.append(hex(reg_val</span><span style="color:#24292E">))</span></span>
+<span class="line"><span style="color:#6F42C1">    sp</span><span style="color:#032F62"> =</span><span style="color:#032F62"> int.from_bytes</span><span style="color:#24292E">(</span><span style="color:#6F42C1">inf.read_memory(vm_addr</span><span style="color:#032F62"> +</span><span style="color:#032F62"> 36,</span><span style="color:#005CC5"> 4</span><span style="color:#24292E">)</span><span style="color:#032F62">,</span></span>
+<span class="line"><span style="color:#6F42C1">    "little"</span><span style="color:#6F42C1">,</span><span style="color:#032F62"> signed=False</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#6F42C1">    flag</span><span style="color:#032F62"> =</span><span style="color:#032F62"> int.from_bytes</span><span style="color:#24292E">(</span><span style="color:#6F42C1">inf.read_memory(vm_addr</span><span style="color:#032F62"> +</span><span style="color:#032F62"> 40,</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">)</span><span style="color:#032F62">,</span><span style="color:#032F62"> "little",</span><span style="color:#032F62"> signed=False</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">    val</span><span style="color:#032F62"> =</span><span style="color:#032F62"> int.from_bytes</span><span style="color:#24292E">(</span><span style="color:#6F42C1">inf.read_memory(info_addr</span><span style="color:#032F62"> +</span><span style="color:#032F62"> 0,</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">)</span><span style="color:#032F62">,</span><span style="color:#032F62"> "little",</span><span style="color:#032F62"> signed=False</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#6F42C1">    val</span><span style="color:#032F62"> =</span><span style="color:#032F62"> val</span><span style="color:#D73A49"> >></span><span style="color:#005CC5"> 2</span></span>
+<span class="line"><span style="color:#6F42C1">    type_</span><span style="color:#032F62"> =</span><span style="color:#032F62"> int.from_bytes</span><span style="color:#24292E">(</span><span style="color:#6F42C1">inf.read_memory(info_addr</span><span style="color:#032F62"> +</span><span style="color:#032F62"> 1,</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">)</span><span style="color:#032F62">,</span><span style="color:#032F62"> "little",</span><span style="color:#032F62"> signed=False</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#6F42C1">    num1</span><span style="color:#032F62"> =</span><span style="color:#032F62"> int.from_bytes</span><span style="color:#24292E">(</span><span style="color:#6F42C1">inf.read_memory(info_addr</span><span style="color:#032F62"> +</span><span style="color:#032F62"> 4,</span><span style="color:#005CC5"> 4</span><span style="color:#24292E">)</span><span style="color:#032F62">,</span><span style="color:#032F62"> "little",</span><span style="color:#032F62"> signed=False</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#6F42C1">    num2</span><span style="color:#032F62"> =</span><span style="color:#032F62"> int.from_bytes</span><span style="color:#24292E">(</span><span style="color:#6F42C1">inf.read_memory(info_addr</span><span style="color:#032F62"> +</span><span style="color:#032F62"> 8,</span><span style="color:#005CC5"> 4</span><span style="color:#24292E">)</span><span style="color:#032F62">,</span><span style="color:#032F62"> "little",</span><span style="color:#032F62"> signed=False</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#005CC5">    print</span><span style="color:#24292E">(</span><span style="color:#032F62">f</span><span style="color:#6F42C1">"Type: {hex(type_)} | val: {hex(val)} | num1: {hex(num1)} | num2: {hex(num2)} || VM ip: 0x{ip:X} | regs: {regs} | sp: 0x{sp:X} | flag: {flag}"</span><span style="color:#6F42C1">,</span><span style="color:#032F62"> file=f</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">class</span><span style="color:#032F62"> VmTrace</span><span style="color:#24292E">(</span><span style="color:#6F42C1">gdb.Breakpoint</span><span style="color:#24292E">)</span><span style="color:#032F62">:</span></span>
+<span class="line"><span style="color:#6F42C1">    def</span><span style="color:#032F62"> __init__</span><span style="color:#24292E">(</span><span style="color:#6F42C1">self,</span><span style="color:#032F62"> addr</span><span style="color:#24292E">)</span><span style="color:#032F62">:</span></span>
+<span class="line"><span style="color:#6F42C1">        super</span><span style="color:#24292E">().__init__(</span><span style="color:#6F42C1">addr,</span><span style="color:#032F62"> temporary=False</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">    def</span><span style="color:#032F62"> stop</span><span style="color:#24292E">(</span><span style="color:#6F42C1">self</span><span style="color:#24292E">)</span><span style="color:#032F62">:</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">        rdi</span><span style="color:#032F62"> =</span><span style="color:#032F62"> int</span><span style="color:#24292E">(</span><span style="color:#6F42C1">gdb.parse_and_eval(</span><span style="color:#6F42C1">"</span><span style="color:#24292E">$rdi</span><span style="color:#6F42C1">"</span><span style="color:#24292E">))</span></span>
+<span class="line"><span style="color:#6F42C1">        rsi</span><span style="color:#032F62"> =</span><span style="color:#032F62"> int</span><span style="color:#24292E">(</span><span style="color:#6F42C1">gdb.parse_and_eval(</span><span style="color:#6F42C1">"</span><span style="color:#24292E">$rsi</span><span style="color:#6F42C1">"</span><span style="color:#24292E">))</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">        analyse(rdi,</span><span style="color:#032F62"> rsi</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#032F62"> False</span><span style="color:#6A737D">    # False = 自动 continue</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">off_list</span><span style="color:#032F62"> =</span><span style="color:#24292E"> [0x14DE, </span><span style="color:#032F62">0x1AAC,</span><span style="color:#032F62"> 0x1C96,0x211D]</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">for</span><span style="color:#24292E"> off </span><span style="color:#D73A49">in</span><span style="color:#032F62"> off_list:</span></span>
+<span class="line"><span style="color:#6F42C1">    addr</span><span style="color:#032F62"> =</span><span style="color:#032F62"> gdb.parse_and_eval</span><span style="color:#24292E">(</span><span style="color:#6F42C1">f</span><span style="color:#6F42C1">"</span><span style="color:#24292E">$rebase</span><span style="color:#6F42C1">({hex(off)})"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#6F42C1">    VmTrace(f</span><span style="color:#6F42C1">"*{addr}"</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">end</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">continue</span></span></code></pre>
+<p>trace 完成，在 vm.log 文件查看结果。</p>
+<h2 id="漏洞利用">漏洞利用</h2>
+<p><code>type</code> 为 0、<code>val >> 2</code> 为 <code>0x35</code> 时是 syscall，系统调用号放在 <code>num1</code>；<code>val >> 2</code> 为 <code>0x3b</code> 时是 ret。</p>
+<p>在 vm.log 找到</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>Type: 0x0 | val: 0x35 | num1: 0x1 | num2: 0x0 || VM ip: 0x107 | regs: ['0x1', '0x2ffe0', '0x12', '0x0', '0x0', '0x2ffdc'] | sp: 0x2FFCC | flag: 0</span></span>
+<span class="line"><span>···</span></span>
+<span class="line"><span>Type: 0x0 | val: 0x35 | num1: 0x0 | num2: 0x0 || VM ip: 0xDE | regs: ['0x0', '0x2ffc4', '0x50', '0x18', '0x0', '0x2ffc0'] | sp: 0x2FFB0 | flag: 0</span></span>
+<span class="line"><span>···</span></span>
+<span class="line"><span>Type: 0x0 | val: 0x35 | num1: 0x1 | num2: 0x0 || VM ip: 0x107 | regs: ['0x1', '0x2ffac', '0x6', '0x18', '0x0', '0x2ffa8'] | sp: 0x2FF98 | flag: 0</span></span>
+<span class="line"><span>···</span></span>
+<span class="line"><span>Type: 0x0 | val: 0x35 | num1: 0x1 | num2: 0x0 || VM ip: 0x107 | regs: ['0x1', '0x2ffc4', '0x9', '0x18', '0x0', '0x2ffa8'] | sp: 0x2FF98 | flag: 0</span></span>
+<span class="line"><span>···</span></span>
+<span class="line"><span>Type: 0x0 | val: 0x3b | num1: 0x0 | num2: 0x0 || VM ip: 0xAD | regs: ['0x5555a2ac', '0x2ffc4', '0x9', '0x18', '0x0', '0x0'] | sp: 0x2FFDC | flag: 0</span></span></code></pre>
+<p>对应的伪代码也就是</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="asm"><code><span class="line"><span style="color:#24292E">write(</span><span style="color:#005CC5">1</span><span style="color:#24292E">, </span><span style="color:#005CC5">0x2ffe0</span><span style="color:#24292E">, </span><span style="color:#005CC5">0x12</span><span style="color:#24292E">)</span><span style="color:#6A737D">;</span></span>
+<span class="line"><span style="color:#24292E">len = read(</span><span style="color:#005CC5">0</span><span style="color:#24292E">, </span><span style="color:#005CC5">0x2ffc4</span><span style="color:#24292E">, </span><span style="color:#005CC5">0x50</span><span style="color:#24292E">)</span><span style="color:#6A737D">;</span></span>
+<span class="line"><span style="color:#24292E">write(</span><span style="color:#005CC5">1</span><span style="color:#24292E">, </span><span style="color:#005CC5">0x2ffac</span><span style="color:#24292E">, </span><span style="color:#005CC5">0x6</span><span style="color:#24292E">)</span><span style="color:#6A737D">;</span></span>
+<span class="line"><span style="color:#24292E">write(</span><span style="color:#005CC5">1</span><span style="color:#24292E">, </span><span style="color:#005CC5">0x2ffc4</span><span style="color:#24292E">, len)</span><span style="color:#6A737D">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">ret</span><span style="color:#6A737D">     # rsp = 0x2FFDC</span></span></code></pre>
+<p><code>len</code> 是几次 trace 后对上的。</p>
+<p>漏洞点在这里：<code>0x2FFDC</code> 落在 <code>0x2ffc4</code> 到 <code>0x2ffc4+0x50</code> 之间，<code>read</code> 长度足够就能盖住返回地址。</p>
+<p>所以思路是让解释器执行我们写进去的字节码：先把各寄存器安排好，再用 syscall 拿 shell。
+完整的 WP 见<a href="https://yfor-yfor.github.io/2025/12/07/2025dasctf-wp/#pwn3">这篇</a>，本文只讲 trace 这一环。</p>
+<h2 id="模板">模板</h2>
+<p>最后是一个可以直接改的模板：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="gdb"><code><span class="line"><span style="color:#6F42C1">start</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">python</span></span>
+<span class="line"><span style="color:#6F42C1">import</span><span style="color:#032F62"> gdb</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">f</span><span style="color:#032F62"> =</span><span style="color:#032F62"> open</span><span style="color:#24292E">(</span><span style="color:#6F42C1">"./vm.log"</span><span style="color:#6F42C1">,</span><span style="color:#032F62"> "w"</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">def</span><span style="color:#032F62"> analyse</span><span style="color:#24292E">(</span><span style="color:#D73A49">*</span><span style="color:#24292E">args)</span><span style="color:#032F62">:</span></span>
+<span class="line"><span style="color:#6F42C1">    inf</span><span style="color:#032F62"> =</span><span style="color:#032F62"> gdb.selected_inferior</span><span style="color:#24292E">()   </span><span style="color:#6A737D"># 获取调试实例</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#005CC5">    ...</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">class</span><span style="color:#032F62"> MyBreakPoint</span><span style="color:#24292E">(</span><span style="color:#6F42C1">gdb.Breakpoint</span><span style="color:#24292E">)</span><span style="color:#032F62">:</span></span>
+<span class="line"><span style="color:#6F42C1">    def</span><span style="color:#032F62"> __init__</span><span style="color:#24292E">(</span><span style="color:#6F42C1">self,</span><span style="color:#032F62"> addr</span><span style="color:#24292E">)</span><span style="color:#032F62">:</span></span>
+<span class="line"><span style="color:#6F42C1">        super</span><span style="color:#24292E">().__init__(</span><span style="color:#6F42C1">addr,</span><span style="color:#032F62"> temporary=False</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">    def</span><span style="color:#032F62"> stop</span><span style="color:#24292E">(</span><span style="color:#6F42C1">self</span><span style="color:#24292E">)</span><span style="color:#032F62">:</span></span>
+<span class="line"><span style="color:#005CC5">        ...</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#032F62"> False</span><span style="color:#6A737D">    # False = 自动 continue</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D"># 断点自填</span></span>
+<span class="line"><span style="color:#6F42C1">off_list</span><span style="color:#032F62"> =</span><span style="color:#24292E"> []</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">is_pie</span><span style="color:#032F62"> =</span><span style="color:#005CC5"> 1</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">for</span><span style="color:#24292E"> off </span><span style="color:#D73A49">in</span><span style="color:#032F62"> off_list:</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#6F42C1"> is_pie:</span></span>
+<span class="line"><span style="color:#6F42C1">        addr</span><span style="color:#032F62"> =</span><span style="color:#032F62"> gdb.parse_and_eval</span><span style="color:#24292E">(</span><span style="color:#6F42C1">f</span><span style="color:#6F42C1">"</span><span style="color:#24292E">$rebase</span><span style="color:#6F42C1">({hex(off)})"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    else:</span></span>
+<span class="line"><span style="color:#6F42C1">        addr</span><span style="color:#032F62"> =</span><span style="color:#032F62"> gdb.parse_and_eval</span><span style="color:#24292E">(</span><span style="color:#6F42C1">f</span><span style="color:#6F42C1">"{hex(off)}"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#6F42C1">    MyBreakPoint(f</span><span style="color:#6F42C1">"*{addr}"</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">end</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">continue</span></span></code></pre></div><nav class="pager" aria-label="同分类内的上一篇 / 下一篇" data-astro-cid-tldeq5d5><div class="pager-item" data-astro-cid-tldeq5d5></div><div class="pager-item next" data-astro-cid-tldeq5d5><span class="pager-label" data-astro-cid-tldeq5d5>下一篇 →</span><a href="/posts/proto/" data-astro-cid-tldeq5d5>Protobuf 学习笔记</a></div></nav></article></div></main><footer class="colophon" data-astro-cid-jo6i4kqk><div class="inner" data-astro-cid-jo6i4kqk><p class="links" data-astro-cid-jo6i4kqk><a href="/posts" data-astro-cid-jo6i4kqk>归档</a><a href="/tags" data-astro-cid-jo6i4kqk>标签</a></p><p class="sign" data-astro-cid-jo6i4kqk>Findkey · 二〇二六</p></div></footer><script type="module">function e(e){let t=document.createElement(`textarea`);t.value=e,t.setAttribute(`readonly`,``),t.style.position=`fixed`,t.style.top=`-1000px`,document.body.appendChild(t),t.select();let n=!1;try{n=document.execCommand(`copy`)}catch{n=!1}return t.remove(),n}async function t(t,n){let r=n.textContent;try{if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(t);else if(!e(t))throw Error(`copy failed`);n.textContent=`已复制`}catch{n.textContent=e(t)?`已复制`:`复制失败`}setTimeout(()=>{n.textContent=r},1400)}function n(e){if(e.closest(`.code-block`))return;let n=document.createElement(`div`);n.className=`code-block`,e.parentNode?.insertBefore(n,e);let r=(e.textContent??``).replace(/\n$/,``),i=r.split(`
+`).length,a=document.createElement(`div`);a.className=`code-head`;let o=document.createElement(`button`);if(o.type=`button`,o.className=`code-btn`,o.textContent=`复制`,o.addEventListener(`click`,()=>t(r,o)),a.appendChild(o),n.appendChild(a),i>26){let t=document.createElement(`div`);t.className=`code-body is-folded`,t.style.maxHeight=`21rem`,t.appendChild(e),n.appendChild(t);let r=document.createElement(`button`);r.type=`button`,r.className=`code-more`,r.textContent=`展开（共 ${i} 行）`,r.addEventListener(`click`,()=>{let e=t.classList.toggle(`is-folded`);t.style.maxHeight=e?`21rem`:`none`,r.textContent=e?`展开（共 ${i} 行）`:`收起`,e&&n.getBoundingClientRect().top<60&&n.scrollIntoView({behavior:`smooth`,block:`nearest`})}),n.appendChild(r)}else n.appendChild(e)}function r(){document.querySelectorAll(`.prose pre`).forEach(n)}r(),document.addEventListener(`astro:page-load`,r);</script></body></html>

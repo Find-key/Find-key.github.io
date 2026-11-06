@@ -1,0 +1,240 @@
+<!DOCTYPE html><html lang="zh-CN" data-astro-cid-tldeq5d5><head><!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="theme-color" content="#fbf9f5"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="sitemap" href="/sitemap-index.xml"><meta name="generator" content="Astro v7.4.2"><meta name="author" content="Findkey"><!-- Canonical URL --><link rel="canonical" href="https://find-key.github.io/posts/v8-learn-1/"><!-- Primary Meta Tags --><title>V8 学习笔记 0x01 · Findkey’s Blog</title><meta name="description" content="对象数组与浮点数组在内存里的排布"><!-- Open Graph / Facebook --><meta property="og:type" content="article"><meta property="og:url" content="https://find-key.github.io/posts/v8-learn-1/"><meta property="og:site_name" content="Findkey’s Blog"><meta property="og:locale" content="zh_CN"><meta property="og:title" content="V8 学习笔记 0x01 · Findkey’s Blog"><meta property="og:description" content="对象数组与浮点数组在内存里的排布"><meta property="og:image" content="https://find-key.github.io/og.png"><!-- Twitter --><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="V8 学习笔记 0x01 · Findkey’s Blog"><meta name="twitter:description" content="对象数组与浮点数组在内存里的排布"><meta name="twitter:image" content="https://find-key.github.io/og.png"><link rel="stylesheet" href="/_astro/_..YMHo4NxU.css"><link rel="stylesheet" href="/_astro/Header.Cvwz3oM9.css"><script type="module" src="/_astro/page.tougUCvb.js"></script></head><body data-astro-cid-tldeq5d5><header class="site-header" data-astro-cid-nen7h5rs><div class="inner" data-astro-cid-nen7h5rs><a class="brand" href="/" data-astro-cid-nen7h5rs>Findkey’s Blog</a><nav class="nav" data-astro-cid-nen7h5rs><a href="/posts" class="active" data-astro-cid-nen7h5rs>归档</a><a href="/links" data-astro-cid-nen7h5rs>友链</a></nav></div></header><main class="wrap" data-astro-cid-tldeq5d5><div class="grid" data-astro-cid-tldeq5d5><aside class="sidebar" data-astro-cid-7k3pnqyz><span class="label" data-astro-cid-7k3pnqyz>目录</span><ol class="toc" data-astro-cid-7k3pnqyz><li class="d2" data-astro-cid-7k3pnqyz><a href="#调试" data-heading="调试" data-astro-cid-7k3pnqyz>调试</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#实验" data-heading="实验" data-astro-cid-7k3pnqyz>实验</a></li></ol></aside><script type="module">var e=new Map;document.querySelectorAll(`a[data-heading]`).forEach(t=>{let n=t.dataset.heading;if(!n)return;let r=e.get(n)??[];r.push(t),e.set(n,r)});var t=Array.from(document.querySelectorAll(`.prose h2[id], .prose h3[id]`));if(document.querySelectorAll(`.toc-inline a[data-heading]`).forEach(e=>{e.addEventListener(`click`,()=>{let t=e.closest(`details`);t&&(t.open=!1)})}),e.size>0&&t.length>0){let n=new IntersectionObserver(t=>{for(let n of t)n.isIntersecting&&(e.forEach(e=>e.forEach(e=>e.classList.remove(`active`))),e.get(n.target.id)?.forEach(e=>e.classList.add(`active`)))},{rootMargin:`-84px 0px -65% 0px`});t.forEach(e=>n.observe(e))}</script><article class="article" data-astro-cid-tldeq5d5><nav class="crumb" aria-label="位置" data-astro-cid-tldeq5d5><a href="/" data-astro-cid-tldeq5d5>首页</a><span class="sep" data-astro-cid-tldeq5d5>/</span><a href="/categories/v8/" data-astro-cid-tldeq5d5>V8</a></nav><h1 data-astro-cid-tldeq5d5>V8 学习笔记 0x01</h1><p class="meta" data-astro-cid-tldeq5d5><time datetime="2026-04-20">2026年4月20日</time><span class="dot" data-astro-cid-tldeq5d5>·</span><span data-astro-cid-tldeq5d5>约 23 分钟</span></p><div class="tags" data-astro-cid-tldeq5d5><a href="/tags/v8/" data-astro-cid-tldeq5d5>#v8</a></div><details class="toc-inline" data-astro-cid-7k3pnqyz><summary data-astro-cid-7k3pnqyz>目录</summary><ol class="toc" data-astro-cid-7k3pnqyz><li class="d2" data-astro-cid-7k3pnqyz><a href="#调试" data-heading="调试" data-astro-cid-7k3pnqyz>调试</a></li><li class="d2" data-astro-cid-7k3pnqyz><a href="#实验" data-heading="实验" data-astro-cid-7k3pnqyz>实验</a></li></ol></details><div class="prose" data-astro-cid-tldeq5d5><h2 id="调试">调试</h2>
+<p>编译好之后就可以调 exp 了。调试还是用 gdb，只是启动时要把 d8 的参数带上：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6F42C1">gdb</span><span style="color:#005CC5"> --args</span><span style="color:#032F62"> /path/to/d8</span><span style="color:#005CC5"> --allow-natives-syntax</span><span style="color:#032F62"> exp.js</span></span></code></pre>
+<p>问题是不知道在哪下断点。其实在 JS 层就能断：在 exp.js 里写 <code>%SystemBreak();</code>，跑到那儿就会停下来。</p>
+<p>例如，</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="js"><code><span class="line"><span style="color:#24292E">console.</span><span style="color:#6F42C1">log</span><span style="color:#24292E">(</span><span style="color:#032F62">"hello, key"</span><span style="color:#24292E">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">%</span><span style="color:#6F42C1">SystemBreak</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">console.</span><span style="color:#6F42C1">log</span><span style="color:#24292E">(</span><span style="color:#032F62">"bye, key"</span><span style="color:#24292E">);</span></span></code></pre>
+<p>在 gdb 使用 run 命令后就会停在中间，只看到打印 <em>hello, key</em> 而没有 <em>bye, key</em>。</p>
+<p>要看变量地址用 <code>%DebugPrint(obj);</code>，它会把对象的内存布局整个打出来。</p>
+<h2 id="实验">实验</h2>
+<p>拿一个数组做样例：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="js"><code><span class="line"><span style="color:#6A737D">// k.js</span></span>
+<span class="line"><span style="color:#24292E">arr </span><span style="color:#D73A49">=</span><span style="color:#24292E"> [</span><span style="color:#005CC5">1</span><span style="color:#24292E">, </span><span style="color:#005CC5">2</span><span style="color:#24292E">, </span><span style="color:#005CC5">3</span><span style="color:#24292E">];</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">%</span><span style="color:#6F42C1">DebugPrint</span><span style="color:#24292E">(arr);</span></span>
+<span class="line"><span style="color:#D73A49">%</span><span style="color:#6F42C1">SystemBreak</span><span style="color:#24292E">();</span></span></code></pre>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6F42C1">gdb</span><span style="color:#005CC5"> --args</span><span style="color:#032F62"> /path/to/d8</span><span style="color:#005CC5"> --allow-natives-syntax</span><span style="color:#032F62"> k.js</span></span></code></pre>
+<p>在 gdb 里 <code>run</code> 起来，<code>%DebugPrint(arr)</code> 会把 <code>arr</code> 的布局打出来：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>DebugPrint: 0x7b8fb55ab1: [JSArray]</span></span>
+<span class="line"><span> - map: 0x119adca9d981 &#x3C;Map[32](PACKED_SMI_ELEMENTS)> [FastProperties]</span></span>
+<span class="line"><span> - prototype: 0x119adca9d9c9 &#x3C;JSArray[0]></span></span>
+<span class="line"><span> - elements: 0x119adcabdb49 &#x3C;FixedArray[3]> [PACKED_SMI_ELEMENTS (COW)]</span></span>
+<span class="line"><span> - length: 3</span></span>
+<span class="line"><span> - properties: 0x36dda0040e19 &#x3C;FixedArray[0]></span></span>
+<span class="line"><span> - All own properties (excluding elements): {</span></span>
+<span class="line"><span>    0x36dda0041921: [String] in ReadOnlySpace: #length: 0x061b689879c1 &#x3C;AccessorInfo name= 0x36dda0041921 &#x3C;String[6]: #length>, data= 0x36dda0040011 &#x3C;undefined>> (const accessor descriptor, attrs: [W__])</span></span>
+<span class="line"><span> }</span></span>
+<span class="line"><span> - elements: 0x119adcabdb49 &#x3C;FixedArray[3]> {</span></span>
+<span class="line"><span>           0: 1</span></span>
+<span class="line"><span>           1: 2</span></span>
+<span class="line"><span>           2: 3</span></span>
+<span class="line"><span> }</span></span>
+<span class="line"><span>0x119adca9d981: [Map] in OldSpace</span></span>
+<span class="line"><span> - map: 0x119adca91559 &#x3C;MetaMap (0x119adca915e9 &#x3C;NativeContext[307]>)></span></span>
+<span class="line"><span> - type: JS_ARRAY_TYPE</span></span>
+<span class="line"><span> - instance size: 32</span></span>
+<span class="line"><span> - inobject properties: 0</span></span>
+<span class="line"><span> - unused property fields: 0</span></span>
+<span class="line"><span> - elements kind: PACKED_SMI_ELEMENTS</span></span>
+<span class="line"><span> - enum length: invalid</span></span>
+<span class="line"><span> - back pointer: 0x36dda0040011 &#x3C;undefined></span></span>
+<span class="line"><span> - prototype_validity_cell: 0x36dda0041399 &#x3C;Cell value= [cleared]></span></span>
+<span class="line"><span> - instance descriptors #1: 0x119adca9e5f1 &#x3C;DescriptorArray[1]></span></span>
+<span class="line"><span> - transitions #1: 0x119adca9e629 &#x3C;TransitionArray[5]></span></span>
+<span class="line"><span>   Transitions #1:</span></span>
+<span class="line"><span>     0x36dda00419f1 &#x3C;Symbol: (elements_transition_symbol)>: (transition to HOLEY_SMI_ELEMENTS) -> 0x119adca9e661 &#x3C;Map[32](HOLEY_SMI_ELEMENTS)></span></span>
+<span class="line"><span> - prototype: 0x119adca9d9c9 &#x3C;JSArray[0]></span></span>
+<span class="line"><span> - constructor: 0x119adca9d821 &#x3C;JSFunction Array (sfi = 0x61b68988c99)></span></span>
+<span class="line"><span> - dependent code: 0x36dda0040e39 &#x3C;Other heap object (WEAK_ARRAY_LIST_TYPE)></span></span>
+<span class="line"><span> - construction counter: 0</span></span></code></pre>
+<p>打印里 <code>0x7b8fb55ab1</code> 这样一串是带了标记位的地址。用 <code>job</code> 看它指向的 Map 结构，用 <code>tel</code> 看这块内存的字节排布：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>pwndbg> job 0x7b8fb55ab1</span></span>
+<span class="line"><span>0x7b8fb55ab1: [JSArray]</span></span>
+<span class="line"><span> - map: 0x119adca9d981 &#x3C;Map[32](PACKED_SMI_ELEMENTS)> [FastProperties]</span></span>
+<span class="line"><span> - prototype: 0x119adca9d9c9 &#x3C;JSArray[0]></span></span>
+<span class="line"><span> - elements: 0x119adcabdb49 &#x3C;FixedArray[3]> [PACKED_SMI_ELEMENTS (COW)]</span></span>
+<span class="line"><span> - length: 3</span></span>
+<span class="line"><span> - properties: 0x36dda0040e19 &#x3C;FixedArray[0]></span></span>
+<span class="line"><span> - All own properties (excluding elements): {</span></span>
+<span class="line"><span>    0x36dda0041921: [String] in ReadOnlySpace: #length: 0x061b689879c1 &#x3C;AccessorInfo name= 0x36dda0041921 &#x3C;String[6]: #length>, data= 0x36dda0040011 &#x3C;undefined>> (const accessor descriptor, attrs: [W__])</span></span>
+<span class="line"><span> }</span></span>
+<span class="line"><span> - elements: 0x119adcabdb49 &#x3C;FixedArray[3]> {</span></span>
+<span class="line"><span>           0: 1</span></span>
+<span class="line"><span>           1: 2</span></span>
+<span class="line"><span>           2: 3</span></span>
+<span class="line"><span> }</span></span>
+<span class="line"><span>pwndbg> tel 0x7b8fb55ab0</span></span>
+<span class="line"><span>00:0000│     0x7b8fb55ab0 —▸ 0x119adca9d981 ◂— 0x40000119adca915</span></span>
+<span class="line"><span>01:0008│     0x7b8fb55ab8 —▸ 0x36dda0040e19 ◂— 0x36dda0040a</span></span>
+<span class="line"><span>02:0010│     0x7b8fb55ac0 —▸ 0x119adcabdb49 ◂— 0x36dda0040c</span></span>
+<span class="line"><span>03:0018│     0x7b8fb55ac8 ◂— 0x300000000</span></span>
+<span class="line"><span>04:0020│     0x7b8fb55ad0 ◂— 0</span></span>
+<span class="line"><span>... ↓     3 skipped</span></span></code></pre>
+<p><code>job</code> 的输出和上面一致。而 <strong>0x7b8fb55ab1</strong> 是加了标记位的值，真实地址是 <strong>0x7b8fb55ab0</strong>：地址最低位是标记位，为 1 表示是指针，为 0 表示是 Smi（小整数）。</p>
+<p>由此可以推出 JSArray 有四个字段：map、properties、elements、length。
+抽象出来，大概是这样：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="C"><code><span class="line"><span style="color:#D73A49">struct</span><span style="color:#24292E"> array {</span></span>
+<span class="line"><span style="color:#24292E">    map</span><span style="color:#D73A49">*</span><span style="color:#24292E"> map;</span></span>
+<span class="line"><span style="color:#24292E">    properties</span><span style="color:#D73A49">*</span><span style="color:#24292E"> properties;</span></span>
+<span class="line"><span style="color:#24292E">    elements</span><span style="color:#D73A49">*</span><span style="color:#24292E"> element;</span></span>
+<span class="line"><span style="color:#D73A49">    long</span><span style="color:#D73A49"> long</span><span style="color:#24292E"> length;</span></span>
+<span class="line"><span style="color:#24292E">};</span></span></code></pre>
+<p>length 以 Smi 存放，上面打印的原始值是 0x300000000，右移 32 位才是真实的 3。</p>
+<p>先看普通数组：<code>elements</code> 指针和数组对象本身的地址差得很远。但浮点数组和对象数组不一样——它们的 <code>elements</code> 就紧跟在数组对象后面。把实验代码稍作修改就能验证。</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="js"><code><span class="line"><span style="color:#24292E">arr </span><span style="color:#D73A49">=</span><span style="color:#24292E"> [</span><span style="color:#005CC5">1</span><span style="color:#24292E">, </span><span style="color:#005CC5">2</span><span style="color:#24292E">, </span><span style="color:#005CC5">3</span><span style="color:#24292E">];</span></span>
+<span class="line"><span style="color:#24292E">f </span><span style="color:#D73A49">=</span><span style="color:#24292E"> [</span><span style="color:#005CC5">3.0</span><span style="color:#24292E">,</span><span style="color:#005CC5">7.2</span><span style="color:#24292E">];</span></span>
+<span class="line"><span style="color:#24292E">ff </span><span style="color:#D73A49">=</span><span style="color:#24292E"> [f, f];</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">%</span><span style="color:#6F42C1">DebugPrint</span><span style="color:#24292E">(arr);</span></span>
+<span class="line"><span style="color:#D73A49">%</span><span style="color:#6F42C1">DebugPrint</span><span style="color:#24292E">(f);</span></span>
+<span class="line"><span style="color:#D73A49">%</span><span style="color:#6F42C1">DebugPrint</span><span style="color:#24292E">(ff);</span></span>
+<span class="line"><span style="color:#D73A49">%</span><span style="color:#6F42C1">SystemBreak</span><span style="color:#24292E">();</span></span></code></pre>
+<p>通过调试，得到下面的内容</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>DebugPrint: 0x3e9c5b995ae9: [JSArray]</span></span>
+<span class="line"><span> - map: 0x12f3c6e9d981 &#x3C;Map[32](PACKED_SMI_ELEMENTS)> [FastProperties]</span></span>
+<span class="line"><span> - prototype: 0x12f3c6e9d9c9 &#x3C;JSArray[0]></span></span>
+<span class="line"><span> - elements: 0x12f3c6ebdb61 &#x3C;FixedArray[3]> [PACKED_SMI_ELEMENTS (COW)]</span></span>
+<span class="line"><span> - length: 3</span></span>
+<span class="line"><span> - properties: 0x082a1ad80e19 &#x3C;FixedArray[0]></span></span>
+<span class="line"><span> - All own properties (excluding elements): {</span></span>
+<span class="line"><span>    0x82a1ad81921: [String] in ReadOnlySpace: #length: 0x2b68715479c1 &#x3C;AccessorInfo name= 0x082a1ad81921 &#x3C;String[6]: #length>, data= 0x082a1ad80011 &#x3C;undefined>> (const accessor descriptor, attrs: [W__])</span></span>
+<span class="line"><span> }</span></span>
+<span class="line"><span> - elements: 0x12f3c6ebdb61 &#x3C;FixedArray[3]> {</span></span>
+<span class="line"><span>           0: 1</span></span>
+<span class="line"><span>           1: 2</span></span>
+<span class="line"><span>           2: 3</span></span>
+<span class="line"><span> }</span></span>
+<span class="line"><span>0x12f3c6e9d981: [Map] in OldSpace</span></span>
+<span class="line"><span> - map: 0x12f3c6e91559 &#x3C;MetaMap (0x12f3c6e915e9 &#x3C;NativeContext[307]>)></span></span>
+<span class="line"><span> - type: JS_ARRAY_TYPE</span></span>
+<span class="line"><span> - instance size: 32</span></span>
+<span class="line"><span> - inobject properties: 0</span></span>
+<span class="line"><span> - unused property fields: 0</span></span>
+<span class="line"><span> - elements kind: PACKED_SMI_ELEMENTS</span></span>
+<span class="line"><span> - enum length: invalid</span></span>
+<span class="line"><span> - back pointer: 0x082a1ad80011 &#x3C;undefined></span></span>
+<span class="line"><span> - prototype_validity_cell: 0x082a1ad81399 &#x3C;Cell value= [cleared]></span></span>
+<span class="line"><span> - instance descriptors #1: 0x12f3c6e9e5f1 &#x3C;DescriptorArray[1]></span></span>
+<span class="line"><span> - transitions #1: 0x12f3c6e9e629 &#x3C;TransitionArray[5]></span></span>
+<span class="line"><span>   Transitions #1:</span></span>
+<span class="line"><span>     0x082a1ad819f1 &#x3C;Symbol: (elements_transition_symbol)>: (transition to HOLEY_SMI_ELEMENTS) -> 0x12f3c6e9e661 &#x3C;Map[32](HOLEY_SMI_ELEMENTS)></span></span>
+<span class="line"><span> - prototype: 0x12f3c6e9d9c9 &#x3C;JSArray[0]></span></span>
+<span class="line"><span> - constructor: 0x12f3c6e9d821 &#x3C;JSFunction Array (sfi = 0x2b6871548c99)></span></span>
+<span class="line"><span> - dependent code: 0x082a1ad80e39 &#x3C;Other heap object (WEAK_ARRAY_LIST_TYPE)></span></span>
+<span class="line"><span> - construction counter: 0</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>DebugPrint: 0x3e9c5b995b29: [JSArray]</span></span>
+<span class="line"><span> - map: 0x12f3c6e9e6e1 &#x3C;Map[32](PACKED_DOUBLE_ELEMENTS)> [FastProperties]</span></span>
+<span class="line"><span> - prototype: 0x12f3c6e9d9c9 &#x3C;JSArray[0]></span></span>
+<span class="line"><span> - elements: 0x3e9c5b995b09 &#x3C;FixedDoubleArray[2]> [PACKED_DOUBLE_ELEMENTS]</span></span>
+<span class="line"><span> - length: 2</span></span>
+<span class="line"><span> - properties: 0x082a1ad80e19 &#x3C;FixedArray[0]></span></span>
+<span class="line"><span> - All own properties (excluding elements): {</span></span>
+<span class="line"><span>    0x82a1ad81921: [String] in ReadOnlySpace: #length: 0x2b68715479c1 &#x3C;AccessorInfo name= 0x082a1ad81921 &#x3C;String[6]: #length>, data= 0x082a1ad80011 &#x3C;undefined>> (const accessor descriptor, attrs: [W__])</span></span>
+<span class="line"><span> }</span></span>
+<span class="line"><span> - elements: 0x3e9c5b995b09 &#x3C;FixedDoubleArray[2]> {</span></span>
+<span class="line"><span>           0: 3 (0x4008000000000000)</span></span>
+<span class="line"><span>           1: 7.2 (0x401ccccccccccccd)</span></span>
+<span class="line"><span> }</span></span>
+<span class="line"><span>0x12f3c6e9e6e1: [Map] in OldSpace</span></span>
+<span class="line"><span> - map: 0x12f3c6e91559 &#x3C;MetaMap (0x12f3c6e915e9 &#x3C;NativeContext[307]>)></span></span>
+<span class="line"><span> - type: JS_ARRAY_TYPE</span></span>
+<span class="line"><span> - instance size: 32</span></span>
+<span class="line"><span> - inobject properties: 0</span></span>
+<span class="line"><span> - unused property fields: 0</span></span>
+<span class="line"><span> - elements kind: PACKED_DOUBLE_ELEMENTS</span></span>
+<span class="line"><span> - enum length: invalid</span></span>
+<span class="line"><span> - back pointer: 0x12f3c6e9e661 &#x3C;Map[32](HOLEY_SMI_ELEMENTS)></span></span>
+<span class="line"><span> - prototype_validity_cell: 0x082a1ad81399 &#x3C;Cell value= [cleared]></span></span>
+<span class="line"><span> - instance descriptors #1: 0x12f3c6e9e5f1 &#x3C;DescriptorArray[1]></span></span>
+<span class="line"><span> - transitions #1: 0x12f3c6e9e729 &#x3C;TransitionArray[5]></span></span>
+<span class="line"><span>   Transitions #1:</span></span>
+<span class="line"><span>     0x082a1ad819f1 &#x3C;Symbol: (elements_transition_symbol)>: (transition to HOLEY_DOUBLE_ELEMENTS) -> 0x12f3c6e9e761 &#x3C;Map[32](HOLEY_DOUBLE_ELEMENTS)></span></span>
+<span class="line"><span> - prototype: 0x12f3c6e9d9c9 &#x3C;JSArray[0]></span></span>
+<span class="line"><span> - constructor: 0x12f3c6e9d821 &#x3C;JSFunction Array (sfi = 0x2b6871548c99)></span></span>
+<span class="line"><span> - dependent code: 0x082a1ad80e39 &#x3C;Other heap object (WEAK_ARRAY_LIST_TYPE)></span></span>
+<span class="line"><span> - construction counter: 0</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>DebugPrint: 0x3e9c5b995b69: [JSArray]</span></span>
+<span class="line"><span> - map: 0x12f3c6e9e7e1 &#x3C;Map[32](PACKED_ELEMENTS)> [FastProperties]</span></span>
+<span class="line"><span> - prototype: 0x12f3c6e9d9c9 &#x3C;JSArray[0]></span></span>
+<span class="line"><span> - elements: 0x3e9c5b995b49 &#x3C;FixedArray[2]> [PACKED_ELEMENTS]</span></span>
+<span class="line"><span> - length: 2</span></span>
+<span class="line"><span> - properties: 0x082a1ad80e19 &#x3C;FixedArray[0]></span></span>
+<span class="line"><span> - All own properties (excluding elements): {</span></span>
+<span class="line"><span>    0x82a1ad81921: [String] in ReadOnlySpace: #length: 0x2b68715479c1 &#x3C;AccessorInfo name= 0x082a1ad81921 &#x3C;String[6]: #length>, data= 0x082a1ad80011 &#x3C;undefined>> (const accessor descriptor, attrs: [W__])</span></span>
+<span class="line"><span> }</span></span>
+<span class="line"><span> - elements: 0x3e9c5b995b49 &#x3C;FixedArray[2]> {</span></span>
+<span class="line"><span>         0-1: 0x3e9c5b995b29 &#x3C;JSArray[2]></span></span>
+<span class="line"><span> }</span></span>
+<span class="line"><span>0x12f3c6e9e7e1: [Map] in OldSpace</span></span>
+<span class="line"><span> - map: 0x12f3c6e91559 &#x3C;MetaMap (0x12f3c6e915e9 &#x3C;NativeContext[307]>)></span></span>
+<span class="line"><span> - type: JS_ARRAY_TYPE</span></span>
+<span class="line"><span> - instance size: 32</span></span>
+<span class="line"><span> - inobject properties: 0</span></span>
+<span class="line"><span> - unused property fields: 0</span></span>
+<span class="line"><span> - elements kind: PACKED_ELEMENTS</span></span>
+<span class="line"><span> - enum length: invalid</span></span>
+<span class="line"><span> - back pointer: 0x12f3c6e9e761 &#x3C;Map[32](HOLEY_DOUBLE_ELEMENTS)></span></span>
+<span class="line"><span> - prototype_validity_cell: 0x082a1ad81399 &#x3C;Cell value= [cleared]></span></span>
+<span class="line"><span> - instance descriptors #1: 0x12f3c6e9e5f1 &#x3C;DescriptorArray[1]></span></span>
+<span class="line"><span> - transitions #1: 0x12f3c6e9e829 &#x3C;TransitionArray[5]></span></span>
+<span class="line"><span>   Transitions #1:</span></span>
+<span class="line"><span>     0x082a1ad819f1 &#x3C;Symbol: (elements_transition_symbol)>: (transition to HOLEY_ELEMENTS) -> 0x12f3c6e9e861 &#x3C;Map[32](HOLEY_ELEMENTS)></span></span>
+<span class="line"><span> - prototype: 0x12f3c6e9d9c9 &#x3C;JSArray[0]></span></span>
+<span class="line"><span> - constructor: 0x12f3c6e9d821 &#x3C;JSFunction Array (sfi = 0x2b6871548c99)></span></span>
+<span class="line"><span> - dependent code: 0x082a1ad80e39 &#x3C;Other heap object (WEAK_ARRAY_LIST_TYPE)></span></span>
+<span class="line"><span> - construction counter: 0</span></span></code></pre>
+<p>输出有点长，分步看：先是 <code>arr</code>。</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>pwndbg> job 0x3e9c5b995ae9</span></span>
+<span class="line"><span>0x3e9c5b995ae9: [JSArray]</span></span>
+<span class="line"><span> - map: 0x12f3c6e9d981 &#x3C;Map[32](PACKED_SMI_ELEMENTS)> [FastProperties]</span></span>
+<span class="line"><span> - prototype: 0x12f3c6e9d9c9 &#x3C;JSArray[0]></span></span>
+<span class="line"><span> - elements: 0x12f3c6ebdb61 &#x3C;FixedArray[3]> [PACKED_SMI_ELEMENTS (COW)]</span></span>
+<span class="line"><span> - length: 3</span></span>
+<span class="line"><span> - properties: 0x082a1ad80e19 &#x3C;FixedArray[0]></span></span>
+<span class="line"><span> - All own properties (excluding elements): {</span></span>
+<span class="line"><span>    0x82a1ad81921: [String] in ReadOnlySpace: #length: 0x2b68715479c1 &#x3C;AccessorInfo name= 0x082a1ad81921 &#x3C;String[6]: #length>, data= 0x082a1ad80011 &#x3C;undefined>> (const accessor descriptor, attrs: [W__])</span></span>
+<span class="line"><span> }</span></span>
+<span class="line"><span> - elements: 0x12f3c6ebdb61 &#x3C;FixedArray[3]> {</span></span>
+<span class="line"><span>           0: 1</span></span>
+<span class="line"><span>           1: 2</span></span>
+<span class="line"><span>           2: 3</span></span>
+<span class="line"><span> }</span></span></code></pre>
+<p><code>elements</code> 和 <code>arr</code> 的地址确实差很远，上一次不是偶然。接着看 <code>f</code>：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>pwndbg> job 0x3e9c5b995b29</span></span>
+<span class="line"><span>0x3e9c5b995b29: [JSArray]</span></span>
+<span class="line"><span> - map: 0x12f3c6e9e6e1 &#x3C;Map[32](PACKED_DOUBLE_ELEMENTS)> [FastProperties]</span></span>
+<span class="line"><span> - prototype: 0x12f3c6e9d9c9 &#x3C;JSArray[0]></span></span>
+<span class="line"><span> - elements: 0x3e9c5b995b09 &#x3C;FixedDoubleArray[2]> [PACKED_DOUBLE_ELEMENTS]</span></span>
+<span class="line"><span> - length: 2</span></span>
+<span class="line"><span> - properties: 0x082a1ad80e19 &#x3C;FixedArray[0]></span></span>
+<span class="line"><span> - All own properties (excluding elements): {</span></span>
+<span class="line"><span>    0x82a1ad81921: [String] in ReadOnlySpace: #length: 0x2b68715479c1 &#x3C;AccessorInfo name= 0x082a1ad81921 &#x3C;String[6]: #length>, data= 0x082a1ad80011 &#x3C;undefined>> (const accessor descriptor, attrs: [W__])</span></span>
+<span class="line"><span> }</span></span>
+<span class="line"><span> - elements: 0x3e9c5b995b09 &#x3C;FixedDoubleArray[2]> {</span></span>
+<span class="line"><span>           0: 3 (0x4008000000000000)</span></span>
+<span class="line"><span>           1: 7.2 (0x401ccccccccccccd)</span></span>
+<span class="line"><span> }</span></span></code></pre>
+<p><code>elements</code> 和 <code>f</code> 的地址只差 <code>0x20</code>，正好是”相邻”：两个 element 占 <code>0x10</code>，<code>map</code> 和 <code>length</code> 两个字段又占 <code>0x10</code>，加起来刚好 <code>0x20</code>。</p>
+<p>最后是 <code>ff</code>：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>pwndbg> job 0x3e9c5b995b69</span></span>
+<span class="line"><span>0x3e9c5b995b69: [JSArray]</span></span>
+<span class="line"><span> - map: 0x12f3c6e9e7e1 &#x3C;Map[32](PACKED_ELEMENTS)> [FastProperties]</span></span>
+<span class="line"><span> - prototype: 0x12f3c6e9d9c9 &#x3C;JSArray[0]></span></span>
+<span class="line"><span> - elements: 0x3e9c5b995b49 &#x3C;FixedArray[2]> [PACKED_ELEMENTS]</span></span>
+<span class="line"><span> - length: 2</span></span>
+<span class="line"><span> - properties: 0x082a1ad80e19 &#x3C;FixedArray[0]></span></span>
+<span class="line"><span> - All own properties (excluding elements): {</span></span>
+<span class="line"><span>    0x82a1ad81921: [String] in ReadOnlySpace: #length: 0x2b68715479c1 &#x3C;AccessorInfo name= 0x082a1ad81921 &#x3C;String[6]: #length>, data= 0x082a1ad80011 &#x3C;undefined>> (const accessor descriptor, attrs: [W__])</span></span>
+<span class="line"><span> }</span></span>
+<span class="line"><span> - elements: 0x3e9c5b995b49 &#x3C;FixedArray[2]> {</span></span>
+<span class="line"><span>         0-1: 0x3e9c5b995b29 &#x3C;JSArray[2]></span></span>
+<span class="line"><span> }</span></span></code></pre>
+<p>和 f 一样，<code>elements</code> 与数组对象相邻。</p>
+<p>到这里结论就明确了：<strong>浮点数组和对象数组的 <code>elements</code> 紧跟在数组对象后面</strong>。只要能把 <code>length</code> 改大，越界读写落到的就是相邻内存——下一篇从这一步往下走。</p></div><nav class="pager" aria-label="同分类内的上一篇 / 下一篇" data-astro-cid-tldeq5d5><div class="pager-item" data-astro-cid-tldeq5d5><span class="pager-label" data-astro-cid-tldeq5d5>← 上一篇</span><a href="/posts/v8-learn-0/" data-astro-cid-tldeq5d5>V8 学习笔记 0x00</a></div><div class="pager-item next" data-astro-cid-tldeq5d5><span class="pager-label" data-astro-cid-tldeq5d5>下一篇 →</span><a href="/posts/v8-learn-2/" data-astro-cid-tldeq5d5>V8 学习笔记 0x02</a></div></nav></article></div></main><footer class="colophon" data-astro-cid-jo6i4kqk><div class="inner" data-astro-cid-jo6i4kqk><p class="links" data-astro-cid-jo6i4kqk><a href="/posts" data-astro-cid-jo6i4kqk>归档</a><a href="/tags" data-astro-cid-jo6i4kqk>标签</a></p><p class="sign" data-astro-cid-jo6i4kqk>Findkey · 二〇二六</p></div></footer><script type="module">function e(e){let t=document.createElement(`textarea`);t.value=e,t.setAttribute(`readonly`,``),t.style.position=`fixed`,t.style.top=`-1000px`,document.body.appendChild(t),t.select();let n=!1;try{n=document.execCommand(`copy`)}catch{n=!1}return t.remove(),n}async function t(t,n){let r=n.textContent;try{if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(t);else if(!e(t))throw Error(`copy failed`);n.textContent=`已复制`}catch{n.textContent=e(t)?`已复制`:`复制失败`}setTimeout(()=>{n.textContent=r},1400)}function n(e){if(e.closest(`.code-block`))return;let n=document.createElement(`div`);n.className=`code-block`,e.parentNode?.insertBefore(n,e);let r=(e.textContent??``).replace(/\n$/,``),i=r.split(`
+`).length,a=document.createElement(`div`);a.className=`code-head`;let o=document.createElement(`button`);if(o.type=`button`,o.className=`code-btn`,o.textContent=`复制`,o.addEventListener(`click`,()=>t(r,o)),a.appendChild(o),n.appendChild(a),i>26){let t=document.createElement(`div`);t.className=`code-body is-folded`,t.style.maxHeight=`21rem`,t.appendChild(e),n.appendChild(t);let r=document.createElement(`button`);r.type=`button`,r.className=`code-more`,r.textContent=`展开（共 ${i} 行）`,r.addEventListener(`click`,()=>{let e=t.classList.toggle(`is-folded`);t.style.maxHeight=e?`21rem`:`none`,r.textContent=e?`展开（共 ${i} 行）`:`收起`,e&&n.getBoundingClientRect().top<60&&n.scrollIntoView({behavior:`smooth`,block:`nearest`})}),n.appendChild(r)}else n.appendChild(e)}function r(){document.querySelectorAll(`.prose pre`).forEach(n)}r(),document.addEventListener(`astro:page-load`,r);</script></body></html>
