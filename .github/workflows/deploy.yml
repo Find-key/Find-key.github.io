@@ -1,10 +1,11 @@
 name: Deploy to GitHub Pages
 
 on:
-  # 推送到 main 分支就构建部署
-  push:
-    branches: [main]
-  # 也可以在 Actions 页面手动触发
+  # 账号 billing 被锁期间 Actions 无法启动（job 直接被拒），
+  # 每 push 一次就多一个红叉，所以先改成只保留手动触发。
+  # 解锁 billing 后把下面这行注释去掉即可恢复「push 自动部署」：
+  # push:
+  #   branches: [main]
   workflow_dispatch:
 
 # 允许读取仓库、写入 Pages、以及用 OIDC 令牌和 Pages 服务认证

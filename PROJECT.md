@@ -65,7 +65,7 @@ base     ''        ← 用户站在根路径
 
 **为什么不走 GitHub Actions**：账号 billing 被锁，workflow 的 job 起不来（日志原文 *The job was not started because your account is locked due to a billing issue*）。Pages 自己的 `pages-build-deployment` 不受影响，所以改成「本地构建 + 推分支」。
 
-**要切回 Actions**：`github.com/settings/billing` 解锁 → Settings → Pages → Source 改 **GitHub Actions** → 之后 push `main` 即自动部署，`gh-pages` 分支可删。
+**Actions 现状**：workflow 文件保留，但触发器只留了 `workflow_dispatch`（手动），避免每次 push 都产生一个失败的运行记录。解锁 billing 后：Settings → Pages → Source 改 **GitHub Actions**，并把 `.github/workflows/deploy.yml` 里注释掉的 `push: branches: [main]` 取消注释 → 之后 push 即自动部署，`gh-pages` 分支可删。
 
 ## 七、路线图
 
