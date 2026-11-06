@@ -1,147 +1,71 @@
 # Findkey
 
-个人技术博客，Astro + GitHub Pages，纯静态。文章按**分类**组织，简约排版优先。
+个人技术博客：Astro 静态站，部署在 GitHub Pages，纯前端无框架。
 
-- **完整文档（结构、命令、写作规范、视觉规范、踩坑记录、变更日志）：[`PROJECT.md`](./PROJECT.md)**
-- 线上地址：`https://find-key.github.io/`
+**线上：<https://find-key.github.io/>**
+
+## 命令
 
 ```bash
 npm install
-npm run dev      # http://localhost:4321/
-npm run build    # 输出 dist/
-npm run preview  # 本地预览生产构建
+npm run dev        # 本地 http://localhost:4321/
+npm run build      # 构建到 dist/
+npm run preview    # 本地预览构建产物
+npm run deploy     # 构建并发布到 gh-pages（线上生效用这个）
+npm run new -- "标题" --cat pwn --tags stack,ret2text   # 新建文章
 ```
 
-写文章：`cp docs/post-template.md src/content/blog/新文章名.md`，frontmatter 里 **`category` 必填**（取值见 `src/consts.ts` 的 `CATEGORIES`）。
-也可以开本机写作后台：`npm run admin` → http://127.0.0.1:4322/
+## 写作
 
-> 改任何东西之后，记得在 `PROJECT.md` 的「变更日志」里加一条。
+文章放 `src/content/blog/<slug>.md`，frontmatter 必填 `title` / `description` / `pubDate` / `category`：
 
-## 日常操作
-
-写文章、加分类、加友链、改站点信息：见 [`docs/how-to.md`](docs/how-to.md)。
-
-项目结构、设计决策、踩坑记录：见 [`PROJECT.md`](PROJECT.md)。
-
+```yaml
 ---
-
-# 部署到 GitHub Pages
-
-站点是 GitHub **用户站**（不是项目站），所以仓库名必须是 `<用户名>.github.io`，站点直接在根路径 `https://<用户名>.github.io/` 上，`base` 为空。
-
-当前配置（`src/consts.ts`）：
-
-```ts
-url:  'https://find-key.github.io',
-base: '',        // 用户站在根路径；若改回项目站（/blog 之类）这里要跟着填
-github: 'https://github.com/Find-key',
+title: "标题"
+description: "一句话摘要（列表与 SEO 用）"
+pubDate: 2026-10-25
+category: pwn          # 取值见 src/consts.ts 的 CATEGORIES
+tags: [stack, ret2text]
+draft: false           # 可选，true 只在本地可见
+---
 ```
 
-当前实际部署方式：**`gh-pages` 分支 + Pages「Deploy from a branch」**。
+正文从 `## 二级标题` 开始写，用 Markdown；`$...$` / `$$...$$` 渲染 KaTeX 公式。
 
-原因是账号的 billing 被锁过，GitHub Actions 的 job 起不来（日志里是 "The job was not started because your account is locked due to a billing issue"），而 Pages 自己那条发布通道不受影响。所以构建在本地做，产物推到 `gh-pages` 分支：
+**分类、友链、站点信息**都在 `src/consts.ts` 里改，别在别处重复定义。
+
+## 部署
 
 ```bash
-npm run deploy     # astro build → 推到 gh-pages → 1~2 分钟后线上更新
+npm run deploy     # 构建 + 推 gh-pages 分支，1~2 分钟后线上更新
 ```
 
-`.github/workflows/deploy.yml` 仍然保留：等 billing 解锁后，把 Pages 的 Source 切回 **GitHub Actions**，就恢复成「push main 自动部署」，`gh-pages` 分支可以删掉。
+Pages 的 Source 是 **Deploy from a branch → gh-pages / (root)**。
+账号 billing 目前被锁，GitHub Actions 起不来，所以不走 Actions；解锁后可以把 Source 切回 GitHub Actions，届时 push main 即自动部署（`.github/workflows/deploy.yml` 一直留着）。
 
-## 一、首次部署
+改代码只 push main **不会**更新线上，必须再跑 `npm run deploy`。
 
-### 1. 建仓库
-
-打开 https://github.com/new
-
-| 项目 | 值 |
-| --- | --- |
-| Repository name | `Find-key.github.io`（**必须**是「用户名 + .github.io」） |
-| 可见性 | Public 或 Private 都行（私有仓库开 Pages 需要 Pro 以上） |
-| README / .gitignore / license | **三个都不勾**（勾了会多一次合并冲突） |
-
-### 2. 关联远端并推送
-
-```bash
-cd ~/Work/blog
-git remote add origin git@github.com:Find-key/Find-key.github.io.git
-git branch -M main
-git push -u origin main
-```
-
-SSH 推送不需要代理；如果还没配密钥：
-
-```bash
-ssh-keygen -t ed25519 -C "findkey"
-cat ~/.ssh/id_ed25519.pub        # 贴到 GitHub → Settings → SSH and GPG keys → New SSH key
-ssh -T git@github.com             # 看到 "Hi Find-key!" 就通了
-```
-
-### 3. 打开 Pages
-
-仓库 → **Settings** → 左侧 **Pages** → **Build and deployment** → **Source** 选 **GitHub Actions**。
-
-> 选错成 "Deploy from a branch" 会出事：仓库里存的是 **Astro 源码**，不是构建好的 HTML，Pages 会把 `src/`、`package.json` 当静态文件发出去，站点直接 404。必须是 GitHub Actions。
-
-### 4. 等构建
-
-仓库 **Actions** 标签 → 名为 `Deploy to GitHub Pages` 的 workflow：build 约 40 秒，deploy 十几秒。绿勾后访问：
+## 结构
 
 ```
-https://find-key.github.io/
+src/
+  consts.ts            站点信息、导航、分类、友链（唯一配置源）
+  content/blog/        文章
+  content.config.ts    frontmatter schema
+  components/          Header / Footer / PostList / Toc / BaseHead / CodeTools
+  layouts/BlogPost.astro
+  pages/               index / posts / categories / tags / links / 404
+  utils/url.ts         withBase() / postUrl() / categoryUrl() / tagUrl()
+scripts/
+  new-post.mjs         新建文章
+  deploy-pages.mjs     发布到 gh-pages
+  admin.mjs            写作后台（已下线，保留入口）
+public/                favicon、头像、友链头像
 ```
 
-首次生效可能要 1–2 分钟（CDN 与 DNS）。
+## 约定
 
-## 二、日常更新
-
-改完 → 提交 → 推送，三步：
-
-```bash
-cd ~/Work/blog
-git status                     # 先看改了什么，避免带上无关文件
-git add -A
-git commit -m "说明这次改了什么"
-git push                       # 触发 Actions，1–2 分钟后线上生效
-```
-
-用写作后台（`npm run admin`）时要注意：**后台保存只等于改磁盘文件，不等于上传**。流程是「后台写完保存 → 终端 `git add -A && git commit && git push` → `npm run deploy`」。
-
-> 现在 Actions 被 billing 锁挡着，**只 push 不会更新线上**，必须再跑一次 `npm run deploy`（它把构建产物推到 `gh-pages`）。
-
-常用检查：
-
-```bash
-git log --oneline origin/main..HEAD   # 本地还没推的提交（空 = 全推了）
-git diff                              # 具体改了哪些行
-npm run build                         # 推之前本地先确认构建能过
-```
-
-## 三、验证线上
-
-```bash
-# 首页是否是新版本（看 last-modified 时间）
-curl -sI https://find-key.github.io/ | grep -i last-modified
-
-# 关键路径都应在 200
-for u in / /posts/ /links/ /categories/pwn/; do
-  printf '%-22s ' "$u"; curl -s -o /dev/null -w '%{http_code}\n' "https://find-key.github.io$u"
-done
-```
-
-## 四、回滚与备份
-
-- **回滚线上内容**：`git revert <提交号>` 再 `git push`（比 force push 安全，历史保留）
-- **旧 Hexo 站**：完整历史在 `legacy-hexo` 分支上，需要时 `git checkout legacy-hexo` 看一眼
-- **Pages 历史**：仓库 Actions 里每次部署都有记录，可下载当时的产物
-
-## 五、踩过的坑
-
-| 现象 | 原因 / 处理 |
-| --- | --- |
-| 站点 404 或直接暴露源码 | Pages Source 还是 "Deploy from a branch"，改成 **GitHub Actions** |
-| 推送被拒（`non-fast-forward`） | 远端已有别的历史。先 `git fetch origin main`，确认后再决定合并还是覆盖 |
-| 推上去但线上没变 | Actions 还没跑完；去 Actions 看状态，或等 1–2 分钟 |
-| 图片/字体 404 | `public/` 下的文件随构建进 `dist/`，路径按根写（如 `/kirito.webp`），不要写 `/blog/...` |
-| favicon 不更新 | 浏览器缓存，`Ctrl+Shift+R` 或新开标签页 |
-| 改了 `base` 之后全站 404 | 站内链接必须走 `withBase()` / `postUrl()` / `categoryUrl()`，别手写绝对路径 |
-| 换仓库名（如改成 `notes`） | 站点会变成项目站 `/notes/`，`src/consts.ts` 的 `base` 必须同步改成 `'/notes'` |
+- 站内链接一律走 `src/utils/url.ts` 的函数，别手写 `/xxx` 绝对路径（改部署路径时全站会失效）
+- 站点元信息只改 `src/consts.ts`
+- 标签用小写英文 / 连字符，会进 URL
+- 改动后在 `PROJECT.md` 的路线图里勾掉对应项

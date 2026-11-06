@@ -1,29 +1,15 @@
 /**
- * 本机写作后台的入口。真正的实现在 scripts/admin/ 下：
+ * 写作后台（入口占位）
  *
- *   lib/frontmatter.mjs   frontmatter 解析 / 生成
- *   lib/posts.mjs         文章读写、软删除、回收站
- *   lib/categories.mjs    分类读写与校验
- *   server.mjs            路由、静态文件、错误处理
- *   ui/                   页面（html / css / js 分离）
+ * 原来的实现（本机 127.0.0.1:4322 的四视图编辑器 + 软删除回收站）已清空，
+ * 保留这个入口和 `npm run admin` 的位置，以后再重写。
  *
- *   npm run admin   →  http://127.0.0.1:4322
- *
- * 只监听 127.0.0.1。写的是仓库里的真实文件，没有鉴权，别往外网暴露。
+ * 重写时的注意点：
+ *   - 只监听 127.0.0.1，改的是仓库里的真实文件，没有鉴权
+ *   - 分类存在 `src/consts.ts` 的 #region categories 段，写入要整段重写
+ *   - frontmatter 的字段以 `src/content.config.ts` 为准
+ *   - 删除类操作要可撤销（放到仓库外的 .trash/，别直接 unlink）
  */
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { startServer } from './admin/server.mjs';
-
-const HERE = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(HERE, '..');
-
-startServer({
-	root: ROOT,
-	uiDir: join(HERE, 'admin/ui'),
-	postsDir: join(ROOT, 'src/content/blog'),
-	trashDir: join(ROOT, '.trash'),
-	constsPath: join(ROOT, 'src/consts.ts'),
-	port: Number(process.env.ADMIN_PORT ?? 4322),
-	siteDev: process.env.SITE_DEV ?? 'http://localhost:4321',
-});
+console.log('写作后台已下线（实现已清空，入口保留）。');
+console.log('现在写文章用：npm run new -- "标题" --cat pwn --tags a,b');
+console.log('或者直接在 src/content/blog/ 下新建 .md，字段见 README。');
