@@ -78,6 +78,7 @@ export const FRIENDS: Friend[] = [
 	{ name: 'Lochad', url: 'https://lochad.top/', note: 'more what, more why.', avatar: '/friends/lochad-s.webp' },
 	{ name: 'sysNow', url: 'https://sysnow.xyz/', note: 'to be a pwn master', avatar: '/friends/sysnow-s.webp' },
 	{ name: 'Fa1lSnow', url: 'https://blog.fa1lsnow.com/', note: '林雪落的小玩意', avatar: '/friends/fa1lsnow-s.webp' },
+	{ name: 'wuye', url: 'https://www.mgoyy.cn/', note: 'wuye的博客', avatar: '/friends/wuye-s.webp' },
 ];
 
 /**
