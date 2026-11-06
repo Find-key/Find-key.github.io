@@ -37,7 +37,15 @@ base: '',        // 用户站在根路径；若改回项目站（/blog 之类）
 github: 'https://github.com/Find-key',
 ```
 
-推送分支 **`main`** 会触发 `.github/workflows/deploy.yml`：`withastro/action` 构建 → `actions/deploy-pages` 发布。
+当前实际部署方式：**`gh-pages` 分支 + Pages「Deploy from a branch」**。
+
+原因是账号的 billing 被锁过，GitHub Actions 的 job 起不来（日志里是 "The job was not started because your account is locked due to a billing issue"），而 Pages 自己那条发布通道不受影响。所以构建在本地做，产物推到 `gh-pages` 分支：
+
+```bash
+npm run deploy     # astro build → 推到 gh-pages → 1~2 分钟后线上更新
+```
+
+`.github/workflows/deploy.yml` 仍然保留：等 billing 解锁后，把 Pages 的 Source 切回 **GitHub Actions**，就恢复成「push main 自动部署」，`gh-pages` 分支可以删掉。
 
 ## 一、首次部署
 
@@ -96,7 +104,9 @@ git commit -m "说明这次改了什么"
 git push                       # 触发 Actions，1–2 分钟后线上生效
 ```
 
-用写作后台（`npm run admin`）时要注意：**后台保存只等于改磁盘文件，不等于上传**。流程是「后台写完保存 → 终端 `git add -A && git commit && git push`」。
+用写作后台（`npm run admin`）时要注意：**后台保存只等于改磁盘文件，不等于上传**。流程是「后台写完保存 → 终端 `git add -A && git commit && git push` → `npm run deploy`」。
+
+> 现在 Actions 被 billing 锁挡着，**只 push 不会更新线上**，必须再跑一次 `npm run deploy`（它把构建产物推到 `gh-pages`）。
 
 常用检查：
 
