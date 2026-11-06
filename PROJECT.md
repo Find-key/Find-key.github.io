@@ -1,6 +1,8 @@
 # PROJECT.md
 
-这个仓库的**计划与约定**。日常用法看 [`README.md`](./README.md)，给编码助手的硬性规则看 [`AGENTS.md`](./AGENTS.md)。
+这个仓库的**计划与约定**。给编码助手的硬性规则看 [`AGENTS.md`](./AGENTS.md)。
+
+> 部署 / 推送的日常操作手册在本地 `README.md`（已加进 `.gitignore`，不进仓库）。
 
 ## 一、这是什么
 

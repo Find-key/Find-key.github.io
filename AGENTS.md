@@ -1,6 +1,8 @@
 # AGENTS.md — 给编码助手的约定
 
-动手前先读 [`PROJECT.md`](./PROJECT.md)（计划、结构、约定、部署）和 [`README.md`](./README.md)（命令、写作）。
+动手前先读 [`PROJECT.md`](./PROJECT.md)（计划、结构、约定、部署）。
+
+> 部署 / 推送的操作手册是本地 `README.md`（不进仓库，已 gitignore）。
 
 ## 硬性规则
 
