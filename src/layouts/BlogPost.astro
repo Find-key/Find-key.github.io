@@ -29,7 +29,7 @@ interface Props {
 }
 
 const { post, headings = [] } = Astro.props;
-const { title, description, pubDate, updatedDate, tags, category: categorySlug } = post.data;
+const { title, description, pubDate, updatedDate, tags, category: categorySlug, heroImage } = post.data;
 
 const category = categoryOf(categorySlug);
 const all = (await getCollection('blog', isVisible)).sort(sortForReading);
@@ -40,9 +40,15 @@ const next = index >= 0 && index < siblings.length - 1 ? siblings[index + 1] : u
 const minutes = readingMinutes(post.body);
 ---
 
+<!doctype html>
 <html lang={SITE.lang}>
 	<head>
-		<BaseHead title={`${title} · ${SITE.title}`} description={description} type="article" />
+		<BaseHead
+			title={`${title} · ${SITE.title}`}
+			description={description}
+			image={heroImage}
+			type="article"
+		/>
 	</head>
 
 	<body>

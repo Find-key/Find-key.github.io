@@ -14,12 +14,13 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const postsDir = join(root, 'src/content/blog');
 
-// 从 consts.ts 里读分类，避免两处维护
+// 从 consts.ts 里读分类和 base，避免两处维护
 const consts = readFileSync(join(root, 'src/consts.ts'), 'utf8');
-const categories = [...consts.matchAll(/slug: '([^']+)',\s*\n\s*name: '([^']+)'/g)].map((m) => ({
+const categories = [...consts.matchAll(/slug:\s*'([^']+)',\s*name:\s*'([^']+)'/g)].map((m) => ({
 	slug: m[1],
 	name: m[2],
 }));
+const base = (consts.match(/\bbase:\s*'([^']*)'/)?.[1] ?? '').replace(/\/+$/, '');
 
 const argv = process.argv.slice(2);
 const flags = {};
@@ -119,4 +120,4 @@ writeFileSync(file, `${front}\n${body}`, 'utf8');
 
 const existing = readdirSync(postsDir).filter((f) => f.endsWith('.md')).length;
 console.log(`已创建 src/content/blog/${slug}.md（${categories.find((c) => c.slug === category)?.name}，共 ${existing} 篇）`);
-console.log('预览：http://localhost:4321/blog/posts/' + slug + '/');
+console.log(`预览：http://localhost:4321${base}/posts/${slug}/`);

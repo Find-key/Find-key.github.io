@@ -27,7 +27,7 @@ const { category, posts } = Astro.props;
 	<head>
 		<BaseHead
 			title={`${category.name} · ${SITE.title}`}
-			description={category.description}
+			description={category.description || `${category.name} 分类下的文章 · ${SITE.title}`}
 		/>
 	</head>
 	<body>
@@ -39,7 +39,7 @@ const { category, posts } = Astro.props;
 				<span>{category.name}</span>
 			</nav>
 			<h1>{category.name}</h1>
-			<p class="sub">{category.description}</p>
+			{category.description && <p class="sub">{category.description}</p>}
 
 			{posts.length > 0 ? <PostList posts={posts} /> : <p class="empty">这个分类还没有文章。</p>}
 

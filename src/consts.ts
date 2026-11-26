@@ -3,9 +3,6 @@
  *
  * 改站点名 / 作者 / 域名 / base 路径，只需要改这个文件：
  * astro.config.mjs、Header、Footer、RSS、SEO 全部从这里读。
- *
- * ⚠️ 首次上线前必须改：url、base、github 里的 USERNAME 占位符。
- *    详见项目根目录 PROJECT.md 的「上线前检查清单」。
  */
 export const SITE = {
 	/** 浏览器标签页 / SEO 用（短，标签栏里认得出就行） */
@@ -105,7 +102,7 @@ export const CATEGORIES: CategoryItem[] = [
 	{ slug: 'wp', name: 'WP', description: '比赛题解与复现' },
 	{ slug: 'v8', name: 'V8', description: 'V8 引擎：环境搭建、对象内存布局、OOB 与利用' },
 	{ slug: 'iot', name: '嵌入式与 IoT', description: '路由器等设备的固件与漏洞复现' },
-	{ slug: 'tools', name: '工具与笔记', description: '' },
+	{ slug: 'tools', name: '工具与笔记', description: '调试脚本、协议分析与日常工具笔记' },
 ];
 // #endregion
 

@@ -7,13 +7,11 @@ tags: [exercise]
 ---
 
 ## 前言
-> 做过的题想记下来，又不想每题单开一篇，就汇总在这里。**长期更新中。**
+> 做过的 glibc pwn 题想记下来，又不想每题单开一篇，就汇总在这里。**长期更新中。**
 
-## glibc
+## 杂
 
-### 杂
-
-#### [NISA CTF]shop_pwn
+### [NISA CTF]shop_pwn
 
 > 来源：NSSCTF
 
@@ -76,7 +74,7 @@ LABEL_17:
 }
 ```
 
-##### 漏洞分析
+#### 漏洞分析
 ```C
 unsigned __int64 sale()
 {
@@ -127,7 +125,7 @@ void *__fastcall to_sale(void *a1)
 ```
 子进程会 `usleep(50000)`（5 秒），这期间父进程被挂起，所以可以同时开几个子进程，在 `bags[a1]` 还没置零时重复卖同一件物品——一物多卖就是漏洞。
 
-##### exp
+#### exp
 ```python
 from pwn import *
 
@@ -148,9 +146,9 @@ io.interactive()
 # 然后直接购买flag就行.
 ```
 
-### stack
+## stack
 
-#### ez_fmt
+### ez_fmt
 
 > 来源：sally
 
@@ -231,14 +229,14 @@ int printf(const char *format, ...)
 }
 ```
 
-##### 漏洞分析
+#### 漏洞分析
 很明显的格式化字符串漏洞。
 在 init() 函数中，将 .fini_array 设置为可读可写。
 ret 变量地址与 unk 相连，可以通过 %s 泄露，从而得到 libc 地址。
 
 `init()` 把 `.fini_array` 设成了可写，而程序退出时会依次调用表里的函数指针——改它等于直接改执行流，于是可以在同一道题里第二次、第三次用格式化字符串，把 ROP 链摆上去。
 
-##### exp
+#### exp
 ```python
 from pwn import *
 
@@ -353,7 +351,7 @@ io.sendline(payload)
 io.interactive()
 ```
 
-#### ez_fmt_revenge
+### ez_fmt_revenge
 
 > 来源：sally
 
@@ -385,13 +383,13 @@ int vuln()
 }
 ```
 
-##### 漏洞分析
+#### 漏洞分析
 同样的，劫持 .fini_array。
 通过格式化字符串泄露 libc 地址和 stack 地址。
 
 在第二次利用格式化字符串时构造 ROP。
 
-##### exp
+#### exp
 ```python
 from pwn import *
 
@@ -509,9 +507,9 @@ io.sendline(payload)
 io.interactive()
 ```
 
-### heap 2.23
+## heap 2.23
 
-#### babyheap_0ctf_2017
+### babyheap_0ctf_2017
 
 > 来源：BUUOJ
 
@@ -553,7 +551,7 @@ __int64 __fastcall main(char *a1, char **a2, char **a3)
 }
 ```
 
-##### 漏洞分析
+#### 漏洞分析
 ```C
 unsigned __int64 __fastcall edit(book *arr)
 {
@@ -586,7 +584,7 @@ unsigned __int64 __fastcall edit(book *arr)
 
 利用思路：构造堆重叠 -> 泄露 libc -> 劫持 `hook` 为 one_gadget.
 
-##### exp
+#### exp
 ```python
 from pwn import *
 
@@ -678,7 +676,7 @@ add(255)
 io.interactive()
 ```
 
-#### [ZJCTF 2019]EasyHeap
+### [ZJCTF 2019]EasyHeap
 
 > 来源：BUUOJ
 
@@ -747,7 +745,7 @@ int __fastcall __noreturn main(int argc, const char **argv, const char **envp)
 }
 ```
 
-##### 漏洞分析
+#### 漏洞分析
 ```C
 unsigned __int64 edit_heap()
 {
@@ -786,7 +784,7 @@ edit_heap() 函数会请求输入**size**，故存在溢出。
 
 思路：通过 *unsafe unlink*，修改 heap 地址数组，劫持 atoi() 为 system()
 
-##### exp
+#### exp
 ```python
 from pwn import *
 
@@ -851,7 +849,7 @@ io.sendline(b'/bin/sh')
 io.interactive()
 ```
 
-#### little game
+### little game
 
 > 来源：JNCTF
 
@@ -896,7 +894,7 @@ void __fastcall __noreturn main(__int64 a1, char **a2, char **a3)
 }
 ```
 
-##### 漏洞分析
+#### 漏洞分析
 ```C
 unsigned __int64 edit()
 {
@@ -940,7 +938,7 @@ unsigned __int64 __fastcall bug(void *a1, int a2)
 ```
 典型的 off-by-null。`init()` 里调了 `mallopt(1, 0)`，本题用不了 fastbin，于是走 unsorted bin attack 接 FSOP。
 
-##### exp
+#### exp
 ```python
 from pwn import *
 
@@ -1066,7 +1064,7 @@ add(0x100)
 io.interactive()
 ```
 
-#### asis2016_b00ks
+### asis2016_b00ks
 ```C
 __int64 __fastcall main(int a1, char **a2, char **a3)
 {
@@ -1114,7 +1112,7 @@ __int64 __fastcall main(int a1, char **a2, char **a3)
 }
 ```
 
-##### 漏洞分析
+#### 漏洞分析
 ```C
 __int64 rename()
 {
@@ -1169,7 +1167,7 @@ int show()
 
 `rename()` 里有 off-by-null，而 `name` 和 `arr` 数组相邻，刚好能溢出：把第一个 `chunk_ptr` 的最低字节盖成 `\x00`。`show()` 里字符串没有截断，也能顺带泄 heap 地址。
 
-##### exp
+#### exp
 ```python
 from pwn import *
 
@@ -1281,7 +1279,7 @@ delete(3)
 io.interactive()
 ```
 
-#### hitcontraining_bamboobox
+### hitcontraining_bamboobox
 ```C
 int __fastcall main(int argc, const char **argv, const char **envp)
 {
@@ -1334,7 +1332,7 @@ int __fastcall main(int argc, const char **argv, const char **envp)
 }
 ```
 
-##### 漏洞分析
+#### 漏洞分析
 ```c
 unsigned __int64 change_item()
 {
@@ -1372,7 +1370,7 @@ unsigned __int64 change_item()
 ```
 `change_item()` 读入 `size` 时不做校验，存在堆溢出；思路是用 unsafe unlink 改掉存放 chunk 地址的数组。
 
-##### exp
+#### exp
 ```python
 from pwn import *
 
@@ -1460,9 +1458,9 @@ edit(0, 8, p64(system))
 
 io.interactive()
 ```
-### heap 2.27
+## heap 2.27
 
-#### actf_2019_babyheap
+### actf_2019_babyheap
 
 > 来源：BUUOJ
 
@@ -1509,7 +1507,7 @@ void __fastcall __noreturn main(char *a1, char **a2, char **a3)
   }
 }
 ```
-##### 漏洞分析
+#### 漏洞分析
 ```C
 unsigned __int64 del()
 {
@@ -1540,7 +1538,7 @@ unsigned __int64 del()
 
 程序没开 PIE，里面还带着 `/bin/sh` 字样，直接劫持 `printf` 为 `system` 就行。
 
-##### exp
+#### exp
 ```python
 from pwn import *
 
@@ -1596,9 +1594,9 @@ show(0)
 io.interactive()
 ```
 
-### heap 2.31
+## heap 2.31
 
-#### feedback
+### feedback
 
 > 来源：moectf 2023
 
@@ -1631,7 +1629,7 @@ void __cdecl read_flag()
   //flag内容写入libc
 }
 ```
-##### 漏洞分析
+#### 漏洞分析
 ```C
 void __cdecl __noreturn vuln()
 {
@@ -1668,7 +1666,7 @@ void __cdecl __noreturn vuln()
 
 `index` 可以是负数，数组越界；`.bss` 上 `feedback_list` 紧跟在 `stdout`/`stdin`/`stderr` 之后，改这些结构体就能利用。
 
-##### exp
+#### exp
 ```python
 from pwn import *
 
@@ -1719,7 +1717,7 @@ edit(-8, payload)
 io.interactive()
 ```
 
-#### tcache_king
+### tcache_king
 
 > 来源：偶然所得
 ```C
@@ -1765,7 +1763,7 @@ LABEL_13:
   }
 }
 ```
-##### 漏洞分析
+#### 漏洞分析
 ```C
 void del()
 {
@@ -1781,7 +1779,7 @@ void del()
 ```
 明显的 UAF：把 chunk 申请到数组地址上，再劫持 GOT。沙箱禁了 `execve` 和 `execveat`，所以改打 ORW。
 
-##### exp
+#### exp
 ```Python
 from pwn import *
 

@@ -10,7 +10,7 @@ order: 1
 ## Docker 环境
 
 先写 Dockerfile：
-```bash
+```dockerfile
 FROM ubuntu:22.04
 
 RUN apt-get update && apt-get install -y \
@@ -81,6 +81,6 @@ ninja -C out/x64.release.no_pc -j4 d8
 V8 自带两个 gdb 辅助脚本，追加到 `~/.gdbinit` 就能用 `job`、`jsobj` 这类命令：
 
 ```bash
-echo "source /home/key/Work/Pwn/Knowledges/V8/v8/tools/gdbinit" >> ~/.gdbinit
-echo "source /home/key/Work/Pwn/Knowledges/V8/v8/tools/gdb-v8-support.py" >> ~/.gdbinit
+echo "source /path/to/v8/tools/gdbinit" >> ~/.gdbinit
+echo "source /path/to/v8/tools/gdb-v8-support.py" >> ~/.gdbinit
 ```

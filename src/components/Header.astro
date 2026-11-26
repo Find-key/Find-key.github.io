@@ -14,7 +14,11 @@ const { variant = 'inner' } = Astro.props;
 
 // 当前所在栏目，用于给导航加下划线
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, '');
-const current = (Astro.url.pathname.replace(BASE, '').replace(/\/+$/, '') || '/') as string;
+const stripped =
+	BASE && Astro.url.pathname.startsWith(BASE)
+		? Astro.url.pathname.slice(BASE.length)
+		: Astro.url.pathname;
+const current = stripped.replace(/\/+$/, '') || '/';
 const isActive = (href: string) => current === href || current.startsWith(`${href}/`);
 ---
 
