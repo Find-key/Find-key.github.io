@@ -52,9 +52,24 @@ export function categoryOf(slug: string) {
 	return CATEGORIES.find((category) => category.slug === slug);
 }
 
-/** 粗略阅读时长：中文按 400 字/分钟，去掉空白 */
+const CODE_FENCE_RE = /^```[\s\S]*?^```/gm;
+
+/** 是否包含数学公式（显式声明 math: true，或正文出现行内/块级 $...$ 公式） */
+export function hasMath(post: Post): boolean {
+	if (post.data.math) return true;
+	if (!post.body) return false;
+	const cleaned = post.body.replace(CODE_FENCE_RE, '').replace(/`[^`]*`/g, '');
+	return /\$\$[\s\S]+?\$\$|\$(?!\s)(?:\\.|[^$\\\n])+(?<!\s)\$/.test(cleaned);
+}
+
+/** 阅读时长估算：剥离代码块后分权计算（中文正文约 380 字/分，代码按 80 行/分折算） */
 export function readingMinutes(body: string | undefined): number {
 	if (!body) return 1;
-	const chars = body.replace(/\s+/g, '').length;
-	return Math.max(1, Math.round(chars / 400));
+	let codeLines = 0;
+	const prose = body.replace(CODE_FENCE_RE, (block) => {
+		codeLines += Math.max(0, block.split('\n').length - 2);
+		return '';
+	});
+	const proseChars = prose.replace(/\s+/g, '').length;
+	return Math.max(1, Math.round(proseChars / 380 + codeLines / 80));
 }

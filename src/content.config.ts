@@ -33,6 +33,8 @@ const blog = defineCollection({
 			heroImage: image().optional(),
 			// 标签：用小写英文/连字符，会生成 /tags/<tag>/ 页面
 			tags: z.array(z.string()).default([]),
+			// 含数学公式时可显式开启；正文检测到 $...$ / $$...$$ 时也会自动加载 KaTeX 样式
+			math: z.boolean().default(false),
 			// draft: true 只在本地 dev 可见，build 时不会输出
 			draft: z.boolean().default(false),
 		}),

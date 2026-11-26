@@ -64,6 +64,7 @@ const variant = Astro.props.variant ?? 'sidebar';
 	});
 
 	const targets = Array.from(document.querySelectorAll<HTMLElement>('.prose h2[id], .prose h3[id]'));
+	const tracked = targets.filter((el) => links.has(el.id));
 
 	// 窄屏点完目录就收起来，免得展开的列表挡在正文里
 	document.querySelectorAll<HTMLAnchorElement>('.toc-inline a[data-heading]').forEach((link) => {
@@ -73,19 +74,41 @@ const variant = Astro.props.variant ?? 'sidebar';
 		});
 	});
 
-	if (links.size > 0 && targets.length > 0) {
-		const observer = new IntersectionObserver(
-			(entries) => {
-				for (const entry of entries) {
-					if (!entry.isIntersecting) continue;
-					links.forEach((list) => list.forEach((link) => link.classList.remove('active')));
-					links.get(entry.target.id)?.forEach((link) => link.classList.add('active'));
+	if (links.size > 0 && tracked.length > 0) {
+		let currentId = '';
+		let raf = 0;
+
+		const updateActive = () => {
+			raf = 0;
+			let nextId = '';
+			const atBottom =
+				window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+			if (atBottom) {
+				nextId = tracked[tracked.length - 1].id;
+			} else {
+				for (const el of tracked) {
+					if (el.getBoundingClientRect().top <= 112) {
+						nextId = el.id;
+					} else {
+						break;
+					}
 				}
-			},
-			// 视口上方留出站头高度，下方留 65%，让"当前小节"落在上半屏
-			{ rootMargin: '-84px 0px -65% 0px' },
-		);
-		targets.forEach((target) => observer.observe(target));
+			}
+			if (nextId === currentId) return;
+			currentId = nextId;
+			links.forEach((list) => list.forEach((link) => link.classList.remove('active')));
+			if (currentId) {
+				links.get(currentId)?.forEach((link) => link.classList.add('active'));
+			}
+		};
+
+		const scheduleUpdate = () => {
+			if (!raf) raf = window.requestAnimationFrame(updateActive);
+		};
+
+		updateActive();
+		window.addEventListener('scroll', scheduleUpdate, { passive: true });
+		window.addEventListener('resize', scheduleUpdate, { passive: true });
 	}
 </script>
 

@@ -32,18 +32,21 @@
 		return ok;
 	}
 
-	async function copyText(text: string, btn: HTMLButtonElement) {
-		const old = btn.textContent;
+	async function copyString(text: string): Promise<boolean> {
 		try {
 			if (navigator.clipboard?.writeText) {
 				await navigator.clipboard.writeText(text);
-			} else if (!fallbackCopy(text)) {
-				throw new Error('copy failed');
+				return true;
 			}
-			btn.textContent = '已复制';
+			return fallbackCopy(text);
 		} catch {
-			btn.textContent = fallbackCopy(text) ? '已复制' : '复制失败';
+			return fallbackCopy(text);
 		}
+	}
+
+	async function copyText(text: string, btn: HTMLButtonElement) {
+		const old = btn.textContent;
+		btn.textContent = (await copyString(text)) ? '已复制' : '复制失败';
 		setTimeout(() => {
 			btn.textContent = old;
 		}, 1400);
@@ -58,9 +61,17 @@
 
 		const text = (pre.textContent ?? '').replace(/\n$/, '');
 		const lines = text.split('\n').length;
+		const lang = (pre.dataset.language ?? '').trim();
 
 		const head = document.createElement('div');
 		head.className = 'code-head';
+
+		if (lang && lang.toLowerCase() !== 'plaintext') {
+			const badge = document.createElement('span');
+			badge.className = 'code-lang';
+			badge.textContent = lang;
+			head.appendChild(badge);
+		}
 
 		const copy = document.createElement('button');
 		copy.type = 'button';
@@ -100,8 +111,42 @@
 		wrap.appendChild(pre);
 	}
 
+	function enhanceHeadings() {
+		document.querySelectorAll<HTMLElement>('.prose h2[id], .prose h3[id]').forEach((heading) => {
+			if (heading.querySelector('.heading-anchor')) return;
+			const id = heading.id;
+			const anchor = document.createElement('a');
+			anchor.className = 'heading-anchor';
+			anchor.href = `#${id}`;
+			anchor.setAttribute('aria-label', '复制本节链接');
+			anchor.textContent = '#';
+			anchor.addEventListener('click', async () => {
+				const url = `${window.location.origin}${window.location.pathname}#${id}`;
+				if (await copyString(url)) {
+					anchor.textContent = '✓';
+					setTimeout(() => {
+						anchor.textContent = '#';
+					}, 1200);
+				}
+			});
+			heading.appendChild(anchor);
+		});
+	}
+
+	function enhanceTables() {
+		document.querySelectorAll<HTMLTableElement>('.prose table').forEach((table) => {
+			if (table.closest('.table-wrap')) return;
+			const wrap = document.createElement('div');
+			wrap.className = 'table-wrap';
+			table.parentNode?.insertBefore(wrap, table);
+			wrap.appendChild(table);
+		});
+	}
+
 	function run() {
 		document.querySelectorAll<HTMLElement>('.prose pre').forEach(enhance);
+		enhanceHeadings();
+		enhanceTables();
 	}
 
 	run();
@@ -125,24 +170,68 @@
 		padding-top: 0.15rem;
 	}
 
-	/* 工具行：真实占位的一行，右侧放按钮 */
+	/* 工具行：真实占位的一行，左侧显示语言，右侧放复制按钮 */
 	.code-head {
 		display: flex;
-		justify-content: flex-end;
+		justify-content: space-between;
 		align-items: center;
-		padding: 0.32rem 0.6rem 0;
-		min-height: 0.9rem;
-		opacity: 0;
-		transition: opacity 0.15s ease;
+		padding: 0.35rem 0.7rem 0.1rem;
+		min-height: 1.2rem;
 	}
-	.code-block:hover .code-head,
-	.code-head:focus-within {
+	.code-lang {
+		color: var(--muted);
+		font-family: var(--font-mono);
+		font-size: 0.64rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		user-select: none;
+	}
+	.code-btn {
+		margin-left: auto;
+		opacity: 0;
+		transition: opacity 0.15s ease, color 0.15s ease;
+	}
+	.code-block:hover .code-btn,
+	.code-btn:focus-visible {
 		opacity: 1;
 	}
 	@media (hover: none) {
-		.code-head {
+		.code-btn {
 			opacity: 1;
 		}
+	}
+
+	.heading-anchor {
+		margin-left: 0.42em;
+		color: var(--muted);
+		font-family: var(--font-mono);
+		font-size: 0.78em;
+		font-weight: 400;
+		border-bottom: none !important;
+		opacity: 0;
+		transition: opacity 0.15s ease, color 0.15s ease;
+	}
+	.prose :is(h2, h3):hover .heading-anchor,
+	.heading-anchor:focus-visible {
+		opacity: 1;
+	}
+	.heading-anchor:hover {
+		color: var(--accent);
+		text-decoration: none;
+	}
+	@media (hover: none) {
+		.heading-anchor {
+			opacity: 0.55;
+		}
+	}
+
+	.table-wrap {
+		margin: 1.6em 0;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+	.prose .table-wrap table {
+		margin: 0;
 	}
 
 	.code-body {

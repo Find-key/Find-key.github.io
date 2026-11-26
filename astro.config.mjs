@@ -8,6 +8,7 @@ import remarkMath from 'remark-math';
 
 // 站点域名 / base 路径统一在 src/consts.ts 里改，这里只负责读
 import { SITE } from './src/consts.ts';
+import { katexAssets } from './src/integrations/katex-assets.ts';
 
 // https://astro.build/config
 export default defineConfig({
@@ -19,7 +20,7 @@ export default defineConfig({
 	// 启用链接预获取：用户鼠标悬停（hover）站内链接时自动预载，提升翻页流畅度
 	prefetch: true,
 	// 不加载 webfont：中文用系统字体栈，首屏没有字体闪烁，也少两个请求
-	integrations: [sitemap()],
+	integrations: [sitemap(), katexAssets()],
 	// 关掉开发工具条：它只出现在 npm run dev，容易让人以为是站点的一部分
 	devToolbar: { enabled: false },
 	markdown: {

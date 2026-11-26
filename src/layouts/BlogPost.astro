@@ -5,7 +5,6 @@
  */
 import { getCollection } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
-import 'katex/dist/katex.min.css';
 import CodeTools from '../components/CodeTools.astro';
 import BaseHead from '../components/BaseHead.astro';
 import Toc from '../components/Toc.astro';
@@ -15,6 +14,7 @@ import Header from '../components/Header.astro';
 import { SITE } from '../consts';
 import {
 	categoryOf,
+	hasMath,
 	isVisible,
 	postsOfCategory,
 	readingMinutes,
@@ -38,6 +38,7 @@ const index = siblings.findIndex((item) => item.id === post.id);
 const prev = index > 0 ? siblings[index - 1] : undefined;
 const next = index >= 0 && index < siblings.length - 1 ? siblings[index + 1] : undefined;
 const minutes = readingMinutes(post.body);
+const loadKatex = hasMath(post);
 ---
 
 <!doctype html>
@@ -48,7 +49,12 @@ const minutes = readingMinutes(post.body);
 			description={description}
 			image={heroImage}
 			type="article"
+			articleTitle={title}
+			pubDate={pubDate}
+			updatedDate={updatedDate}
+			tags={tags}
 		/>
+		{loadKatex && <link rel="stylesheet" href={withBase('/katex/katex.min.css')} />}
 	</head>
 
 	<body>
