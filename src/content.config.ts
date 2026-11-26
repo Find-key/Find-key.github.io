@@ -16,8 +16,8 @@ const categorySchema =
 		: z.string();
 
 const blog = defineCollection({
-	// 文章放在 src/content/blog/，支持 .md 和 .mdx
-	loader: glob({ base: './src/content/blog', pattern: '**/*.{md,mdx}' }),
+	// 文章放在 src/content/blog/，使用 .md 格式
+	loader: glob({ base: './src/content/blog', pattern: '**/*.md' }),
 	// frontmatter 的类型校验：写错字段名/类型，构建时直接报错（比运行时白屏好排查）
 	schema: ({ image }) =>
 		z.object({

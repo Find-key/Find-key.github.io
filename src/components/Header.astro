@@ -22,6 +22,7 @@ const current = stripped.replace(/\/+$/, '') || '/';
 const isActive = (href: string) => current === href || current.startsWith(`${href}/`);
 ---
 
+<a class="skip-link" href="#main-content">跳到正文</a>
 <header class="site-header">
 	<div class="inner">
 		{
@@ -36,13 +37,19 @@ const isActive = (href: string) => current === href || current.startsWith(`${hre
 			)
 		}
 
-		<nav class="nav">
+		<nav class="nav" aria-label="主导航">
 			{
-				NAV.map((item) => (
-					<a href={withBase(item.href)} class:list={[{ active: isActive(item.href) }]}>
-						{item.label}
-					</a>
-				))
+				NAV.map((item) => {
+					const active = isActive(item.href);
+					return (
+						<a
+							href={withBase(item.href)}
+							class:list={[{ active }]}
+							aria-current={active ? 'page' : undefined}>
+							{item.label}
+						</a>
+					);
+				})
 			}
 		</nav>
 	</div>

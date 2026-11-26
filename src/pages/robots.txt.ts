@@ -1,4 +1,3 @@
-import { SITE } from '../consts';
 import { absoluteUrl } from '../utils/url';
 
 // 静态端点：构建时生成 dist/robots.txt

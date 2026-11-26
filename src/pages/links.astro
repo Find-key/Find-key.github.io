@@ -16,7 +16,7 @@ const initial = (name: string) => name.trim().slice(0, 1).toUpperCase();
 	</head>
 	<body>
 		<Header />
-		<main class="container page">
+		<main id="main-content" class="container page">
 			<h1>友链</h1>
 			<p class="sub">常看的站点和朋友的主页</p>
 
@@ -36,7 +36,6 @@ const initial = (name: string) => name.trim().slice(0, 1).toUpperCase();
 												height="40"
 												loading="lazy"
 												referrerpolicy="no-referrer"
-												onerror="this.remove()"
 											/>
 										)}
 									</span>
@@ -65,6 +64,16 @@ const initial = (name: string) => name.trim().slice(0, 1).toUpperCase();
 		<Footer />
 	</body>
 </html>
+
+<script>
+	document.querySelectorAll<HTMLImageElement>('.friends .avatar img').forEach((img) => {
+		if (img.complete && img.naturalWidth === 0) {
+			img.remove();
+		} else {
+			img.addEventListener('error', () => img.remove(), { once: true });
+		}
+	});
+</script>
 
 <style>
 	.page {

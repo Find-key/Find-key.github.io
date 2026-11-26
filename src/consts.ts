@@ -68,7 +68,7 @@ export const FRIENDS: Friend[] = [
 	{ name: 'Sally', url: 'https://sally-0000.github.io/', note: '一个pwn手的blog', avatar: '/friends/sally-s.webp' },
 	{ name: 'sadsnowcat', url: 'https://sadsnowcat.github.io/', note: '为了没有泪水的明天', avatar: '/friends/sadsnowcat-s.webp' },
 	{ name: 'Nick', url: 'https://nickchen.top/', note: '越平静，越汹涌', avatar: '/friends/nick-s.webp' },
-	{ name: 'wsh', url: 'https://wele.vercel.app/', note: 'wsh 的 web 笔记', avatar: 'https://wele.vercel.app/avatar.jpg' },
+	{ name: 'wsh', url: 'https://wele.vercel.app/', note: 'wsh 的 web 笔记', avatar: '/friends/wsh-s.webp' },
 	{ name: 'yfor', url: 'https://yfor-yfor.github.io/', note: 'yfor, 为什么不是 wifi', avatar: '/friends/yfor-s.webp' },
 	{ name: 'Yolo', url: 'https://docs.yo1o.top/', note: 'to be continued', avatar: '/friends/yolo-s.webp' },
 	{ name: 'Y&Y', url: 'https://singlehorn.github.io/', note: '保持好奇心', avatar: '/friends/y-y-s.webp' },

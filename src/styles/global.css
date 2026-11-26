@@ -16,7 +16,7 @@
 	/* 纸感暖白 + 暖灰层次 */
 	--bg: #fbf9f5;
 	--text: #262220;
-	--muted: #736d64;
+	--muted: #6f6960;
 	--line: #ede8de;
 	--line-soft: #f2ede4;
 	--line-strong: #e0dacd;
@@ -286,6 +286,26 @@ h3 {
 }
 
 /* ---------- 通用小工具 ---------- */
+
+.skip-link {
+	position: fixed;
+	top: 0.75rem;
+	left: 0.75rem;
+	z-index: 100;
+	padding: 0.4rem 0.75rem;
+	border: 1px solid var(--accent);
+	border-radius: 4px;
+	background: var(--bg);
+	color: var(--text);
+	font-size: 0.84rem;
+	transform: translateY(-200%);
+	transition: transform 0.15s ease;
+}
+
+.skip-link:focus-visible {
+	transform: translateY(0);
+	text-decoration: none;
+}
 
 .sr-only {
 	position: absolute !important;

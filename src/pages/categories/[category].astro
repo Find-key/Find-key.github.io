@@ -32,7 +32,7 @@ const { category, posts } = Astro.props;
 	</head>
 	<body>
 		<Header />
-		<main class="container page">
+		<main id="main-content" class="container page">
 			<nav class="crumb" aria-label="位置">
 				<a href={`${withBase('/')}#${category.slug}`}>首页</a>
 				<span class="sep">/</span>

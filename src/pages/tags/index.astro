@@ -24,7 +24,7 @@ const tags = [...tagMap.entries()].sort((a, b) => b[1] - a[1] || a[0].localeComp
 	</head>
 	<body>
 		<Header />
-		<main class="container page">
+		<main id="main-content" class="container page">
 			<h1>标签</h1>
 			{tags.length > 0 && <p class="sub">{tags.length} 个标签，作为分类之外的横向索引</p>}
 			<div class="cloud">
